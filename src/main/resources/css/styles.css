@@ -1,0 +1,145 @@
+/* Root Styling */
+.root-pane {
+    -fx-background-color: #E8DCC4;
+}
+
+/* Login Card */
+.login-card {
+    -fx-background-color: white;
+    -fx-background-radius: 20px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 20, 0, 0, 5);
+    -fx-padding: 50px 45px;
+}
+
+/* Logo Section */
+.logo-section {
+    -fx-spacing: 15px;
+}
+
+.logo-container {
+    -fx-background-color: #4CAF50;
+    -fx-background-radius: 15px;
+    -fx-pref-width: 70px;
+    -fx-pref-height: 70px;
+}
+
+.logo-icon {
+    -fx-font-size: 38px;
+    -fx-text-fill: white;
+}
+
+.app-title {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 32px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #2c3e50;
+}
+
+.app-subtitle {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: #7f8c8d;
+}
+
+/* Form Section */
+.form-section {
+    -fx-spacing: 20px;
+    -fx-padding: 30px 0 0 0;
+}
+
+.field-label {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Input Fields */
+.input-field {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 8px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8px;
+    -fx-padding: 14px 16px;
+    -fx-prompt-text-fill: #95a5a6;
+    -fx-text-fill: #2c3e50;
+}
+
+.input-field:focused {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.2), 5, 0, 0, 0);
+}
+
+/* Error Label */
+.error-label {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #e74c3c;
+    -fx-padding: 5px 0;
+}
+
+/* Sign In Button */
+.sign-in-button {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 14px 0;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.3), 8, 0, 0, 2);
+}
+
+.sign-in-button:hover {
+    -fx-background-color: #45a049;
+    -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.4), 10, 0, 0, 3);
+}
+
+.sign-in-button:pressed {
+    -fx-background-color: #3d8b40;
+    -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.2), 5, 0, 0, 1);
+}
+
+/* Forgot Password Link */
+.forgot-link {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: #4A90E2;
+    -fx-border-color: transparent;
+    -fx-padding: 10px 0 0 0;
+}
+
+.forgot-link:hover {
+    -fx-text-fill: #357ABD;
+    -fx-underline: true;
+}
+
+/* Decorative Pill */
+.decorative-pill {
+    -fx-font-size: 60px;
+    -fx-opacity: 0.3;
+}
+
+/* Scrollbar customization */
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Tooltips */
+.tooltip {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 12px;
+    -fx-background-color: #2c3e50;
+    -fx-text-fill: white;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px 10px;
+}

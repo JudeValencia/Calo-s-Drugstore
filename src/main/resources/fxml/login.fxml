@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.inventory.Calo.s_Drugstore.controller.LoginController"
+           prefHeight="600" prefWidth="900" styleClass="root-pane">
+
+    <VBox alignment="CENTER" spacing="0" mouseTransparent="false">
+
+        <!-- Main Login Card -->
+        <VBox alignment="TOP_CENTER" styleClass="login-card" maxWidth="450" prefHeight="550">
+
+            <!-- Logo/Icon Section -->
+            <VBox alignment="CENTER" spacing="15" styleClass="logo-section">
+                <StackPane styleClass="logo-container">
+                    <Label text="💊" styleClass="logo-icon"/>
+                </StackPane>
+
+                <VBox alignment="CENTER" spacing="5">
+                    <Label text="PharmaTrack" styleClass="app-title"/>
+                    <Label text="Inventory &amp; Sales Management System" styleClass="app-subtitle"/>
+                </VBox>
+            </VBox>
+
+            <!-- Form Section -->
+            <VBox spacing="20" styleClass="form-section">
+                <VBox.margin>
+                    <Insets top="30"/>
+                </VBox.margin>
+
+                <!-- Username/Email Field -->
+                <VBox spacing="8">
+                    <Label text="Username / Email" styleClass="field-label"/>
+                    <TextField fx:id="usernameField" promptText="Enter your username or email"
+                               styleClass="input-field"/>
+                </VBox>
+
+                <!-- Password Field -->
+                <VBox spacing="8">
+                    <Label text="Password" styleClass="field-label"/>
+                    <PasswordField fx:id="passwordField" promptText="Enter your password"
+                                   styleClass="input-field"/>
+                </VBox>
+
+                <!-- Error/Success Label -->
+                <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" visible="false"/>
+
+                <!-- Sign In Button -->
+                <Button fx:id="signInButton" text="Sign In"
+                        styleClass="sign-in-button"
+                        onAction="#handleSignIn"
+                        maxWidth="Infinity"/>
+
+                <!-- Forgot Password Link -->
+                <HBox alignment="CENTER">
+                    <Hyperlink fx:id="forgotPasswordLink" text="Forgot password?"
+                               styleClass="forgot-link"
+                               onAction="#handleForgotPassword"/>
+                </HBox>
+            </VBox>
+
+        </VBox>
+    </VBox>
+
+</StackPane>
