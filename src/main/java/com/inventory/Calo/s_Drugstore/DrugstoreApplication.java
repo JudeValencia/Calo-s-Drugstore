@@ -1,6 +1,6 @@
 package com.inventory.Calo.s_Drugstore;
 
-import com.inventory.Calo.s_Drugstore.service.AuthenticationService;
+import com.inventory.Calo.s_Drugstore.Service.AuthenticationService;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;

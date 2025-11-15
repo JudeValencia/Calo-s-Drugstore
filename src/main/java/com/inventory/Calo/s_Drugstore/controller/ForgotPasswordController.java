@@ -82,7 +82,7 @@ public class ForgotPasswordController {
 
             Stage stage = (Stage) backToLoginLink.getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/css/login.css").toExternalForm());
 
             stage.setScene(scene);
             stage.show();

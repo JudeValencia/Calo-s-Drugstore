@@ -4,14 +4,14 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+<StackPane fx:id="rootPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.inventory.Calo.s_Drugstore.controller.LoginController"
            prefHeight="600" prefWidth="900" styleClass="root-pane">
 
-    <VBox alignment="CENTER" spacing="0" mouseTransparent="false">
+    <VBox alignment="CENTER" spacing="0">
 
         <!-- Main Login Card -->
-        <VBox alignment="TOP_CENTER" styleClass="login-card" maxWidth="450" prefHeight="550">
+        <VBox alignment="TOP_CENTER" styleClass="login-card" maxWidth="450" prefHeight="580">
 
             <!-- Logo/Icon Section -->
             <VBox alignment="CENTER" spacing="15" styleClass="logo-section">
@@ -31,35 +31,56 @@
                     <Insets top="30"/>
                 </VBox.margin>
 
-                <!-- Username/Email Field -->
+                <!-- Username Field -->
                 <VBox spacing="8">
-                    <Label text="Username / Email" styleClass="field-label"/>
-                    <TextField fx:id="usernameField" promptText="Enter your username or email"
+                    <Label text="Username" styleClass="field-label"/>
+                    <TextField fx:id="usernameField" promptText="Enter your username"
                                styleClass="input-field"/>
                 </VBox>
 
                 <!-- Password Field -->
                 <VBox spacing="8">
                     <Label text="Password" styleClass="field-label"/>
-                    <PasswordField fx:id="passwordField" promptText="Enter your password"
-                                   styleClass="input-field"/>
+                    <StackPane fx:id="passwordContainer">
+                        <PasswordField fx:id="passwordField" promptText="Enter your password"
+                                       styleClass="input-field"/>
+                        <TextField fx:id="passwordTextField" promptText="Enter your password"
+                                   styleClass="input-field"
+                                   visible="false" managed="false"/>
+                    </StackPane>
+
+                    <!-- Caps Lock Warning -->
+                    <Label fx:id="capsLockLabel" text="⚠ Caps Lock is ON"
+                           styleClass="caps-lock-warning" visible="false">
+                        <padding>
+                            <Insets top="3"/>
+                        </padding>
+                    </Label>
+
+                    <!-- Show Password Checkbox -->
+                    <CheckBox fx:id="showPasswordCheckBox" text="Show password"
+                              styleClass="show-password-checkbox">
+                        <padding>
+                            <Insets top="5"/>
+                        </padding>
+                    </CheckBox>
                 </VBox>
 
                 <!-- Error/Success Label -->
                 <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" visible="false"/>
 
-                <!-- Sign In Button -->
-                <Button fx:id="signInButton" text="Sign In"
-                        styleClass="sign-in-button"
-                        onAction="#handleSignIn"
-                        maxWidth="Infinity"/>
+                <!-- Sign In Button with Loading Indicator -->
+                <StackPane>
+                    <Button fx:id="signInButton" text="Sign In"
+                            styleClass="sign-in-button"
+                            onAction="#handleSignIn"
+                            maxWidth="Infinity"/>
+                    <ProgressIndicator fx:id="loadingIndicator"
+                                       styleClass="loading-indicator"
+                                       maxHeight="30" maxWidth="30"
+                                       visible="false"/>
+                </StackPane>
 
-                <!-- Forgot Password Link -->
-                <HBox alignment="CENTER">
-                    <Hyperlink fx:id="forgotPasswordLink" text="Forgot password?"
-                               styleClass="forgot-link"
-                               onAction="#handleForgotPassword"/>
-                </HBox>
             </VBox>
 
         </VBox>

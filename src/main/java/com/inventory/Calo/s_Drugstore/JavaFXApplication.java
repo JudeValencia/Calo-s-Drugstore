@@ -15,7 +15,7 @@ public class JavaFXApplication extends Application {
 
     @Override
     public void init() {
-        applicationContext = new SpringApplicationBuilder(com.inventory.Calo.s_Drugstore.DrugstoreApplication.class)
+        applicationContext = new SpringApplicationBuilder(DrugstoreApplication.class)
                 .run();
     }
 
@@ -26,11 +26,24 @@ public class JavaFXApplication extends Application {
         Parent root = loader.load();
 
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/css/login.css").toExternalForm());
 
         primaryStage.setTitle("PharmaTrack - Calo's Drugstore");
         primaryStage.setScene(scene);
-        primaryStage.setResizable(false);
+
+        // Enable resizing
+        primaryStage.setResizable(true);
+
+        // Set minimum size
+        primaryStage.setMinWidth(800);
+        primaryStage.setMinHeight(500);
+
+        // Set initial size
+        primaryStage.setWidth(900);
+        primaryStage.setHeight(600);
+
+
+
         primaryStage.show();
     }
 

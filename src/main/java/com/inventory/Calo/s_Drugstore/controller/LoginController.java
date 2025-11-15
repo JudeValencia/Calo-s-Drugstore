@@ -1,14 +1,22 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
 import com.inventory.Calo.s_Drugstore.entity.User;
-import com.inventory.Calo.s_Drugstore.service.AuthenticationService;
+import com.inventory.Calo.s_Drugstore.Service.AuthenticationService;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Controller;
 import java.util.Optional;
 
@@ -22,36 +30,134 @@ public class LoginController {
     private PasswordField passwordField;
 
     @FXML
-    private Button signInButton;
+    private TextField passwordTextField;
 
     @FXML
-    private Hyperlink forgotPasswordLink;
+    private CheckBox showPasswordCheckBox;
+
+    @FXML
+    private StackPane passwordContainer;
+
+    @FXML
+    private Button signInButton;
 
     @FXML
     private Label errorLabel;
 
+    @FXML
+    private Label capsLockLabel;
+
+    @FXML
+    private ProgressIndicator loadingIndicator;
+
+    @FXML
+    private StackPane rootPane;
+
     @Autowired
     private AuthenticationService authenticationService;
 
+    @Autowired
+    private ApplicationContext springContext;
+
     @FXML
     public void initialize() {
-        // Add Enter key listener for password field
+        // AUTO-FOCUS: Set focus on username field when page loads
+        Platform.runLater(() -> usernameField.requestFocus());
+
+        // Initially show PasswordField, hide TextField
+        passwordTextField.setVisible(false);
+        passwordTextField.setManaged(false);
+
+        // Hide loading indicator and caps lock warning
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisible(false);
+        }
+        if (capsLockLabel != null) {
+            capsLockLabel.setVisible(false);
+        }
+
+        // Bind the text between PasswordField and TextField
+        passwordField.textProperty().bindBidirectional(passwordTextField.textProperty());
+
+        // Add listener to checkbox
+        showPasswordCheckBox.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
+            if (isSelected) {
+                // Show password
+                passwordTextField.setVisible(true);
+                passwordTextField.setManaged(true);
+                passwordField.setVisible(false);
+                passwordField.setManaged(false);
+                passwordTextField.requestFocus();
+            } else {
+                // Hide password
+                passwordField.setVisible(true);
+                passwordField.setManaged(true);
+                passwordTextField.setVisible(false);
+                passwordTextField.setManaged(false);
+                passwordField.requestFocus();
+            }
+        });
+
+        // CAPS LOCK WARNING: Add key event handlers for both password fields
+        passwordField.setOnKeyPressed(this::handleCapsLock);
+        passwordField.setOnKeyReleased(this::handleCapsLock);
+        passwordTextField.setOnKeyPressed(this::handleCapsLock);
+        passwordTextField.setOnKeyReleased(this::handleCapsLock);
+
+        // Add Enter key listener for both password fields
         passwordField.setOnAction(event -> handleSignIn());
+        passwordTextField.setOnAction(event -> handleSignIn());
 
         // Hide error label initially
         if (errorLabel != null) {
             errorLabel.setVisible(false);
         }
+
+        // Setup fullscreen shortcut (F11)
+        setupFullscreenShortcut();
+    }
+
+    private void handleCapsLock(KeyEvent event) {
+        if (capsLockLabel != null) {
+            capsLockLabel.setVisible(event.getCode() != KeyCode.CAPS &&
+                    (event.isShiftDown() ? !event.getCode().isLetterKey() :
+                            event.getCode().isLetterKey() &&
+                                    Character.isUpperCase(event.getText().charAt(0))));
+            // Simple check: if caps lock might be on
+            try {
+                boolean capsOn = java.awt.Toolkit.getDefaultToolkit().getLockingKeyState(
+                        java.awt.event.KeyEvent.VK_CAPS_LOCK);
+                capsLockLabel.setVisible(capsOn);
+            } catch (Exception e) {
+                // Fallback if AWT not available - just hide the warning
+                capsLockLabel.setVisible(false);
+            }
+        }
+    }
+
+    private void setupFullscreenShortcut() {
+        rootPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                KeyCombination f11 = new KeyCodeCombination(KeyCode.F11);
+                newScene.getAccelerators().put(f11, this::toggleFullscreen);
+            }
+        });
+    }
+
+    @FXML
+    private void toggleFullscreen() {
+        Stage stage = (Stage) rootPane.getScene().getWindow();
+        stage.setFullScreen(!stage.isFullScreen());
     }
 
     @FXML
     private void handleSignIn() {
-        String usernameOrEmail = usernameField.getText().trim();
+        String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
         // Validation
-        if (usernameOrEmail.isEmpty()) {
-            showError("Please enter your username or email");
+        if (username.isEmpty()) {
+            showError("Please enter your username");
             return;
         }
 
@@ -60,33 +166,61 @@ public class LoginController {
             return;
         }
 
-        // Authenticate
-        Optional<User> userOpt = authenticationService.authenticate(usernameOrEmail, password);
+        // LOADING INDICATOR: Show loading and disable button
+        showLoading(true);
+        signInButton.setDisable(true);
+        hideError();
 
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            hideError();
+        // Perform authentication in background thread
+        Task<Optional<User>> authTask = new Task<>() {
+            @Override
+            protected Optional<User> call() {
+                // Simulate slight delay for better UX (optional)
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return authenticationService.authenticate(username, password);
+            }
+        };
 
-            // Show success message
-            showInfo("Welcome, " + user.getFullName() + "!");
+        authTask.setOnSucceeded(event -> {
+            showLoading(false);
+            signInButton.setDisable(false);
 
-            // TODO: Navigate to main dashboard
-            // For now, just print success
-            System.out.println("Login successful!");
-            System.out.println("User: " + user.getUsername());
-            System.out.println("Role: " + user.getRole());
+            Optional<User> userOpt = authTask.getValue();
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                showInfo("Welcome, " + user.getFullName() + "!");
 
-            // Load dashboard (placeholder)
-            loadDashboard(user);
-        } else {
-            showError("Invalid username/email or password");
-            passwordField.clear();
-        }
+                System.out.println("Login successful!");
+                System.out.println("User: " + user.getUsername());
+                System.out.println("Role: " + user.getRole());
+
+                loadDashboard(user);
+            } else {
+                showError("Invalid username or password");
+                passwordField.clear();
+                passwordTextField.clear();
+                passwordField.requestFocus();
+            }
+        });
+
+        authTask.setOnFailed(event -> {
+            showLoading(false);
+            signInButton.setDisable(false);
+            showError("Authentication error: " + authTask.getException().getMessage());
+        });
+
+        // Start the authentication task
+        new Thread(authTask).start();
     }
 
-    @FXML
-    private void handleForgotPassword() {
-        showInfo("Password reset feature coming soon!");
+    private void showLoading(boolean show) {
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisible(show);
+        }
     }
 
     private void showError(String message) {
@@ -113,15 +247,38 @@ public class LoginController {
 
     private void loadDashboard(User user) {
         try {
-            // TODO: Load the actual dashboard FXML when ready
-            // For now, just show an alert
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Success");
-            alert.setHeaderText("Login Successful");
-            alert.setContentText("Welcome, " + user.getFullName() + "!\n\n" +
-                    "Role: " + user.getRole() + "\n" +
-                    "Dashboard will be loaded here.");
-            alert.showAndWait();
+            java.net.URL dashboardUrl = getClass().getResource("/fxml/dashboard.fxml");
+            if (dashboardUrl == null) {
+                showError("Error: dashboard.fxml not found!");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(dashboardUrl);
+            loader.setControllerFactory(springContext::getBean);
+            Parent root = loader.load();
+
+            DashboardController dashboardController = loader.getController();
+            if (dashboardController != null) {
+                dashboardController.setCurrentUser(user);
+            }
+
+            Stage stage = (Stage) rootPane.getScene().getWindow();
+            Scene scene = new Scene(root);
+
+            // LOAD DASHBOARD.CSS instead of styles.css
+            java.net.URL cssUrl = getClass().getResource("/css/dashboard.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+
+            stage.setWidth(1200);
+            stage.setHeight(700);
+            stage.setMaximized(false);  // Prevent auto-maximize
+            stage.setFullScreen(false); // Prevent fullscreen
+            stage.centerOnScreen();
+
+            stage.setScene(scene);
+            stage.show();
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,4 +1,4 @@
-package com.inventory.Calo.s_Drugstore.service;
+package com.inventory.Calo.s_Drugstore.Service;
 
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.repository.UserRepository;
