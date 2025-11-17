@@ -165,54 +165,35 @@
 }
 
 
-/* ============================================
-   SIDEBAR
-   ============================================ */
+/* ===================================
+   SIDEBAR STYLES (Updated to match Inventory)
+   =================================== */
 
 .sidebar-overlay {
     -fx-background-color: white;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 20, 0, 5, 0);
-    -fx-min-width: 250px;
-    -fx-pref-width: 280px;
-    -fx-max-width: 300px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 2, 0);
 }
 
 .sidebar-header {
-    -fx-background-color: white;
+    -fx-background-color: transparent;
 }
 
 .sidebar-logo {
     -fx-background-color: #4CAF50;
-    -fx-background-radius: 10px;
-    -fx-min-width: 45px;
-    -fx-pref-width: 45px;
-    -fx-min-height: 45px;
-    -fx-pref-height: 45px;
-    -fx-alignment: center;
+    -fx-background-radius: 12px;
+    -fx-pref-width: 50px;
+    -fx-pref-height: 50px;
 }
 
 .sidebar-logo-icon {
-    -fx-font-size: 24px;
+    -fx-font-size: 28px;
+    -fx-text-fill: white;
 }
 
 .sidebar-title {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-font-size: 20px;
-    -fx-font-weight: 700;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
     -fx-text-fill: #2c3e50;
-}
-
-.sidebar-close-btn {
-    -fx-font-size: 20px;
-    -fx-background-color: transparent;
-    -fx-text-fill: #7f8c8d;
-    -fx-cursor: hand;
-    -fx-padding: 5px 10px;
-}
-
-.sidebar-close-btn:hover {
-    -fx-background-color: #F5F5F5;
-    -fx-background-radius: 5px;
 }
 
 .sidebar-separator {
@@ -220,62 +201,58 @@
 }
 
 .sidebar-menu {
-    -fx-background-color: white;
+    -fx-background-color: transparent;
 }
 
+/* Menu Items - Green Highlight */
 .menu-item {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-font-size: 15px;
     -fx-background-color: transparent;
-    -fx-background-radius: 10px;
     -fx-text-fill: #2c3e50;
+    -fx-font-size: 15px;
     -fx-cursor: hand;
     -fx-padding: 12px 15px;
     -fx-alignment: CENTER_LEFT;
+    -fx-background-radius: 8px;
     -fx-graphic-text-gap: 12px;
 }
 
 .menu-item:hover {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: rgba(76, 175, 80, 0.1);
 }
 
+/* GREEN ACTIVE STATE - matches inventory */
 .menu-item.active {
-    -fx-background-color: #F5F5F5;
-    -fx-text-fill: #2c3e50;
-    -fx-font-weight: 600;
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
 }
 
 .menu-icon {
-    -fx-font-size: 20px;
+    -fx-font-size: 18px;
 }
 
 .sidebar-user {
-    -fx-background-color: #F9F9F9;
+    -fx-background-color: #F8F9FA;
+    -fx-background-radius: 10px;
 }
 
 .user-avatar {
     -fx-background-color: #E0E0E0;
-    -fx-background-radius: 50%;
-    -fx-min-width: 40px;
-    -fx-pref-width: 40px;
-    -fx-min-height: 40px;
-    -fx-pref-height: 40px;
-    -fx-alignment: center;
+    -fx-background-radius: 25px;
+    -fx-pref-width: 50px;
+    -fx-pref-height: 50px;
 }
 
 .user-avatar-icon {
-    -fx-font-size: 20px;
+    -fx-font-size: 24px;
 }
 
 .user-name {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
     -fx-font-size: 14px;
-    -fx-font-weight: 600;
+    -fx-font-weight: bold;
     -fx-text-fill: #2c3e50;
 }
 
 .user-email {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
     -fx-font-size: 12px;
     -fx-text-fill: #7f8c8d;
 }
@@ -286,7 +263,7 @@
     -fx-background-color: transparent;
     -fx-text-fill: #e74c3c;
     -fx-cursor: hand;
-    -fx-padding: 12px 15px 12px 30px;  /* Changed: added 20px left padding */
+    -fx-padding: 12px 15px 12px 30px;
     -fx-alignment: CENTER_LEFT;
     -fx-graphic-text-gap: 12px;
 }
@@ -479,4 +456,32 @@
 
 .content-scroll .viewport {
     -fx-background-color: #F5F5F5;
+}
+
+/* ===================================
+   FIX FOR ACTION BUTTONS
+   =================================== */
+
+.inventory-table .table-cell {
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Action column should be centered */
+.inventory-table .table-column:last-child .table-cell {
+    -fx-alignment: CENTER;
+}
+
+/* Ensure buttons in table are visible */
+.inventory-table .button {
+    -fx-background-color: white;
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 12px;
+    -fx-padding: 6px 12px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.inventory-table .button .label {
+    -fx-text-fill: inherit;
 }

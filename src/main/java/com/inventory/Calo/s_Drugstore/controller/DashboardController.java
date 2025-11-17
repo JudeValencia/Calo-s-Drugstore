@@ -6,6 +6,7 @@ import com.inventory.Calo.s_Drugstore.service.UserManagementService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
@@ -13,7 +14,9 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -24,22 +27,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * DashboardController - Controls the main admin dashboard page
- *
- * WHAT THIS FILE DOES:
- * - Displays dashboard metrics (sales, stock, etc.)
- * - Handles navigation (clicking menu items)
- * - Shows dialogs for creating staff and resetting passwords
- * - Manages logout functionality
- *
- * CONNECTS TO:
- * - dashboard.fxml (the UI layout)
- * - DashboardService (gets the data to display)
- * - UserManagementService (creates users, resets passwords)
- */
 
-@Controller  // This is a Spring-managed controller
+@Controller
 public class DashboardController {
 
     // ========================================
@@ -105,18 +94,10 @@ public class DashboardController {
     private Button logoutBtn;
 
     @FXML
-    private VBox sidebarOverlay;
-
-    @FXML
     private LineChart<String, Number> salesTrendsChart;
 
     @FXML
     private BarChart<String, Number> inventoryDistributionChart;
-
-
-    // ========================================
-    // SERVICES (Dependencies injected by Spring)
-    // ========================================
 
     @Autowired
     private DashboardService dashboardService;  // Gets dashboard data
@@ -128,21 +109,9 @@ public class DashboardController {
     private ApplicationContext springContext;  // Needed for loading other pages
 
 
-    // ========================================
-    // CURRENT USER (who is logged in)
-    // ========================================
-
     private User currentUser;  // Stores the logged-in user's info
 
 
-    /**
-     * SET CURRENT USER
-     *
-     * Called by LoginController after successful login
-     * Stores the user info and updates the welcome message
-     *
-     * @param user - The logged-in user
-     */
     public void setCurrentUser(User user) {
         this.currentUser = user;
 
@@ -160,13 +129,6 @@ public class DashboardController {
         }
     }
 
-
-    /**
-     * INITIALIZE
-     *
-     * Called automatically when dashboard.fxml is loaded
-     * Sets up the page and loads all data
-     */
     @FXML
     public void initialize() {
         // Load all dashboard data
@@ -176,13 +138,6 @@ public class DashboardController {
         setActiveButton(dashboardBtn);
     }
 
-
-    /**
-     * LOAD DASHBOARD DATA
-     *
-     * Fetches data from DashboardService and displays it on the UI
-     * Updates all the KPI cards with current numbers
-     */
     private void loadDashboardData() {
         // Load KPI metrics
         Map<String, Object> metrics = dashboardService.getDashboardMetrics();
@@ -224,105 +179,54 @@ public class DashboardController {
         loadInventoryDistributionChart();
     }
 
-
-    // ========================================
-    // NAVIGATION HANDLERS (Sidebar Menu Clicks)
-    // ========================================
-
-    /**
-     * Handle Dashboard Button Click
-     * Already on dashboard, so just highlight the button
-     */
     @FXML
     private void handleDashboard() {
         setActiveButton(dashboardBtn);
         // Already on dashboard, no need to navigate
     }
 
-    /**
-     * Handle Inventory Button Click
-     * Will navigate to inventory page (coming soon)
-     */
+
     @FXML
     private void handleInventory() {
         setActiveButton(inventoryBtn);
-        showComingSoon("Inventory Management");
+        navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
-    /**
-     * Handle Sales Button Click
-     * Will navigate to sales/POS page (coming soon)
-     */
+
     @FXML
     private void handleSales() {
         setActiveButton(salesBtn);
-        showComingSoon("Sales & POS");
+        navigateToPage("/fxml/sales.fxml", "/css/sales.css");
     }
 
-    /**
-     * Handle Reports Button Click
-     * Will navigate to reports page (coming soon)
-     */
     @FXML
     private void handleReports() {
         setActiveButton(reportsBtn);
         showComingSoon("Reports & Analytics");
     }
 
-    /**
-     * Handle Suppliers Button Click
-     * Will navigate to suppliers page (coming soon)
-     */
     @FXML
     private void handleSuppliers() {
         setActiveButton(suppliersBtn);
         showComingSoon("Supplier Management");
     }
 
-    /**
-     * Handle Settings Button Click
-     * Shows a menu with admin options:
-     * - Create Staff Account
-     * - Reset Password
-     */
     @FXML
     private void handleSettings() {
         setActiveButton(settingsBtn);
         showSettingsMenu();
     }
 
-    /**
-     * Handle Logout Button Click
-     * Asks for confirmation, then returns to login page
-     */
     @FXML
     private void handleLogout() {
-        // Show confirmation dialog
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Logout");
-        confirmAlert.setHeaderText("Are you sure you want to logout?");
-        confirmAlert.setContentText("You will be returned to the login screen.");
+        boolean confirmed = showLogoutConfirmation();
 
-        Optional<ButtonType> result = confirmAlert.showAndWait();
-
-        // If user clicked OK, logout
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            navigateToLogin();
+        if (confirmed) {
+            performLogout();
         }
     }
 
 
-    // ========================================
-    // SETTINGS MENU FUNCTIONS
-    // ========================================
-
-    /**
-     * SHOW SETTINGS MENU
-     *
-     * Displays a dialog with admin options:
-     * - Create Staff Account
-     * - Reset Password
-     */
     private void showSettingsMenu() {
         Alert settingsAlert = new Alert(Alert.AlertType.INFORMATION);
         settingsAlert.setTitle("Settings");
@@ -349,12 +253,6 @@ public class DashboardController {
         }
     }
 
-    /**
-     * SHOW CREATE STAFF DIALOG
-     *
-     * Displays a form to create a new staff account
-     * Fields: Username, Email, Full Name, Password, Confirm Password, Role
-     */
     private void showCreateStaffDialog() {
         // Create dialog
         Dialog<ButtonType> dialog = new Dialog<>();
@@ -449,12 +347,6 @@ public class DashboardController {
         }
     }
 
-    /**
-     * SHOW RESET PASSWORD DIALOG
-     *
-     * Displays a form to reset a staff member's password
-     * Fields: Username, New Password, Confirm Password
-     */
     private void showResetPasswordDialog() {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Reset Staff Password");
@@ -525,17 +417,6 @@ public class DashboardController {
         }
     }
 
-
-    // ========================================
-    // HELPER FUNCTIONS
-    // ========================================
-
-    /**
-     * SET ACTIVE BUTTON
-     *
-     * Highlights the clicked menu item in green
-     * Removes highlight from other buttons
-     */
     private void setActiveButton(Button button) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
@@ -551,11 +432,6 @@ public class DashboardController {
         }
     }
 
-    /**
-     * SHOW COMING SOON MESSAGE
-     *
-     * Displays a placeholder message for features not yet implemented
-     */
     private void showComingSoon(String moduleName) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Coming Soon");
@@ -564,11 +440,6 @@ public class DashboardController {
         alert.showAndWait();
     }
 
-    /**
-     * SHOW ERROR MESSAGE
-     *
-     * Displays an error dialog with red X icon
-     */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
@@ -577,11 +448,6 @@ public class DashboardController {
         alert.showAndWait();
     }
 
-    /**
-     * SHOW SUCCESS MESSAGE
-     *
-     * Displays a success dialog with green checkmark
-     */
     private void showSuccess(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Success");
@@ -590,48 +456,7 @@ public class DashboardController {
         alert.showAndWait();
     }
 
-    /**
-     * NAVIGATE TO LOGIN
-     *
-     * Returns to the login page (logout)
-     */
-    private void navigateToLogin() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
-            loader.setControllerFactory(springContext::getBean);
-            Parent root = loader.load();
 
-            Stage stage = (Stage) logoutBtn.getScene().getWindow();
-            Scene scene = new Scene(root);
-
-            // LOAD STYLES.CSS for login page
-            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/css/styles.css")).toExternalForm());
-
-            stage.setWidth(900);
-            stage.setHeight(600);
-            stage.centerOnScreen();
-
-            stage.setScene(scene);
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            showError("Error returning to login: " + e.getMessage());
-        }
-    }
-
-    @FXML
-    private void handleMenuToggle() {
-        boolean isVisible = sidebarOverlay.isVisible();
-        sidebarOverlay.setVisible(!isVisible);
-        sidebarOverlay.setManaged(!isVisible);
-    }
-
-    /**
-     * LOAD SALES TRENDS CHART
-     *
-     * Creates a line chart showing daily sales for the last 7 days
-     */
     private void loadSalesTrendsChart() {
         if (salesTrendsChart == null) return;
 
@@ -685,5 +510,310 @@ public class DashboardController {
         // Style the chart
         inventoryDistributionChart.setLegendVisible(false);
         inventoryDistributionChart.setAnimated(true);
+    }
+
+    private void navigateToPage(String fxmlPath, String cssPath) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            loader.setControllerFactory(springContext::getBean);
+            Parent root = loader.load();
+
+            // Pass current user to the next controller
+            if (fxmlPath.contains("inventory")) {
+                InventoryController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("dashboard")) {
+                DashboardController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("sales")) {
+                SalesController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            }
+
+            Stage stage = (Stage) dashboardBtn.getScene().getWindow();
+            Scene currentScene = stage.getScene();
+
+            // SAVE CURRENT WINDOW SIZE AND POSITION
+            double currentWidth = stage.getWidth();
+            double currentHeight = stage.getHeight();
+            double currentX = stage.getX();
+            double currentY = stage.getY();
+            boolean isMaximized = stage.isMaximized();
+
+            // Create new scene
+            Scene newScene = new Scene(root);
+            newScene.getStylesheets().add(getClass().getResource(cssPath).toExternalForm());
+
+            // Set initial opacity to 0 for fade-in effect
+            root.setOpacity(0);
+
+            // Create fade-out animation for current scene
+            javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(30),
+                    currentScene.getRoot()
+            );
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+
+            fadeOut.setOnFinished(e -> {
+                // Switch to new scene
+                stage.setScene(newScene);
+
+                // RESTORE WINDOW SIZE AND POSITION
+                if (isMaximized) {
+                    stage.setMaximized(true);
+                } else {
+                    stage.setWidth(currentWidth);
+                    stage.setHeight(currentHeight);
+                    stage.setX(currentX);
+                    stage.setY(currentY);
+                }
+
+                // Create fade-in animation for new scene
+                javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                        javafx.util.Duration.millis(30),
+                        root
+                );
+                fadeIn.setFromValue(0.0);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+            });
+
+            fadeOut.play();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to load page: " + e.getMessage());
+        }
+    }
+
+    private void performLogout() {
+        try {
+            // Load login page
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
+            loader.setControllerFactory(springContext::getBean);
+            Parent root = loader.load();
+
+            Stage stage = (Stage) dashboardBtn.getScene().getWindow();
+            Scene currentScene = stage.getScene();
+
+            // Create new scene
+            Scene newScene = new Scene(root);
+
+            // Try to load CSS if it exists (handle null gracefully)
+            try {
+                java.net.URL cssUrl = getClass().getResource("/css/styles.css");
+                if (cssUrl != null) {
+                    newScene.getStylesheets().add(cssUrl.toExternalForm());
+                } else {
+                    // Try alternative CSS paths
+                    cssUrl = getClass().getResource("/css/login.css");
+                    if (cssUrl != null) {
+                        newScene.getStylesheets().add(cssUrl.toExternalForm());
+                    }
+                }
+            } catch (Exception cssEx) {
+                // CSS loading failed, continue without it
+                System.err.println("Warning: Could not load CSS for login page: " + cssEx.getMessage());
+            }
+
+            // Set initial opacity to 0 for fade-in effect
+            root.setOpacity(0);
+
+            // Create fade-out animation for current scene
+            javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(30),
+                    currentScene.getRoot()
+            );
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+
+            fadeOut.setOnFinished(e -> {
+                // Clear current user
+                this.currentUser = null;
+
+                // Switch to login scene
+                stage.setScene(newScene);
+
+                // Reset window size to login page size
+                stage.setWidth(800);
+                stage.setHeight(600);
+                stage.centerOnScreen();
+                stage.setMaximized(false);
+
+                // Create fade-in animation for login scene
+                javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                        javafx.util.Duration.millis(30),
+                        root
+                );
+                fadeIn.setFromValue(0.0);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+            });
+
+            fadeOut.play();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to logout: " + e.getMessage());
+        }
+    }
+
+    private void showStyledAlert(Alert.AlertType type, String title, String message) {
+        // Create custom dialog
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle(title);
+        dialogStage.setResizable(false);
+
+        // Main container
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(500);
+
+        // Title
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        titleLabel.setWrapText(true);
+
+        // Message
+        Label messageLabel = new Label(message);
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-line-spacing: 3px;");
+
+        // Button
+        HBox buttonBox = new HBox();
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button okButton = new Button("OK");
+
+        // Button color based on alert type
+        String buttonColor = "#4CAF50"; // Success - Green
+        String buttonHoverColor = "#45a049";
+
+        if (type == Alert.AlertType.ERROR) {
+            buttonColor = "#dc3545"; // Red
+            buttonHoverColor = "#c82333";
+        } else if (type == Alert.AlertType.WARNING) {
+            buttonColor = "#FF9800"; // Orange
+            buttonHoverColor = "#f57c00";
+        } else if (type == Alert.AlertType.INFORMATION) {
+            buttonColor = "#4CAF50"; // Green
+            buttonHoverColor = "#45a049";
+        }
+
+        final String finalButtonColor = buttonColor;
+        final String finalHoverColor = buttonHoverColor;
+
+        okButton.setStyle(
+                "-fx-background-color: " + buttonColor + "; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 40px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        okButton.setOnAction(e -> dialogStage.close());
+
+        okButton.setOnMouseEntered(e -> okButton.setStyle(
+                okButton.getStyle().replace(finalButtonColor, finalHoverColor)
+        ));
+        okButton.setOnMouseExited(e -> okButton.setStyle(
+                okButton.getStyle().replace(finalHoverColor, finalButtonColor)
+        ));
+
+        buttonBox.getChildren().add(okButton);
+        mainContainer.getChildren().addAll(titleLabel, messageLabel, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+    }
+
+    private boolean showLogoutConfirmation() {
+        // Create custom dialog
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Logout");
+        dialogStage.setResizable(false);
+        dialogStage.setUserData(false);
+
+        // Main container
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(500);
+
+        // Title
+        Label titleLabel = new Label("Are you sure you want to logout?");
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        titleLabel.setWrapText(true);
+
+        // Message
+        Label messageLabel = new Label("You will be returned to the login screen and will need to log in again to access the system.");
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-line-spacing: 3px;");
+
+        // Buttons
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-text-fill: #2c3e50; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1.5px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+        cancelButton.setOnAction(e -> {
+            dialogStage.setUserData(false);
+            dialogStage.close();
+        });
+
+        Button logoutButton = getButton(dialogStage);
+
+        buttonBox.getChildren().addAll(cancelButton, logoutButton);
+        mainContainer.getChildren().addAll(titleLabel, messageLabel, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+
+        return (Boolean) dialogStage.getUserData();
+    }
+
+    private static Button getButton(Stage dialogStage) {
+        Button logoutButton = new Button("Logout");
+        logoutButton.setStyle(
+                "-fx-background-color: #dc3545; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+        logoutButton.setOnAction(e -> {
+            dialogStage.setUserData(true);
+            dialogStage.close();
+        });
+
+        logoutButton.setOnMouseEntered(e -> logoutButton.setStyle(
+                logoutButton.getStyle().replace("#dc3545", "#c82333")
+        ));
+        logoutButton.setOnMouseExited(e -> logoutButton.setStyle(
+                logoutButton.getStyle().replace("#c82333", "#dc3545")
+        ));
+        return logoutButton;
     }
 }

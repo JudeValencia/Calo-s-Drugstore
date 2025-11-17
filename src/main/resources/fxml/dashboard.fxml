@@ -15,12 +15,11 @@
 
     <!-- LEFT SIDEBAR -->
     <left>
-        <VBox styleClass="sidebar-overlay" prefWidth="280">
+        <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
             <padding>
                 <Insets top="20" bottom="20"/>
             </padding>
 
-            <!-- Sidebar Header -->
             <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="15">
                 <padding>
                     <Insets top="10" right="20" bottom="10" left="20"/>
@@ -34,7 +33,6 @@
 
             <Separator styleClass="sidebar-separator"/>
 
-            <!-- Navigation Menu -->
             <VBox spacing="5" styleClass="sidebar-menu" VBox.vgrow="ALWAYS">
                 <padding>
                     <Insets top="10" right="10" bottom="10" left="10"/>
@@ -47,7 +45,7 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item"
+                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item,active"
                         onAction="#handleInventory">
                     <graphic>
                         <Label text="📦" styleClass="menu-icon"/>
@@ -85,7 +83,6 @@
 
             <Separator styleClass="sidebar-separator"/>
 
-            <!-- User Info Section -->
             <VBox styleClass="sidebar-user" spacing="5">
                 <padding>
                     <Insets top="15" right="20" bottom="15" left="20"/>
@@ -104,7 +101,6 @@
 
             <Separator styleClass="sidebar-separator"/>
 
-            <!-- Logout Button -->
             <Button fx:id="logoutBtn" text="Logout" styleClass="logout-btn"
                     onAction="#handleLogout">
                 <graphic>
