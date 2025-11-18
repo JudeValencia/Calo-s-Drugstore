@@ -22,4 +22,6 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     // Get the latest transaction ID for generating new IDs
     @Query("SELECT s FROM Sale s ORDER BY s.id DESC")
     List<Sale> findLatestSales();
+
+    List<Sale> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 }

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.ReportsController"
+            styleClass="reports-root">
+
+    <fx:define>
+        <ToggleGroup fx:id="timePeriodToggle"/>
+    </fx:define>
+
+    <!-- Sidebar -->
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
+            <padding>
+                <Insets top="20" bottom="20"/>
+            </padding>
+
+            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="15">
+                <padding>
+                    <Insets top="10" right="20" bottom="10" left="20"/>
+                </padding>
+
+                <StackPane styleClass="sidebar-logo">
+                    <Label text="💊" styleClass="sidebar-logo-icon"/>
+                </StackPane>
+                <Label text="PharmaTrack" styleClass="sidebar-title"/>
+            </HBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox spacing="5" styleClass="sidebar-menu" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Button fx:id="dashboardBtn" text="Dashboard" styleClass="menu-item"
+                        onAction="#handleDashboard">
+                    <graphic>
+                        <Label text="📊" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item,active"
+                        onAction="#handleInventory">
+                    <graphic>
+                        <Label text="📦" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item"
+                        onAction="#handleSales">
+                    <graphic>
+                        <Label text="🛒" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="reportsBtn" text="Reports" styleClass="menu-item"
+                        onAction="#handleReports">
+                    <graphic>
+                        <Label text="📈" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="suppliersBtn" text="Suppliers" styleClass="menu-item"
+                        onAction="#handleSuppliers">
+                    <graphic>
+                        <Label text="🚚" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="settingsBtn" text="Settings" styleClass="menu-item"
+                        onAction="#handleSettings">
+                    <graphic>
+                        <Label text="⚙️" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox styleClass="sidebar-user" spacing="5">
+                <padding>
+                    <Insets top="15" right="20" bottom="15" left="20"/>
+                </padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <StackPane styleClass="user-avatar">
+                        <Label text="👤" styleClass="user-avatar-icon"/>
+                    </StackPane>
+                    <VBox spacing="2">
+                        <Label fx:id="userNameLabel" text="Admin User" styleClass="user-name"/>
+                        <Label fx:id="userEmailLabel" text="admin@pharmatrack.com" styleClass="user-email"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <Button fx:id="logoutBtn" text="Logout" styleClass="logout-btn"
+                    onAction="#handleLogout">
+                <graphic>
+                    <Label text="🚪" styleClass="menu-icon"/>
+                </graphic>
+            </Button>
+
+        </VBox>
+    </left>
+
+    <!-- Main Content -->
+    <center>
+        <VBox styleClass="main-content" spacing="25">
+            <!-- Header -->
+            <HBox alignment="CENTER_LEFT" styleClass="page-header">
+                <VBox VBox.vgrow="ALWAYS">
+                    <Label text="Reports &amp; Analytics" styleClass="page-title"/>
+                    <Label text="Comprehensive insights into your pharmacy operations" styleClass="page-subtitle"/>
+                </VBox>
+<!--                <Button text="📥 Export Report" styleClass="export-button" onAction="#handleExportReport"/>-->
+            </HBox>
+
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+                <VBox spacing="25" style="-fx-padding: 0 20 20 0;">
+                    <!-- Sales Trends Chart -->
+                    <VBox styleClass="filter-card">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <Label text="📈" style="-fx-font-size: 24px;"/>
+                            <VBox>
+                                <Label text="Sales Trends" styleClass="card-title"/>
+                                <Label text="Sales performance over different time periods" styleClass="card-subtitle"/>
+                            </VBox>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <ToggleButton text="Daily" toggleGroup="$timePeriodToggle" styleClass="period-toggle" selected="true" onAction="#handleDailyView"/>
+                            <ToggleButton text="Weekly" toggleGroup="$timePeriodToggle" styleClass="period-toggle" onAction="#handleWeeklyView"/>
+                            <ToggleButton text="Monthly" toggleGroup="$timePeriodToggle" styleClass="period-toggle" onAction="#handleMonthlyView"/>
+                        </HBox>
+
+                        <StackPane fx:id="salesChartContainer" prefHeight="350" style="-fx-padding: 20 0 0 0;"/>
+                    </VBox>
+
+                    <!-- Two Column Layout -->
+                    <HBox spacing="25">
+                        <!-- Sales by Category -->
+                        <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="15">
+                                <Label text="💰" style="-fx-font-size: 24px;"/>
+                                <VBox>
+                                    <Label text="Sales by Category" styleClass="card-title"/>
+                                    <Label text="Distribution of sales across medicine categories" styleClass="card-subtitle"/>
+                                </VBox>
+                            </HBox>
+                            <StackPane fx:id="categoryChartContainer" prefHeight="300" style="-fx-padding: 20 0 0 0;"/>
+                        </VBox>
+
+                        <!-- Key Performance Indicators -->
+                        <VBox styleClass="filter-card" prefWidth="400">
+                            <Label text="Key Performance Indicators" styleClass="card-title"/>
+                            <Label text="Important metrics for this month" styleClass="card-subtitle" style="-fx-padding: 0 0 15 0;"/>
+
+                            <VBox spacing="12">
+                                <HBox styleClass="kpi-card, revenue" alignment="CENTER_LEFT">
+                                    <VBox HBox.hgrow="ALWAYS">
+                                        <Label text="Total Revenue" styleClass="kpi-title"/>
+                                        <Label fx:id="totalRevenueLabel" text="₱75,420" styleClass="kpi-value"/>
+                                    </VBox>
+                                    <Label text="📈" style="-fx-font-size: 32px;"/>
+                                </HBox>
+
+                                <HBox styleClass="kpi-card, transactions" alignment="CENTER_LEFT">
+                                    <VBox HBox.hgrow="ALWAYS">
+                                        <Label text="Total Transactions" styleClass="kpi-title"/>
+                                        <Label fx:id="totalTransactionsLabel" text="1,247" styleClass="kpi-value"/>
+                                    </VBox>
+                                    <Label text="📅" style="-fx-font-size: 32px;"/>
+                                </HBox>
+
+                                <HBox styleClass="kpi-card, average" alignment="CENTER_LEFT">
+                                    <VBox HBox.hgrow="ALWAYS">
+                                        <Label text="Average Order Value" styleClass="kpi-title"/>
+                                        <Label fx:id="avgOrderValueLabel" text="₱60.50" styleClass="kpi-value"/>
+                                    </VBox>
+                                    <Label text="💵" style="-fx-font-size: 32px;"/>
+                                </HBox>
+
+                                <HBox styleClass="kpi-card, stock" alignment="CENTER_LEFT">
+                                    <VBox HBox.hgrow="ALWAYS">
+                                        <Label text="Low Stock Items" styleClass="kpi-title"/>
+                                        <Label fx:id="lowStockItemsLabel" text="8" styleClass="kpi-value"/>
+                                    </VBox>
+                                    <Label text="⚠️" style="-fx-font-size: 32px;"/>
+                                </HBox>
+                            </VBox>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Expiring Medicines Alert -->
+                    <VBox styleClass="filter-card">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <Label text="⚠️" style="-fx-font-size: 24px;"/>
+                            <VBox>
+                                <Label text="Expiring Medicines Alert" styleClass="card-title"/>
+                                <Label text="Medicines expiring within 30 days or already expired" styleClass="card-subtitle"/>
+                            </VBox>
+                        </HBox>
+
+                        <TableView fx:id="expiringMedicinesTable" styleClass="">
+                            <columns>
+                                <TableColumn fx:id="medicineIdCol" text="Medicine ID" prefWidth="120"/>
+                                <TableColumn fx:id="medicineNameCol" text="Medicine Name" prefWidth="250"/>
+                                <TableColumn fx:id="expirationDateCol" text="Expiration Date" prefWidth="150"/>
+                                <TableColumn fx:id="daysLeftCol" text="Days Left" prefWidth="150"/>
+                                <TableColumn fx:id="stockCol" text="Stock" prefWidth="100"/>
+                                <TableColumn fx:id="statusCol" text="Status" prefWidth="120"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </VBox>
+    </center>
+</BorderPane>

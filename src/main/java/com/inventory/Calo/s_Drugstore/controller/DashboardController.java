@@ -202,7 +202,7 @@ public class DashboardController {
     @FXML
     private void handleReports() {
         setActiveButton(reportsBtn);
-        showComingSoon("Reports & Analytics");
+        navigateToPage("/fxml/reports.fxml", "/css/reports.css");
     }
 
     @FXML
@@ -528,7 +528,11 @@ public class DashboardController {
             } else if (fxmlPath.contains("sales")) {
                 SalesController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("reports")) {
+                ReportsController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
             }
+
 
             Stage stage = (Stage) dashboardBtn.getScene().getWindow();
             Scene currentScene = stage.getScene();

@@ -204,7 +204,6 @@
     -fx-background-color: transparent;
 }
 
-/* Menu Items - Green Highlight */
 .menu-item {
     -fx-background-color: transparent;
     -fx-text-fill: #2c3e50;
@@ -220,7 +219,6 @@
     -fx-background-color: rgba(76, 175, 80, 0.1);
 }
 
-/* GREEN ACTIVE STATE - matches inventory */
 .menu-item.active {
     -fx-background-color: #4CAF50;
     -fx-text-fill: white;

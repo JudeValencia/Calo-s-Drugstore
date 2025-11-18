@@ -167,14 +167,14 @@
 
                     <TableView fx:id="inventoryTable" styleClass="inventory-table">
                         <columns>
-                            <TableColumn fx:id="medicineIdColumn" text="ID" prefWidth="80" minWidth="80" styleClass="table-column-header"/>
-                            <TableColumn fx:id="nameColumn" text="Name" prefWidth="220" styleClass="table-column-header"/>
-                            <TableColumn fx:id="stockColumn" text="Stock" prefWidth="100" styleClass="table-column-header"/>
-                            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100" styleClass="table-column-header"/>
-                            <TableColumn fx:id="priceColumn" text="Price" prefWidth="100" styleClass="table-column-header"/>
-                            <TableColumn fx:id="expirationColumn" text="Expiration Date" prefWidth="150" styleClass="table-column-header"/>
-                            <TableColumn fx:id="supplierColumn" text="Supplier" prefWidth="130" styleClass="table-column-header"/>
-                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150" minWidth="150" styleClass="table-column-header" sortable="false" resizable="false"/>
+                            <TableColumn fx:id="medicineIdColumn" text="ID" prefWidth="80" minWidth="80"/>
+                            <TableColumn fx:id="nameColumn" text="Name" prefWidth="220"/>
+                            <TableColumn fx:id="stockColumn" text="Stock" prefWidth="100"/>
+                            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+                            <TableColumn fx:id="priceColumn" text="Price" prefWidth="100"/>
+                            <TableColumn fx:id="expirationColumn" text="Expiration Date" prefWidth="150"/>
+                            <TableColumn fx:id="supplierColumn" text="Supplier" prefWidth="130"/>
+                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150" sortable="false" resizable="false"/>
                         </columns>
 
                         <columnResizePolicy>

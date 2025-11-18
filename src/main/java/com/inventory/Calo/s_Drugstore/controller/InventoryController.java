@@ -1371,7 +1371,8 @@ public class InventoryController implements Initializable {
 
     @FXML
     private void handleReports() {
-        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon", "Reports module coming soon!");
+        setActiveButton(reportsBtn);
+        navigateToPage("/fxml/reports.fxml", "/css/reports.css");
     }
 
     @FXML
@@ -1409,6 +1410,9 @@ public class InventoryController implements Initializable {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("sales")) {
                 SalesController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("reports")) {
+                ReportsController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
             }
 

@@ -857,9 +857,11 @@ public class SalesController implements Initializable {
         // Already on sales page
     }
 
+
     @FXML
     private void handleReports() {
-        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon", "Reports module coming soon!");
+        setActiveButton(reportsBtn);
+        navigateToPage("/fxml/reports.fxml", "/css/reports.css");
     }
 
     @FXML
@@ -980,7 +982,11 @@ public class SalesController implements Initializable {
             } else if (fxmlPath.contains("sales")) {
                 SalesController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("reports")) {
+                ReportsController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
             }
+
 
             Stage stage = (Stage) salesBtn.getScene().getWindow();  // Change salesBtn to appropriate button
             Scene currentScene = stage.getScene();

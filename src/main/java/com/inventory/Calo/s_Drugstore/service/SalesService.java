@@ -127,4 +127,8 @@ public class SalesService {
         int number = Integer.parseInt(lastId.substring(3)) + 1;
         return String.format("TXN%03d", number);
     }
+
+    public List<Sale> getSalesBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
+        return saleRepository.findByCreatedAtBetween(startDate, endDate);
+    }
 }
