@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.SalesController"
+            styleClass="sales-root">
+
+    <!-- LEFT SIDEBAR (Same as inventory/dashboard) -->
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
+            <padding>
+                <Insets top="20" bottom="20"/>
+            </padding>
+
+            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="15">
+                <padding>
+                    <Insets top="10" right="20" bottom="10" left="20"/>
+                </padding>
+
+                <StackPane styleClass="sidebar-logo">
+                    <Label text="💊" styleClass="sidebar-logo-icon"/>
+                </StackPane>
+                <Label text="PharmaTrack" styleClass="sidebar-title"/>
+            </HBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox spacing="5" styleClass="sidebar-menu" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Button fx:id="dashboardBtn" text="Dashboard" styleClass="menu-item"
+                        onAction="#handleDashboard">
+                    <graphic>
+                        <Label text="📊" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item"
+                        onAction="#handleInventory">
+                    <graphic>
+                        <Label text="📦" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item,active"
+                        onAction="#handleSales">
+                    <graphic>
+                        <Label text="🛒" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="reportsBtn" text="Reports" styleClass="menu-item"
+                        onAction="#handleReports">
+                    <graphic>
+                        <Label text="📈" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="suppliersBtn" text="Suppliers" styleClass="menu-item"
+                        onAction="#handleSuppliers">
+                    <graphic>
+                        <Label text="🚚" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="settingsBtn" text="Settings" styleClass="menu-item"
+                        onAction="#handleSettings">
+                    <graphic>
+                        <Label text="⚙️" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox styleClass="sidebar-user" spacing="5">
+                <padding>
+                    <Insets top="15" right="20" bottom="15" left="20"/>
+                </padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <StackPane styleClass="user-avatar">
+                        <Label text="👤" styleClass="user-avatar-icon"/>
+                    </StackPane>
+                    <VBox spacing="2">
+                        <Label fx:id="userNameLabel" text="Admin User" styleClass="user-name"/>
+                        <Label fx:id="userEmailLabel" text="admin@pharmatrack.com" styleClass="user-email"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <Button fx:id="logoutBtn" text="Logout" styleClass="logout-btn"
+                    onAction="#handleLogout">
+                <graphic>
+                    <Label text="🚪" styleClass="menu-icon"/>
+                </graphic>
+            </Button>
+
+        </VBox>
+    </left>
+
+    <!-- CENTER: MAIN CONTENT -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="content-scroll">
+            <VBox spacing="25" styleClass="main-content">
+                <padding>
+                    <Insets top="30" right="30" bottom="30" left="30"/>
+                </padding>
+
+                <!-- Page Header -->
+                <VBox spacing="5">
+                    <Label text="Sales Recording" styleClass="page-header"/>
+                    <Label text="Record new sales and manage transactions" styleClass="page-subheader"/>
+                </VBox>
+
+                <!-- ADD TO CART SECTION -->
+                <VBox styleClass="sales-card" spacing="20">
+                    <padding>
+                        <Insets top="25" right="25" bottom="25" left="25"/>
+                    </padding>
+
+                    <!-- Section Title -->
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="+" styleClass="section-icon"/>
+                        <Label text="Add to Cart" styleClass="card-title"/>
+                    </HBox>
+
+                    <Label text="Select medicines to add to current transaction" styleClass="card-subtitle"/>
+
+                    <!-- Medicine Selection -->
+                    <VBox spacing="10">
+                        <Label text="Select Medicine" styleClass="section-label"/>
+
+                        <TextField fx:id="medicineSearchField"
+                                   promptText="Search medicines..."
+                                   styleClass="sales-field"/>
+
+                        <ComboBox fx:id="medicineCombo"
+                                  promptText="Choose a medicine"
+                                  styleClass="sales-combo"
+                                  maxWidth="Infinity"/>
+                    </VBox>
+
+                    <!-- Quantity -->
+                    <VBox spacing="10">
+                        <Label text="Quantity" styleClass="section-label"/>
+                        <TextField fx:id="quantityField"
+                                   text="1"
+                                   styleClass="sales-field"
+                                   prefWidth="200"/>
+                    </VBox>
+
+                    <!-- Buttons -->
+                    <HBox spacing="15">
+                        <Button text="+ Add to Cart" styleClass="add-cart-btn"
+                                onAction="#handleAddToCart"
+                                maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                        <Button text="📦 Bulk Add" styleClass="bulk-add-btn"
+                                onAction="#handleBulkAdd"/>
+                    </HBox>
+                </VBox>
+
+                <!-- CURRENT CART SECTION -->
+                <VBox styleClass="sales-card" spacing="20" fx:id="cartSection">
+                    <padding>
+                        <Insets top="25" right="25" bottom="25" left="25"/>
+                    </padding>
+
+                    <!-- Cart Header -->
+                    <HBox alignment="CENTER_LEFT">
+                        <HBox spacing="10" HBox.hgrow="ALWAYS">
+                            <Label text="🛒" styleClass="section-icon"/>
+                            <Label text="Current Cart" styleClass="cart-title"/>
+                        </HBox>
+                        <Button fx:id="clearCartBtn" text="✕ Clear" styleClass="clear-btn"
+                                onAction="#handleClearCart" visible="false"/>
+                    </HBox>
+
+                    <Label fx:id="cartCountLabel" text="0 items in cart" styleClass="cart-count"/>
+
+                    <!-- Empty Cart State -->
+                    <VBox fx:id="emptyCartState" styleClass="empty-cart" spacing="15" alignment="CENTER">
+                        <padding>
+                            <Insets top="60" right="30" bottom="60" left="30"/>
+                        </padding>
+                        <Label text="🛒" styleClass="empty-cart-icon"/>
+                        <Label text="No items in cart" styleClass="empty-cart-text"/>
+                        <Label text="Add medicines to start a transaction" styleClass="empty-cart-subtext"/>
+                    </VBox>
+
+                    <!-- Cart Items List -->
+                    <VBox fx:id="cartItemsContainer" spacing="15" visible="false"/>
+
+                    <!-- Cart Total -->
+                    <HBox fx:id="cartTotalSection" styleClass="cart-total-section" alignment="CENTER_LEFT" visible="false">
+                        <Label text="Total:" styleClass="cart-total-label" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="cartTotalLabel" text="₱0.00" styleClass="cart-total-amount"/>
+                    </HBox>
+
+                    <!-- Complete Transaction Button -->
+                    <Button fx:id="completeTransactionBtn"
+                            text="💵 Complete Transaction"
+                            styleClass="complete-btn"
+                            onAction="#handleCompleteTransaction"
+                            maxWidth="Infinity"
+                            visible="false"/>
+                </VBox>
+
+                <!-- TODAY'S SUMMARY -->
+                <!-- TODAY'S SUMMARY -->
+                <VBox styleClass="sales-card" spacing="20">
+                    <padding>
+                        <Insets top="25" right="25" bottom="25" left="25"/>
+                    </padding>
+
+                    <Label text="Today's Summary" styleClass="card-title"/>
+
+                    <VBox spacing="15">
+                        <HBox styleClass="summary-row" alignment="CENTER_LEFT">
+                            <Label text="Total Transactions:" styleClass="summary-label" HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="totalTransactionsLabel" text="0" styleClass="summary-value"/>
+                        </HBox>
+
+                        <HBox styleClass="summary-row" alignment="CENTER_LEFT">
+                            <Label text="Total Items Sold:" styleClass="summary-label" HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="totalItemsSoldLabel" text="0" styleClass="summary-value"/>
+                        </HBox>
+
+                        <HBox styleClass="summary-row" alignment="CENTER_LEFT">
+                            <Label text="Total Sales:" styleClass="summary-label" HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="totalSalesLabel" text="₱0.00" styleClass="summary-value-green"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+
+                <!-- TODAY'S TRANSACTIONS -->
+                <VBox styleClass="sales-card" spacing="20">
+                    <padding>
+                        <Insets top="25" right="25" bottom="25" left="25"/>
+                    </padding>
+
+                    <VBox spacing="5">
+                        <Label text="Today's Transactions" styleClass="card-title"/>
+                        <Label text="All transactions recorded today" styleClass="card-subtitle"/>
+                    </VBox>
+
+                    <TableView fx:id="transactionsTable" styleClass="transactions-table">
+                        <columns>
+                            <TableColumn fx:id="transactionIdColumn" text="Transaction ID" prefWidth="150"/>
+                            <TableColumn fx:id="itemsColumn" text="Items" prefWidth="250"/>
+                            <TableColumn fx:id="totalAmountColumn" text="Total Amount" prefWidth="150"/>
+                            <TableColumn fx:id="dateTimeColumn" text="Date/Time" prefWidth="200"/>
+                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="120"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

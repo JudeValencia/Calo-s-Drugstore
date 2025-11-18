@@ -84,10 +84,6 @@ public class InventoryController implements Initializable {
         loadProducts();
         setActiveButton(inventoryBtn);
 
-        // Initialize sample data if empty
-        productService.initializeSampleData();
-        loadProducts();
-
     }
 
     public void setCurrentUser(User user) {
