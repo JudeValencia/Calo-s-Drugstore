@@ -31,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -79,15 +80,27 @@ public class ReportsController implements Initializable {
     @FXML private TableColumn<Product, String> stockCol;
     @FXML private TableColumn<Product, String> statusCol;
 
+    // Top Selling Medicines table
+    @FXML private TableView<Map<String, Object>> topSellingTable;
+    @FXML private TableColumn<Map<String, Object>, String> rankCol;
+    @FXML private TableColumn<Map<String, Object>, String> topMedicineNameCol;
+    @FXML private TableColumn<Map<String, Object>, String> categoryCol;
+    @FXML private TableColumn<Map<String, Object>, String> quantitySoldCol;
+
+    // Current view mode for sales chart
+    private String currentViewMode = "DAILY";
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setActiveButton(reportsBtn);
         setupExpiringMedicinesTable();
+        setupTopSellingTable();
         setupTableColumns();
         loadDashboardData();
         loadSalesTrendsChart();
         loadCategoryChart();
         loadExpiringMedicines();
+        loadTopSellingMedicines();
     }
 
     private void setupTableColumns() {
@@ -98,6 +111,139 @@ public class ReportsController implements Initializable {
         daysLeftCol.setStyle("-fx-alignment: CENTER-LEFT;");
         stockCol.setStyle("-fx-alignment: CENTER-LEFT;");
         statusCol.setStyle("-fx-alignment: CENTER-LEFT;");
+    }
+
+    private void setupTopSellingTable() {
+        // Setup rank column with green numbering
+        rankCol.setCellValueFactory(cellData -> {
+            Integer rank = (Integer) cellData.getValue().get("rank");
+            return new SimpleStringProperty("#" + rank);
+        });
+        rankCol.setStyle("-fx-alignment: CENTER-LEFT;");
+
+        rankCol.setCellFactory(column -> new TableCell<Map<String, Object>, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-font-size: 14px;");
+                }
+            }
+        });
+
+        // Setup medicine name column
+        topMedicineNameCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty((String) cellData.getValue().get("medicineName")));
+        topMedicineNameCol.setStyle("-fx-alignment: CENTER-LEFT;");
+
+        // Setup category column with pill-style badges
+        categoryCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty((String) cellData.getValue().get("category")));
+        categoryCol.setStyle("-fx-alignment: CENTER-LEFT;");
+
+        categoryCol.setCellFactory(column -> new TableCell<Map<String, Object>, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label categoryLabel = new Label(item);
+                    categoryLabel.setStyle(
+                            "-fx-background-color: #f5f7fa; " +
+                                    "-fx-padding: 5px 12px; " +
+                                    "-fx-background-radius: 12px; " +
+                                    "-fx-text-fill: #2c3e50; " +
+                                    "-fx-font-size: 12px; " +
+                                    "-fx-font-weight: 600;"
+                    );
+                    setGraphic(categoryLabel);
+                    setText(null);
+                }
+            }
+        });
+
+        // Setup quantity column
+        quantitySoldCol.setCellValueFactory(cellData -> {
+            Integer quantity = (Integer) cellData.getValue().get("quantitySold");
+            return new SimpleStringProperty(String.valueOf(quantity));
+        });
+        quantitySoldCol.setStyle("-fx-alignment: CENTER-LEFT;");
+
+        quantitySoldCol.setCellFactory(column -> new TableCell<Map<String, Object>, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    setStyle("-fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+                }
+            }
+        });
+    }
+
+    private void loadTopSellingMedicines() {
+        try {
+            // Get sales from last 7 days
+            LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+            LocalDateTime now = LocalDateTime.now();
+
+            List<Sale> weekSales = salesService.getSalesBetweenDates(weekAgo, now);
+
+            // Count quantities by medicine
+            Map<String, Map<String, Object>> medicineStats = new HashMap<>();
+
+            for (Sale sale : weekSales) {
+                List<SaleItem> items = sale.getItems();
+                for (SaleItem item : items) {
+                    String medicineName = item.getMedicineName();
+
+                    if (!medicineStats.containsKey(medicineName)) {
+                        // Find the product to get category
+                        Optional<Product> productOpt = productService.getProductByMedicineId(item.getMedicineId());
+                        String category = productOpt.map(Product::getCategory).orElse("Unknown");
+
+                        Map<String, Object> stats = new HashMap<>();
+                        stats.put("medicineName", medicineName);
+                        stats.put("category", category);
+                        stats.put("quantitySold", 0);
+                        medicineStats.put(medicineName, stats);
+                    }
+
+                    Map<String, Object> stats = medicineStats.get(medicineName);
+                    Integer currentQty = (Integer) stats.get("quantitySold");
+                    stats.put("quantitySold", currentQty + item.getQuantity());
+                }
+            }
+
+            // Sort by quantity and take top 5
+            List<Map<String, Object>> topMedicines = medicineStats.values().stream()
+                    .sorted((a, b) -> Integer.compare(
+                            (Integer) b.get("quantitySold"),
+                            (Integer) a.get("quantitySold")
+                    ))
+                    .limit(5)
+                    .collect(Collectors.toList());
+
+            // Add rank numbers
+            for (int i = 0; i < topMedicines.size(); i++) {
+                topMedicines.get(i).put("rank", i + 1);
+            }
+
+            topSellingTable.setItems(FXCollections.observableArrayList(topMedicines));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error loading top selling medicines: " + e.getMessage());
+        }
     }
 
     public void setCurrentUser(User user) {
@@ -122,14 +268,14 @@ public class ReportsController implements Initializable {
             activeBtn.getStyleClass().add("active");
         }
     }
+
     private void loadDashboardData() {
         try {
-            // Get ALL sales (not just today)
+            // Get current month sales
             LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
             LocalDateTime endOfMonth = LocalDate.now().withDayOfMonth(
                     LocalDate.now().lengthOfMonth()).atTime(23, 59, 59);
 
-            // You'll need to add this method to SalesService
             List<Sale> monthSales = salesService.getSalesBetweenDates(startOfMonth, endOfMonth);
 
             // Calculate metrics
@@ -161,6 +307,24 @@ public class ReportsController implements Initializable {
         }
     }
 
+    @FXML
+    private void handleDailyView() {
+        currentViewMode = "DAILY";
+        loadSalesTrendsChart();
+    }
+
+    @FXML
+    private void handleWeeklyView() {
+        currentViewMode = "WEEKLY";
+        loadSalesTrendsChart();
+    }
+
+    @FXML
+    private void handleMonthlyView() {
+        currentViewMode = "MONTHLY";
+        loadSalesTrendsChart();
+    }
+
     private void loadSalesTrendsChart() {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
@@ -174,33 +338,84 @@ public class ReportsController implements Initializable {
         series.setName("Sales");
 
         try {
-            // Get last 7 days of sales
-            LocalDate today = LocalDate.now();
-            for (int i = 6; i >= 0; i--) {
-                LocalDate date = today.minusDays(i);
-                LocalDateTime startOfDay = date.atStartOfDay();
-                LocalDateTime endOfDay = date.atTime(23, 59, 59);
-
-                List<Sale> daySales = salesService.getSalesBetweenDates(startOfDay, endOfDay);
-                BigDecimal dayTotal = daySales.stream()
-                        .map(Sale::getTotalAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                String dayLabel = date.format(DateTimeFormatter.ofPattern("EEE"));
-                series.getData().add(new XYChart.Data<>(dayLabel, dayTotal.doubleValue()));
+            if ("DAILY".equals(currentViewMode)) {
+                loadDailySalesTrend(series);
+            } else if ("WEEKLY".equals(currentViewMode)) {
+                loadWeeklySalesTrend(series);
+            } else if ("MONTHLY".equals(currentViewMode)) {
+                loadMonthlySalesTrend(series);
             }
         } catch (Exception e) {
             e.printStackTrace();
             // Use sample data if error
-            String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-            for (String day : days) {
-                series.getData().add(new XYChart.Data<>(day, 0));
+            String[] labels = {"Period 1", "Period 2", "Period 3", "Period 4", "Period 5"};
+            for (String label : labels) {
+                series.getData().add(new XYChart.Data<>(label, 0));
             }
         }
 
         lineChart.getData().add(series);
         salesChartContainer.getChildren().clear();
         salesChartContainer.getChildren().add(lineChart);
+    }
+
+    private void loadDailySalesTrend(XYChart.Series<String, Number> series) {
+        // Last 7 days
+        LocalDate today = LocalDate.now();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+            List<Sale> daySales = salesService.getSalesBetweenDates(startOfDay, endOfDay);
+            BigDecimal dayTotal = daySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            String dayLabel = date.format(DateTimeFormatter.ofPattern("EEE"));
+            series.getData().add(new XYChart.Data<>(dayLabel, dayTotal.doubleValue()));
+        }
+    }
+
+    private void loadWeeklySalesTrend(XYChart.Series<String, Number> series) {
+        // Last 8 weeks
+        LocalDate today = LocalDate.now();
+        for (int i = 7; i >= 0; i--) {
+            LocalDate weekStart = today.minusWeeks(i).with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+            LocalDate weekEnd = weekStart.plusDays(6);
+
+            LocalDateTime startOfWeek = weekStart.atStartOfDay();
+            LocalDateTime endOfWeek = weekEnd.atTime(23, 59, 59);
+
+            List<Sale> weekSales = salesService.getSalesBetweenDates(startOfWeek, endOfWeek);
+            BigDecimal weekTotal = weekSales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            String weekLabel = "Week " + weekStart.format(DateTimeFormatter.ofPattern("MMM dd"));
+            series.getData().add(new XYChart.Data<>(weekLabel, weekTotal.doubleValue()));
+        }
+    }
+
+    private void loadMonthlySalesTrend(XYChart.Series<String, Number> series) {
+        // Last 6 months
+        LocalDate today = LocalDate.now();
+        for (int i = 5; i >= 0; i--) {
+            LocalDate month = today.minusMonths(i);
+            LocalDate monthStart = month.with(TemporalAdjusters.firstDayOfMonth());
+            LocalDate monthEnd = month.with(TemporalAdjusters.lastDayOfMonth());
+
+            LocalDateTime startOfMonth = monthStart.atStartOfDay();
+            LocalDateTime endOfMonth = monthEnd.atTime(23, 59, 59);
+
+            List<Sale> monthSales = salesService.getSalesBetweenDates(startOfMonth, endOfMonth);
+            BigDecimal monthTotal = monthSales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            String monthLabel = month.format(DateTimeFormatter.ofPattern("MMM"));
+            series.getData().add(new XYChart.Data<>(monthLabel, monthTotal.doubleValue()));
+        }
     }
 
     private void loadCategoryChart() {
@@ -210,65 +425,39 @@ public class ReportsController implements Initializable {
         pieChart.setAnimated(true);
 
         try {
-            // Get this month's sales
-            LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-            LocalDateTime endOfMonth = LocalDate.now().withDayOfMonth(
-                    LocalDate.now().lengthOfMonth()).atTime(23, 59, 59);
+            // Get all sales
+            // Get sales from last 30 days
+            LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+            LocalDateTime now = LocalDateTime.now();
+            List<Sale> allSales = salesService.getSalesBetweenDates(thirtyDaysAgo, now);
 
-            List<Sale> monthSales = salesService.getSalesBetweenDates(startOfMonth, endOfMonth);
+            // Count quantities by category
+            Map<String, Integer> categoryCount = new HashMap<>();
 
-            // Count sales by category
-            Map<String, BigDecimal> categoryTotals = new HashMap<>();
-
-            for (Sale sale : monthSales) {
+            for (Sale sale : allSales) {
                 for (SaleItem item : sale.getItems()) {
-                    // ✅ FIX: Use getMedicineId() instead of getProduct().getId()
-                    String medicineId = item.getMedicineId();
-
-                    if (medicineId != null) {
-                        // Get product using the medicineId string
-                        Optional<Product> productOpt = productService.getProductByMedicineId(medicineId);
-
-                        if (productOpt.isPresent()) {
-                            String category = productOpt.get().getCategory();
-                            if (category != null) {
-                                categoryTotals.merge(category, item.getSubtotal(), BigDecimal::add);
-                            }
-                        }
+                    Optional<Product> productOpt = productService.getProductByMedicineId(item.getMedicineId());
+                    if (productOpt.isPresent()) {
+                        String category = productOpt.get().getCategory();
+                        categoryCount.put(category, categoryCount.getOrDefault(category, 0) + item.getQuantity());
                     }
                 }
             }
 
-            // Calculate total
-            BigDecimal total = categoryTotals.values().stream()
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            // Add to pie chart
-            if (total.compareTo(BigDecimal.ZERO) > 0) {
-                for (Map.Entry<String, BigDecimal> entry : categoryTotals.entrySet()) {
-                    double percentage = entry.getValue()
-                            .divide(total, 4, BigDecimal.ROUND_HALF_UP)
-                            .multiply(BigDecimal.valueOf(100))
-                            .doubleValue();
-                    pieChart.getData().add(new PieChart.Data(
-                            entry.getKey() + " (" + String.format("%.1f%%", percentage) + ")",
-                            entry.getValue().doubleValue()
-                    ));
-                }
-            } else {
-                // No data - show placeholder
-                pieChart.getData().add(new PieChart.Data("No Data", 1));
+            // Create pie chart data
+            for (Map.Entry<String, Integer> entry : categoryCount.entrySet()) {
+                pieChart.getData().add(new PieChart.Data(entry.getKey(), entry.getValue()));
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Show sample data on error
+            // Use sample data if error
             pieChart.getData().addAll(
-                    new PieChart.Data("Pain Relief (35%)", 35),
-                    new PieChart.Data("Antibiotics (25%)", 25),
-                    new PieChart.Data("Vitamins (20%)", 20),
-                    new PieChart.Data("Cold & Flu (15%)", 15),
-                    new PieChart.Data("Others (5%)", 5)
+                    new PieChart.Data("Pain Relief", 35),
+                    new PieChart.Data("Antibiotics", 25),
+                    new PieChart.Data("Vitamins", 20),
+                    new PieChart.Data("Cold & Flu", 15),
+                    new PieChart.Data("Others", 5)
             );
         }
 
@@ -277,125 +466,68 @@ public class ReportsController implements Initializable {
     }
 
     private void setupExpiringMedicinesTable() {
-        medicineIdCol.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getMedicineId()));
+        medicineIdCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMedicineId()));
+        medicineNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+        expirationDateCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
 
-        medicineNameCol.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getName()));
-
-        expirationDateCol.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getExpirationDate().format(
-                        DateTimeFormatter.ofPattern("MM/dd/yyyy"))));
-
-        daysLeftCol.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    Product product = getTableRow().getItem();
-                    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate());
-
-                    if (daysLeft < 0) {
-                        setText(Math.abs(daysLeft) + " days ago");
-                        setStyle("-fx-text-fill: #C62828; -fx-font-weight: bold;");
-                    } else {
-                        setText(daysLeft + " days");
-                        setStyle(daysLeft <= 7 ? "-fx-text-fill: #F57C00; -fx-font-weight: bold;" : "");
-                    }
-                }
-            }
+        daysLeftCol.setCellValueFactory(cellData -> {
+            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
+            return new SimpleStringProperty(String.valueOf(daysLeft));
         });
-        daysLeftCol.setCellValueFactory(data -> new SimpleStringProperty(""));
 
-        stockCol.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getStock() + " units"));
+        stockCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getStock())));
 
-        statusCol.setCellFactory(column -> new TableCell<>() {
+        statusCol.setCellValueFactory(cellData -> {
+            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
+            if (daysLeft < 0) return new SimpleStringProperty("Expired");
+            else if (daysLeft <= 7) return new SimpleStringProperty("Critical");
+            else if (daysLeft <= 30) return new SimpleStringProperty("Warning");
+            else return new SimpleStringProperty("Good");
+        });
+
+        // Style the status column
+        statusCol.setCellFactory(column -> new TableCell<Product, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                if (empty || item == null) {
+                    setText(null);
                     setGraphic(null);
                 } else {
-                    Product product = getTableRow().getItem();
-                    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate());
+                    Label statusLabel = new Label(item);
+                    String style = "-fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-size: 11px; -fx-font-weight: bold;";
 
-                    Label badge = new Label();
-                    if (daysLeft < 0) {
-                        badge.setText("Expired");
-                        badge.setStyle(
-                                "-fx-background-color: #C62828; " +
-                                        "-fx-text-fill: white; " +
-                                        "-fx-padding: 4px 12px; " +
-                                        "-fx-background-radius: 12px; " +
-                                        "-fx-font-size: 11px; " +
-                                        "-fx-font-weight: bold;"
-                        );
-                    } else if (daysLeft <= 7) {
-                        badge.setText("Critical");
-                        badge.setStyle(
-                                "-fx-background-color: #F57C00; " +
-                                        "-fx-text-fill: white; " +
-                                        "-fx-padding: 4px 12px; " +
-                                        "-fx-background-radius: 12px; " +
-                                        "-fx-font-size: 11px; " +
-                                        "-fx-font-weight: bold;"
-                        );
-                    } else {
-                        badge.setText("Good");
-                        badge.setStyle(
-                                "-fx-background-color: #2E7D32; " +
-                                        "-fx-text-fill: white; " +
-                                        "-fx-padding: 4px 12px; " +
-                                        "-fx-background-radius: 12px; " +
-                                        "-fx-font-size: 11px; " +
-                                        "-fx-font-weight: bold;"
-                        );
+                    switch (item) {
+                        case "Expired":
+                            statusLabel.setStyle(style + " -fx-background-color: #c62828; -fx-text-fill: white;");
+                            break;
+                        case "Critical":
+                            statusLabel.setStyle(style + " -fx-background-color: #f57c00; -fx-text-fill: white;");
+                            break;
+                        case "Warning":
+                            statusLabel.setStyle(style + " -fx-background-color: #fbc02d; -fx-text-fill: #2c3e50;");
+                            break;
+                        default:
+                            statusLabel.setStyle(style + " -fx-background-color: #2e7d32; -fx-text-fill: white;");
                     }
 
-                    setGraphic(badge);
+                    setGraphic(statusLabel);
+                    setText(null);
                 }
             }
         });
-        statusCol.setCellValueFactory(data -> new SimpleStringProperty(""));
     }
 
     private void loadExpiringMedicines() {
-        List<Product> expiringProducts = productService.getExpiringProducts();
-        expiringMedicinesTable.setItems(FXCollections.observableArrayList(expiringProducts));
+        try {
+            // getExpiringProducts() already returns products expiring within 30 days
+            List<Product> expiringProducts = productService.getExpiringProducts();
 
-        if (expiringProducts.isEmpty()) {
-            expiringMedicinesTable.setPlaceholder(new Label("No expiring medicines"));
+            expiringMedicinesTable.setItems(FXCollections.observableArrayList(expiringProducts));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    }
-
-    @FXML
-    private void handleDailyView() {
-        loadSalesTrendsChart(); // Reload with daily data
-    }
-
-    @FXML
-    private void handleWeeklyView() {
-        // TODO: Load weekly data
-        loadSalesTrendsChart();
-    }
-
-    @FXML
-    private void handleMonthlyView() {
-        // TODO: Load monthly data
-        loadSalesTrendsChart();
-    }
-
-    @FXML
-    private void handleExportReport() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Export Report");
-        alert.setHeaderText(null);
-        alert.setContentText("Export feature coming soon!");
-        alert.showAndWait();
     }
 
     // Navigation methods
@@ -421,148 +553,64 @@ public class ReportsController implements Initializable {
 
     @FXML
     private void handleSuppliers() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Coming Soon");
-        alert.setHeaderText(null);
-        alert.setContentText("Suppliers module coming soon!");
-        alert.showAndWait();
+        showComingSoon("Suppliers");
     }
 
     @FXML
     private void handleSettings() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Coming Soon");
-        alert.setHeaderText(null);
-        alert.setContentText("Settings module coming soon!");
-        alert.showAndWait();
+        showComingSoon("Settings");
+    }
+
+    private void showComingSoon(String feature) {
+        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon",
+                feature + " module is under development and will be available soon!");
     }
 
     @FXML
     private void handleLogout() {
         boolean confirmed = showLogoutConfirmation();
-
         if (confirmed) {
             performLogout();
         }
     }
 
     private boolean showLogoutConfirmation() {
-        // Create custom dialog
-        Stage dialogStage = new Stage();
-        dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setTitle("Logout");
-        dialogStage.setResizable(false);
-        dialogStage.setUserData(false);
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Logout Confirmation");
+        alert.setHeaderText("Are you sure you want to logout?");
+        alert.setContentText("Any unsaved changes will be lost.");
 
-        // Main container
-        VBox mainContainer = new VBox(20);
-        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
-        mainContainer.setPrefWidth(500);
-
-        // Title
-        Label titleLabel = new Label("Are you sure you want to logout?");
-        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-        titleLabel.setWrapText(true);
-
-        // Message
-        Label messageLabel = new Label("You will be returned to the login screen and will need to log in again to access the system.");
-        messageLabel.setWrapText(true);
-        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-line-spacing: 3px;");
-
-        // Buttons
-        HBox buttonBox = new HBox(15);
-        buttonBox.setAlignment(Pos.CENTER_RIGHT);
-
-        Button cancelButton = new Button("Cancel");
-        cancelButton.setStyle(
-                "-fx-background-color: white; " +
-                        "-fx-text-fill: #2c3e50; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-padding: 12px 30px; " +
-                        "-fx-background-radius: 8px; " +
-                        "-fx-border-color: #E0E0E0; " +
-                        "-fx-border-width: 1.5px; " +
-                        "-fx-border-radius: 8px; " +
-                        "-fx-cursor: hand;"
-        );
-        cancelButton.setOnAction(e -> {
-            dialogStage.setUserData(false);
-            dialogStage.close();
-        });
-
-        Button logoutButton = getButton(dialogStage);
-
-        buttonBox.getChildren().addAll(cancelButton, logoutButton);
-        mainContainer.getChildren().addAll(titleLabel, messageLabel, buttonBox);
-
-        Scene scene = new Scene(mainContainer);
-        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
-        dialogStage.setScene(scene);
-        dialogStage.centerOnScreen();
-        dialogStage.showAndWait();
-
-        return (Boolean) dialogStage.getUserData();
-    }
-
-    private static Button getButton(Stage dialogStage) {
-        Button logoutButton = new Button("Logout");
-        logoutButton.setStyle(
-                "-fx-background-color: #dc3545; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-padding: 12px 30px; " +
-                        "-fx-background-radius: 8px; " +
-                        "-fx-cursor: hand;"
-        );
-        logoutButton.setOnAction(e -> {
-            dialogStage.setUserData(true);
-            dialogStage.close();
-        });
-
-        logoutButton.setOnMouseEntered(e -> logoutButton.setStyle(
-                logoutButton.getStyle().replace("#dc3545", "#c82333")
-        ));
-        logoutButton.setOnMouseExited(e -> logoutButton.setStyle(
-                logoutButton.getStyle().replace("#c82333", "#dc3545")
-        ));
-        return logoutButton;
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
     }
 
     private void performLogout() {
         try {
-            // Load login page
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
             loader.setControllerFactory(springContext::getBean);
             Parent root = loader.load();
 
-            Stage stage = (Stage) dashboardBtn.getScene().getWindow();
+            Stage stage = (Stage) logoutBtn.getScene().getWindow();
             Scene currentScene = stage.getScene();
 
-            // Create new scene
             Scene newScene = new Scene(root);
 
-            // Try to load CSS if it exists (handle null gracefully)
             try {
                 java.net.URL cssUrl = getClass().getResource("/css/styles.css");
                 if (cssUrl != null) {
                     newScene.getStylesheets().add(cssUrl.toExternalForm());
                 } else {
-                    // Try alternative CSS paths
                     cssUrl = getClass().getResource("/css/login.css");
                     if (cssUrl != null) {
                         newScene.getStylesheets().add(cssUrl.toExternalForm());
                     }
                 }
             } catch (Exception cssEx) {
-                // CSS loading failed, continue without it
                 System.err.println("Warning: Could not load CSS for login page: " + cssEx.getMessage());
             }
 
-            // Set initial opacity to 0 for fade-in effect
             root.setOpacity(0);
 
-            // Create fade-out animation for current scene
             javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
                     javafx.util.Duration.millis(30),
                     currentScene.getRoot()
@@ -571,19 +619,13 @@ public class ReportsController implements Initializable {
             fadeOut.setToValue(0.0);
 
             fadeOut.setOnFinished(e -> {
-                // Clear current user
                 this.currentUser = null;
-
-                // Switch to login scene
                 stage.setScene(newScene);
-
-                // Reset window size to login page size
                 stage.setWidth(800);
                 stage.setHeight(600);
                 stage.centerOnScreen();
                 stage.setMaximized(false);
 
-                // Create fade-in animation for login scene
                 javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
                         javafx.util.Duration.millis(30),
                         root
@@ -602,46 +644,37 @@ public class ReportsController implements Initializable {
     }
 
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
-        // Create custom dialog
         Stage dialogStage = new Stage();
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
 
-        // Main container
         VBox mainContainer = new VBox(20);
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
         mainContainer.setPrefWidth(500);
 
-        // Title
         Label titleLabel = new Label(title);
         titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
         titleLabel.setWrapText(true);
 
-        // Message
         Label messageLabel = new Label(message);
         messageLabel.setWrapText(true);
         messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-line-spacing: 3px;");
 
-        // Button
         HBox buttonBox = new HBox();
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
         Button okButton = new Button("OK");
 
-        // Button color based on alert type
-        String buttonColor = "#4CAF50"; // Success - Green
+        String buttonColor = "#4CAF50";
         String buttonHoverColor = "#45a049";
 
         if (type == Alert.AlertType.ERROR) {
-            buttonColor = "#dc3545"; // Red
+            buttonColor = "#dc3545";
             buttonHoverColor = "#c82333";
         } else if (type == Alert.AlertType.WARNING) {
-            buttonColor = "#FF9800"; // Orange
+            buttonColor = "#FF9800";
             buttonHoverColor = "#f57c00";
-        } else if (type == Alert.AlertType.INFORMATION) {
-            buttonColor = "#4CAF50"; // Green
-            buttonHoverColor = "#45a049";
         }
 
         final String finalButtonColor = buttonColor;
@@ -688,6 +721,7 @@ public class ReportsController implements Initializable {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("dashboard")) {
                 DashboardController controller = loader.getController();
+                controller.refreshDashboard();
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("sales")) {
                 SalesController controller = loader.getController();
@@ -696,7 +730,6 @@ public class ReportsController implements Initializable {
                 ReportsController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
             }
-
 
             Stage stage = (Stage) dashboardBtn.getScene().getWindow();
             Scene currentScene = stage.getScene();
@@ -708,14 +741,11 @@ public class ReportsController implements Initializable {
             double currentY = stage.getY();
             boolean isMaximized = stage.isMaximized();
 
-            // Create new scene
             Scene newScene = new Scene(root);
             newScene.getStylesheets().add(getClass().getResource(cssPath).toExternalForm());
 
-            // Set initial opacity to 0 for fade-in effect
             root.setOpacity(0);
 
-            // Create fade-out animation for current scene
             javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
                     javafx.util.Duration.millis(30),
                     currentScene.getRoot()
@@ -724,7 +754,6 @@ public class ReportsController implements Initializable {
             fadeOut.setToValue(0.0);
 
             fadeOut.setOnFinished(e -> {
-                // Switch to new scene
                 stage.setScene(newScene);
 
                 // RESTORE WINDOW SIZE AND POSITION
@@ -737,7 +766,6 @@ public class ReportsController implements Initializable {
                     stage.setY(currentY);
                 }
 
-                // Create fade-in animation for new scene
                 javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
                         javafx.util.Duration.millis(30),
                         root

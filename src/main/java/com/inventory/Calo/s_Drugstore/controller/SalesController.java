@@ -978,6 +978,7 @@ public class SalesController implements Initializable {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("dashboard")) {
                 DashboardController controller = loader.getController();
+                controller.refreshDashboard();
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("sales")) {
                 SalesController controller = loader.getController();

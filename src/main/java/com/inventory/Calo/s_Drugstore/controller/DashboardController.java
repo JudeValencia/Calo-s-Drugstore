@@ -108,6 +108,9 @@ public class DashboardController {
     @Autowired
     private ApplicationContext springContext;  // Needed for loading other pages
 
+    @FXML
+    private VBox recentActivityContainer;
+
 
     private User currentUser;  // Stores the logged-in user's info
 
@@ -127,15 +130,90 @@ public class DashboardController {
         if (userEmailLabel != null) {
             userEmailLabel.setText(user.getEmail());
         }
+
+        refreshDashboard();
     }
 
     @FXML
     public void initialize() {
         // Load all dashboard data
         loadDashboardData();
+        loadRecentActivity();
+        refreshDashboard();
 
         // Set dashboard button as active (green highlight)
         setActiveButton(dashboardBtn);
+    }
+
+    public void refreshDashboard() {
+        loadDashboardData();
+        loadSalesTrendsChart();
+        loadInventoryDistributionChart();
+        loadRecentActivity();
+    }
+
+    private void loadRecentActivity() {
+        if (recentActivityContainer == null) return;
+
+        try {
+            List<Map<String, Object>> activities = dashboardService.getRecentActivity();
+
+            // Clear existing activities
+            recentActivityContainer.getChildren().clear();
+
+            for (Map<String, Object> activity : activities) {
+                HBox activityItem = createActivityItem(activity);
+                recentActivityContainer.getChildren().add(activityItem);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private HBox createActivityItem(Map<String, Object> activity) {
+        HBox item = new HBox(15);
+        item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        item.setStyle("-fx-padding: 12px 0;");
+
+        // Status dot
+        javafx.scene.layout.StackPane dot = new javafx.scene.layout.StackPane();
+        dot.setPrefSize(10, 10);
+        dot.setMaxSize(10, 10);
+        dot.setMinSize(10, 10);
+
+        String status = (String) activity.get("status");
+        String dotColor = status.equals("completed") ? "#4CAF50" : "#FF9800";
+        dot.setStyle("-fx-background-color: " + dotColor + "; -fx-background-radius: 5px;");
+
+        // Activity details
+        VBox details = new VBox(4);
+        javafx.scene.layout.HBox.setHgrow(details, javafx.scene.layout.Priority.ALWAYS);
+
+        Label description = new Label((String) activity.get("description"));
+        description.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50; -fx-font-weight: 600;");
+
+        Label itemDetails = new Label((String) activity.get("details"));
+        itemDetails.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+
+        details.getChildren().addAll(description, itemDetails);
+
+        // Right side (amount and timestamp)
+        VBox rightSide = new VBox(4);
+        rightSide.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+
+        Label amount = new Label((String) activity.get("amount"));
+        String amountColor = status.equals("completed") ? "#4CAF50" : "#FF9800";
+        amount.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + amountColor + ";");
+
+        Label timestamp = new Label((String) activity.get("timestamp"));
+        timestamp.setStyle("-fx-font-size: 12px; -fx-text-fill: #95a5a6;");
+
+        rightSide.getChildren().addAll(amount, timestamp);
+
+        item.getChildren().addAll(dot, details, rightSide);
+
+        return item;
     }
 
     private void loadDashboardData() {
@@ -144,7 +222,7 @@ public class DashboardController {
 
         // Update KPI Card 1: Total Sales Today
         if (totalSalesTodayLabel != null) {
-            totalSalesTodayLabel.setText(String.format("$%,.0f", metrics.get("totalSalesToday")));
+            totalSalesTodayLabel.setText(String.format("₱%,.0f", metrics.get("totalSalesToday")));
         }
         if (salesChangeLabel != null) {
             salesChangeLabel.setText((String) metrics.get("salesChange"));

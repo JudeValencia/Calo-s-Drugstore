@@ -142,6 +142,26 @@
                         <StackPane fx:id="salesChartContainer" prefHeight="350" style="-fx-padding: 20 0 0 0;"/>
                     </VBox>
 
+                    <!-- Top Selling Medicines -->
+                    <VBox styleClass="filter-card">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <Label text="🛒" style="-fx-font-size: 24px;"/>
+                            <VBox>
+                                <Label text="Top Selling Medicines" styleClass="filter-title"/>
+                                <Label text="Most popular items this week" styleClass="filter-subtitle"/>
+                            </VBox>
+                        </HBox>
+
+                        <TableView fx:id="topSellingTable" prefHeight="350" style="-fx-padding: 20 0 0 0;">
+                            <columns>
+                                <TableColumn fx:id="rankCol" text="Rank" prefWidth="100"/>
+                                <TableColumn fx:id="topMedicineNameCol" text="Medicine" prefWidth="300"/>
+                                <TableColumn fx:id="categoryCol" text="Category" prefWidth="200"/>
+                                <TableColumn fx:id="quantitySoldCol" text="Quantity" prefWidth="150"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+
                     <!-- Two Column Layout -->
                     <HBox spacing="25">
                         <!-- Sales by Category -->
@@ -195,6 +215,7 @@
                                 </HBox>
                             </VBox>
                         </VBox>
+
                     </HBox>
 
                     <!-- Expiring Medicines Alert -->

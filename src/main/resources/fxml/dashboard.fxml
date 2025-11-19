@@ -274,57 +274,9 @@
 
                     <VBox spacing="15" styleClass="activity-list">
 
-                        <!-- Activity 1 -->
-                        <HBox styleClass="activity-item" spacing="15" alignment="CENTER_LEFT">
-                            <StackPane styleClass="activity-dot,activity-dot-green"/>
-                            <VBox spacing="5" HBox.hgrow="ALWAYS">
-                                <Label text="Sale completed" styleClass="activity-title"/>
-                                <Label text="Aspirin 500mg" styleClass="activity-description"/>
-                            </VBox>
-                            <VBox alignment="CENTER_RIGHT" spacing="5">
-                                <Label text="" styleClass="activity-amount"/>
-                                <Label text="2 minutes ago" styleClass="activity-time"/>
-                            </VBox>
-                        </HBox>
-
-                        <!-- Activity 2 -->
-                        <HBox styleClass="activity-item" spacing="15" alignment="CENTER_LEFT">
-                            <StackPane styleClass="activity-dot,activity-dot-blue"/>
-                            <VBox spacing="5" HBox.hgrow="ALWAYS">
-                                <Label text="Stock updated" styleClass="activity-title"/>
-                                <Label text="Vitamin D3" styleClass="activity-description"/>
-                            </VBox>
-                            <VBox alignment="CENTER_RIGHT" spacing="5">
-                                <Label text="+50 units" styleClass="activity-amount"/>
-                                <Label text="15 minutes ago" styleClass="activity-time"/>
-                            </VBox>
-                        </HBox>
-
-                        <!-- Activity 3 -->
-                        <HBox styleClass="activity-item" spacing="15" alignment="CENTER_LEFT">
-                            <StackPane styleClass="activity-dot,activity-dot-orange"/>
-                            <VBox spacing="5" HBox.hgrow="ALWAYS">
-                                <Label text="Low stock alert" styleClass="activity-title"/>
-                                <Label text="Cough Syrup" styleClass="activity-description"/>
-                            </VBox>
-                            <VBox alignment="CENTER_RIGHT" spacing="5">
-                                <Label text="5 units left" styleClass="activity-amount,activity-warning"/>
-                                <Label text="1 hour ago" styleClass="activity-time"/>
-                            </VBox>
-                        </HBox>
-
-                        <!-- Activity 4 -->
-                        <HBox styleClass="activity-item" spacing="15" alignment="CENTER_LEFT">
-                            <StackPane styleClass="activity-dot,activity-dot-green"/>
-                            <VBox spacing="5" HBox.hgrow="ALWAYS">
-                                <Label text="Sale completed" styleClass="activity-title"/>
-                                <Label text="Paracetamol 250mg" styleClass="activity-description"/>
-                            </VBox>
-                            <VBox alignment="CENTER_RIGHT" spacing="5">
-                                <Label text="" styleClass="activity-amount"/>
-                                <Label text="2 hours ago" styleClass="activity-time"/>
-                            </VBox>
-                        </HBox>
+                        <VBox fx:id="recentActivityContainer" spacing="15" styleClass="activity-list">
+                            <!-- Activities will be loaded dynamically from the controller -->
+                        </VBox>
 
                     </VBox>
                 </VBox>

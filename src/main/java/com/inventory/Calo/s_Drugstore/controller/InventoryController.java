@@ -1408,6 +1408,7 @@ public class InventoryController implements Initializable {
             } else if (fxmlPath.contains("dashboard")) {
                 DashboardController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
+                controller.refreshDashboard();
             } else if (fxmlPath.contains("sales")) {
                 SalesController controller = loader.getController();
                 controller.setCurrentUser(currentUser);

@@ -1,172 +1,260 @@
 package com.inventory.Calo.s_Drugstore.service;
 
+import com.inventory.Calo.s_Drugstore.entity.Product;
+import com.inventory.Calo.s_Drugstore.entity.Sale;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-/**
- * DashboardService - Provides all the data needed for the admin dashboard
- *
- * WHAT THIS FILE DOES:
- * - Supplies metrics (numbers) for the 4 KPI cards
- * - Provides sales trend data for the line chart
- * - Provides inventory distribution for the bar chart
- * - Provides recent activity/transaction data
- *
- * NOTE: Right now it uses MOCK DATA (fake data for testing)
- * Later, you'll replace this with real database queries
- */
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
-@Service  // This tells Spring Boot: "This is a service class, manage it for me"
+@Service
 public class DashboardService {
 
+    @Autowired
+    private SalesService salesService;
+
+    @Autowired
+    private ProductService productService;
+
     /**
-     * GET DASHBOARD METRICS (For the 4 KPI Cards)
-     *
-     * Returns the main numbers shown on dashboard:
-     * - Total Sales Today: $2,847
-     * - Low Stock Alerts: 8 items
-     * - Expiring Medicines: 12 items
-     * - Total Inventory Count: 2,147 items
+     * Get dashboard metrics (KPI cards data)
      */
     public Map<String, Object> getDashboardMetrics() {
-        // Create a Map (like a dictionary) to store all metrics
         Map<String, Object> metrics = new HashMap<>();
 
-        // KPI Card 1: Total Sales Today
-        metrics.put("totalSalesToday", 2847.0);
-        metrics.put("salesChange", "+12% from yesterday");
+        try {
+            // Get today's sales
+            LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
+            LocalDateTime endOfToday = LocalDate.now().atTime(23, 59, 59);
+            List<Sale> todaySales = salesService.getSalesBetweenDates(startOfToday, endOfToday);
 
-        // KPI Card 2: Low Stock Alerts
-        metrics.put("lowStockAlerts", 8);
-        metrics.put("lowStockMessage", "Items need restocking");
+            // Calculate total sales today
+            BigDecimal totalSalesToday = todaySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // KPI Card 3: Expiring Medicines
-        metrics.put("expiringMedicines", 12);
-        metrics.put("expiringMessage", "Expiring within 30 days");
+            // Get yesterday's sales for comparison
+            LocalDateTime startOfYesterday = LocalDate.now().minusDays(1).atStartOfDay();
+            LocalDateTime endOfYesterday = LocalDate.now().minusDays(1).atTime(23, 59, 59);
+            List<Sale> yesterdaySales = salesService.getSalesBetweenDates(startOfYesterday, endOfYesterday);
 
-        // KPI Card 4: Total Inventory Count
-        metrics.put("totalInventoryCount", 2147);
-        metrics.put("inventoryMessage", "Items in stock");
+            BigDecimal totalSalesYesterday = yesterdaySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Return all the metrics in one package
+            // Calculate percentage change
+            String salesChange = calculatePercentageChange(totalSalesToday, totalSalesYesterday);
+
+            // Low stock alerts
+            long lowStockCount = productService.getLowStockCount();
+            String lowStockMessage = lowStockCount > 0
+                    ? lowStockCount + " items need restocking"
+                    : "All items well stocked";
+
+            // Expiring medicines (within 30 days)
+            List<Product> expiringProducts = productService.getExpiringProducts();
+            long expiringCount = expiringProducts.size();
+            String expiringMessage = expiringCount > 0
+                    ? expiringCount + " medicines expiring soon"
+                    : "No medicines expiring soon";
+
+            // Total inventory count
+            List<Product> allProducts = productService.getAllProducts();
+            long totalInventoryCount = allProducts.size();
+            long totalStock = allProducts.stream()
+                    .mapToLong(Product::getStock)
+                    .sum();
+            String inventoryMessage = totalStock + " units in stock";
+
+            // Put everything in the map
+            metrics.put("totalSalesToday", totalSalesToday.doubleValue());
+            metrics.put("salesChange", salesChange);
+            metrics.put("lowStockAlerts", lowStockCount);
+            metrics.put("lowStockMessage", lowStockMessage);
+            metrics.put("expiringMedicines", expiringCount);
+            metrics.put("expiringMessage", expiringMessage);
+            metrics.put("totalInventoryCount", totalInventoryCount);
+            metrics.put("inventoryMessage", inventoryMessage);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Return default values on error
+            metrics.put("totalSalesToday", 0.0);
+            metrics.put("salesChange", "+0%");
+            metrics.put("lowStockAlerts", 0L);
+            metrics.put("lowStockMessage", "No data");
+            metrics.put("expiringMedicines", 0L);
+            metrics.put("expiringMessage", "No data");
+            metrics.put("totalInventoryCount", 0L);
+            metrics.put("inventoryMessage", "No data");
+        }
+
         return metrics;
     }
 
     /**
-     * GET SALES TRENDS (For the Line Chart)
-     *
-     * Returns sales data for the last 7 days
-     * Used to draw the green line chart showing daily sales
+     * Get sales trends for the last 7 days
      */
     public List<Map<String, Object>> getSalesTrends() {
-        // Create a list to hold 7 days of sales data
         List<Map<String, Object>> trends = new ArrayList<>();
 
-        // Days of the week
-        String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+        try {
+            LocalDate today = LocalDate.now();
 
-        // Mock sales amounts for each day (in dollars)
-        double[] sales = {1200, 1900, 1500, 2200, 2450, 2150, 1800};
+            for (int i = 6; i >= 0; i--) {
+                LocalDate date = today.minusDays(i);
+                LocalDateTime startOfDay = date.atStartOfDay();
+                LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
-        // Create a data point for each day
-        for (int i = 0; i < days.length; i++) {
-            Map<String, Object> dayData = new HashMap<>();
-            dayData.put("day", days[i]);        // Day name (Mon, Tue, etc.)
-            dayData.put("sales", sales[i]);     // Sales amount for that day
-            trends.add(dayData);
+                List<Sale> daySales = salesService.getSalesBetweenDates(startOfDay, endOfDay);
+                BigDecimal dayTotal = daySales.stream()
+                        .map(Sale::getTotalAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Map<String, Object> dayData = new HashMap<>();
+                dayData.put("day", date.format(DateTimeFormatter.ofPattern("EEE")));
+                dayData.put("sales", dayTotal.doubleValue());
+                trends.add(dayData);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Return default data on error
+            String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+            for (String day : days) {
+                Map<String, Object> dayData = new HashMap<>();
+                dayData.put("day", day);
+                dayData.put("sales", 0.0);
+                trends.add(dayData);
+            }
         }
 
         return trends;
     }
 
     /**
-     * GET INVENTORY DISTRIBUTION (For the Bar Chart)
-     *
-     * Returns inventory count by category
-     * Used to draw the blue bar chart showing stock levels per category
+     * Get inventory distribution by category
      */
     public Map<String, Integer> getInventoryDistribution() {
-        // Create a Map to store category names and their stock counts
         Map<String, Integer> distribution = new HashMap<>();
 
-        // Category: Stock Count
-        distribution.put("Antibiotics", 120);
-        distribution.put("Pain Relief", 85);
-        distribution.put("Vitamins", 205);
-        distribution.put("First Aid", 45);
-        distribution.put("Cold & Flu", 90);
+        try {
+            List<Product> allProducts = productService.getAllProducts();
+
+            for (Product product : allProducts) {
+                String category = product.getCategory();
+                distribution.put(category, distribution.getOrDefault(category, 0) + product.getStock());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Return default data on error
+            distribution.put("Pain Relief", 0);
+            distribution.put("Antibiotics", 0);
+            distribution.put("Vitamins", 0);
+            distribution.put("Cold & Flu", 0);
+            distribution.put("Others", 0);
+        }
 
         return distribution;
     }
 
     /**
-     * GET RECENT ACTIVITY (For the Recent Activity Section)
-     *
-     * Returns the latest transactions and inventory updates
-     * Shows things like "Sale completed - Aspirin 500mg - $12.50 - 2 minutes ago"
+     * Helper method to calculate percentage change
+     */
+    private String calculatePercentageChange(BigDecimal current, BigDecimal previous) {
+        if (previous.compareTo(BigDecimal.ZERO) == 0) {
+            return current.compareTo(BigDecimal.ZERO) > 0 ? "+100%" : "0%";
+        }
+
+        BigDecimal difference = current.subtract(previous);
+        BigDecimal percentageChange = difference
+                .divide(previous, 4, BigDecimal.ROUND_HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+
+        String sign = percentageChange.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
+        return sign + String.format("%.1f%%", percentageChange);
+    }
+
+    /**
+     * Get recent activity for dashboard
+     */
+    /**
+     * Get recent activity for dashboard
      */
     public List<Map<String, Object>> getRecentActivity() {
-        // Create a list to hold activity items
         List<Map<String, Object>> activities = new ArrayList<>();
 
-        // Activity 1: Recent sale
-        Map<String, Object> activity1 = new HashMap<>();
-        activity1.put("type", "SALE");                      // Type: SALE, STOCK_UPDATE, LOW_STOCK
-        activity1.put("title", "Sale completed");
-        activity1.put("description", "Aspirin 500mg");
-        activity1.put("amount", "$12.50");
-        activity1.put("time", "2 minutes ago");
-        activities.add(activity1);
+        try {
+            // Get today's sales (most recent first)
+            List<Sale> recentSales = salesService.getTodaysTransactions();
 
-        // Activity 2: Stock update
-        Map<String, Object> activity2 = new HashMap<>();
-        activity2.put("type", "STOCK_UPDATE");
-        activity2.put("title", "Stock updated");
-        activity2.put("description", "Vitamin D3");
-        activity2.put("amount", "+50 units");
-        activity2.put("time", "15 minutes ago");
-        activities.add(activity2);
+            // Add sales to activities
+            for (Sale sale : recentSales) {
+                if (activities.size() >= 8) break; // Limit total activities
 
-        // Activity 3: Low stock alert
-        Map<String, Object> activity3 = new HashMap<>();
-        activity3.put("type", "LOW_STOCK");
-        activity3.put("title", "Low stock alert");
-        activity3.put("description", "Cough Syrup");
-        activity3.put("amount", "5 units left");
-        activity3.put("time", "1 hour ago");
-        activities.add(activity3);
+                Map<String, Object> activity = new HashMap<>();
+                activity.put("type", "sale");
+                activity.put("description", "Sale completed");
 
-        // Activity 4: Another sale
-        Map<String, Object> activity4 = new HashMap<>();
-        activity4.put("type", "SALE");
-        activity4.put("title", "Sale completed");
-        activity4.put("description", "Paracetamol 250mg");
-        activity4.put("amount", "$8.75");
-        activity4.put("time", "2 hours ago");
-        activities.add(activity4);
+                // Get first item name from sale
+                String itemName = "Multiple items";
+                if (!sale.getItems().isEmpty()) {
+                    itemName = sale.getItems().get(0).getMedicineName();
+                    if (sale.getItems().size() > 1) {
+                        itemName += " +" + (sale.getItems().size() - 1) + " more";
+                    }
+                }
+                activity.put("details", itemName);
+
+                activity.put("amount", "₱" + String.format("%,.2f", sale.getTotalAmount()));
+                activity.put("timestamp", formatTimeAgo(sale.getCreatedAt()));
+                activity.put("status", "completed");
+                activities.add(activity);
+            }
+
+            // Get low stock items
+            List<Product> lowStockProducts = productService.getLowStockProducts();
+            for (Product product : lowStockProducts) {
+                if (activities.size() >= 8) break;
+
+                Map<String, Object> activity = new HashMap<>();
+                activity.put("type", "alert");
+                activity.put("description", "Low stock alert");
+                activity.put("details", product.getName());
+                activity.put("amount", product.getStock() + " unit/s left");
+                activity.put("timestamp", "Now");
+                activity.put("status", "warning");
+                activities.add(activity);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return activities;
     }
 
     /**
-     * HELPER METHOD: Get detailed sales by category (for the pie chart from original design)
-     *
-     * This returns what percentage of sales came from each medicine category
-     * Example: Pain Relief = 35%, Antibiotics = 25%, etc.
+     * Helper method to format time ago
      */
-    public Map<String, Double> getSalesByCategory() {
-        Map<String, Double> salesByCategory = new HashMap<>();
+    private String formatTimeAgo(LocalDateTime dateTime) {
+        if (dateTime == null) return "Just now";
 
-        // Category: Percentage of total sales
-        salesByCategory.put("Pain Relief", 35.0);
-        salesByCategory.put("Antibiotics", 25.0);
-        salesByCategory.put("Vitamins", 20.0);
-        salesByCategory.put("Cold & Flu", 15.0);
-        salesByCategory.put("Others", 5.0);
+        LocalDateTime now = LocalDateTime.now();
+        long minutes = java.time.Duration.between(dateTime, now).toMinutes();
 
-        return salesByCategory;
+        if (minutes < 1) return "Just now";
+        if (minutes < 60) return minutes + " minute" + (minutes == 1 ? "" : "s") + " ago";
+
+        long hours = minutes / 60;
+        if (hours < 24) return hours + " hour" + (hours == 1 ? "" : "s") + " ago";
+
+        long days = hours / 24;
+        return days + " day" + (days == 1 ? "" : "s") + " ago";
     }
 }

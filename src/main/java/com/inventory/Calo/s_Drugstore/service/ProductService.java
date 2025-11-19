@@ -180,26 +180,6 @@ public class ProductService {
         }
 
         return String.format("MED%03d", maxNumber + 1);
-    }
 
-    // Initialize with sample data (for testing)
-    @Transactional
-    public void initializeSampleData() {
-        if (productRepository.count() == 0) {
-            productRepository.save(new Product("MED001", "Aspirin 500mg", 150,
-                    new java.math.BigDecimal("12.50"), LocalDate.of(2025, 6, 15), "MediCorp"));
-
-            productRepository.save(new Product("MED002", "Paracetamol 250mg", 8,
-                    new java.math.BigDecimal("8.75"), LocalDate.of(2024, 12, 20), "PharmaTech"));
-
-            productRepository.save(new Product("MED003", "Vitamin D3 1000IU", 200,
-                    new java.math.BigDecimal("25.00"), LocalDate.of(2025, 3, 10), "HealthPlus"));
-
-            productRepository.save(new Product("MED004", "Cough Syrup 100ml", 5,
-                    new java.math.BigDecimal("15.30"), LocalDate.of(2024, 11, 5), "MediCorp"));
-
-            productRepository.save(new Product("MED005", "Antibiotic Capsules", 75,
-                    new java.math.BigDecimal("45.00"), LocalDate.of(2025, 1, 25), "BioPharma"));
-        }
     }
 }
