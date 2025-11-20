@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.StaffController"
+            styleClass="staff-root">
+
+    <!-- LEFT SIDEBAR -->
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
+            <padding>
+                <Insets top="20" bottom="20"/>
+            </padding>
+
+            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="15">
+                <padding>
+                    <Insets top="10" right="20" bottom="10" left="20"/>
+                </padding>
+
+                <StackPane styleClass="sidebar-logo">
+                    <Label text="💊" styleClass="sidebar-logo-icon"/>
+                </StackPane>
+                <Label text="PharmaTrack" styleClass="sidebar-title"/>
+            </HBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox spacing="5" styleClass="sidebar-menu" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Button fx:id="dashboardBtn" text="Dashboard" styleClass="menu-item"
+                        onAction="#handleDashboard">
+                    <graphic>
+                        <Label text="📊" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item"
+                        onAction="#handleInventory">
+                    <graphic>
+                        <Label text="📦" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item"
+                        onAction="#handleSales">
+                    <graphic>
+                        <Label text="🛒" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="reportsBtn" text="Reports" styleClass="menu-item"
+                        onAction="#handleReports">
+                    <graphic>
+                        <Label text="📈" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item,active"
+                        onAction="#handleStaff">
+                    <graphic>
+                        <Label text="👥" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox styleClass="sidebar-user" spacing="5">
+                <padding>
+                    <Insets top="15" right="20" bottom="15" left="20"/>
+                </padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <StackPane styleClass="user-avatar">
+                        <Label text="👤" styleClass="user-avatar-icon"/>
+                    </StackPane>
+                    <VBox spacing="2">
+                        <Label fx:id="userNameLabel" text="Admin User" styleClass="user-name"/>
+                        <Label fx:id="userEmailLabel" text="admin@pharmatrack.com" styleClass="user-email"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <Button fx:id="logoutBtn" text="Logout" styleClass="logout-btn"
+                    onAction="#handleLogout">
+                <graphic>
+                    <Label text="🚪" styleClass="menu-icon"/>
+                </graphic>
+            </Button>
+
+        </VBox>
+    </left>
+
+    <!-- CENTER: MAIN CONTENT -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="content-scroll">
+            <VBox spacing="25" styleClass="main-content">
+                <padding>
+                    <Insets top="30" right="30" bottom="30" left="30"/>
+                </padding>
+
+                <!-- Page Header -->
+                <HBox alignment="CENTER_LEFT">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Staff Management" styleClass="page-header"/>
+                        <Label text="Manage staff accounts and access control" styleClass="page-subheader"/>
+                    </VBox>
+                    <Button text="👥+ Add Staff Account" styleClass="add-staff-btn"
+                            onAction="#handleAddStaff"/>
+                </HBox>
+
+                <!-- SUMMARY CARDS -->
+                <GridPane hgap="20" vgap="20">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="25" minWidth="200"/>
+                        <ColumnConstraints percentWidth="25" minWidth="200"/>
+                        <ColumnConstraints percentWidth="25" minWidth="200"/>
+                        <ColumnConstraints percentWidth="25" minWidth="200"/>
+                    </columnConstraints>
+
+                    <!-- Total Staff -->
+                    <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="0">
+                        <padding>
+                            <Insets top="25" right="25" bottom="25" left="25"/>
+                        </padding>
+                        <Label text="Total Staff" styleClass="card-label"/>
+                        <Label fx:id="totalStaffLabel" text="0" styleClass="card-value"/>
+                    </VBox>
+
+                    <!-- Active Accounts -->
+                    <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="1">
+                        <padding>
+                            <Insets top="25" right="25" bottom="25" left="25"/>
+                        </padding>
+                        <Label text="Active Accounts" styleClass="card-label"/>
+                        <Label fx:id="activeAccountsLabel" text="0" styleClass="card-value-green"/>
+                    </VBox>
+
+                    <!-- Administrators -->
+                    <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="2">
+                        <padding>
+                            <Insets top="25" right="25" bottom="25" left="25"/>
+                        </padding>
+                        <Label text="Administrators" styleClass="card-label"/>
+                        <Label fx:id="administratorsLabel" text="0" styleClass="card-value"/>
+                    </VBox>
+
+                    <!-- Staff Members -->
+                    <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="3">
+                        <padding>
+                            <Insets top="25" right="25" bottom="25" left="25"/>
+                        </padding>
+                        <Label text="Staff Members" styleClass="card-label"/>
+                        <Label fx:id="staffMembersLabel" text="0" styleClass="card-value"/>
+                    </VBox>
+                </GridPane>
+
+                <!-- STAFF ACCOUNTS TABLE -->
+                <VBox styleClass="staff-card" spacing="20">
+                    <padding>
+                        <Insets top="25" right="25" bottom="25" left="25"/>
+                    </padding>
+
+                    <VBox spacing="5">
+                        <Label text="Staff Accounts" styleClass="card-title"/>
+                        <Label text="Manage all staff accounts, roles, and permissions" styleClass="card-subtitle"/>
+                    </VBox>
+
+                    <TableView fx:id="staffTable" styleClass="staff-table">
+                        <columns>
+                            <TableColumn fx:id="staffIdColumn" text="Staff ID" minWidth="100" prefWidth="120"/>
+                            <TableColumn fx:id="nameColumn" text="Name" minWidth="150" prefWidth="200"/>
+                            <TableColumn fx:id="contactColumn" text="Contact" minWidth="250" prefWidth="300"/>
+                            <TableColumn fx:id="roleColumn" text="Role" minWidth="100" prefWidth="130"/>
+                            <TableColumn fx:id="statusColumn" text="Status" minWidth="100" prefWidth="120"/>
+                            <TableColumn fx:id="createdDateColumn" text="Created Date" minWidth="120" prefWidth="140"/>
+                            <TableColumn fx:id="actionsColumn" text="Actions" minWidth="200" prefWidth="250"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

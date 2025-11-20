@@ -348,8 +348,10 @@
     -fx-border-width: 0 0 1 0;
 }
 
-.summary-row:last-child {
-    -fx-border-width: 0;
+.summary-row {
+    -fx-padding: 12px 0;
+    -fx-border-color: transparent transparent #F0F0F0 transparent;
+    -fx-border-width: 0 0 1 0;
 }
 
 .summary-label {
@@ -432,4 +434,47 @@
 
 .action-icon-btn:hover {
     -fx-background-color: #F5F5F5;
+}
+
+/* Bulk Add Dialog Table Styling */
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #F8F9FA;
+    -fx-background-radius: 8px 8px 0 0;
+}
+
+.table-view .column-header {
+    -fx-background-color: #F8F9FA;
+    -fx-border-color: transparent transparent #E0E0E0 transparent;
+    -fx-border-width: 0 0 2px 0;
+    -fx-padding: 12px;
+}
+
+.table-view .column-header .label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #F0F0F0 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.table-view .table-row-cell:hover {
+    -fx-background-color: #F8F9FA;
+}
+
+.table-view .table-cell {
+    -fx-padding: 12px;
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 14px;
 }

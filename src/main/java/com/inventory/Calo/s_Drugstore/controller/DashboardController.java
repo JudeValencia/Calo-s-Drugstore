@@ -85,10 +85,7 @@ public class DashboardController {
     private Button reportsBtn;
 
     @FXML
-    private Button suppliersBtn;
-
-    @FXML
-    private Button settingsBtn;
+    private Button staffBtn;
 
     @FXML
     private Button logoutBtn;
@@ -128,6 +125,11 @@ public class DashboardController {
             userNameLabel.setText(user.getFullName());
         }
         if (userEmailLabel != null) {
+            userEmailLabel.setText(user.getEmail());
+        }
+
+        if (user != null) {
+            userNameLabel.setText(user.getFullName());
             userEmailLabel.setText(user.getEmail());
         }
 
@@ -284,15 +286,9 @@ public class DashboardController {
     }
 
     @FXML
-    private void handleSuppliers() {
-        setActiveButton(suppliersBtn);
-        showComingSoon("Supplier Management");
-    }
-
-    @FXML
-    private void handleSettings() {
-        setActiveButton(settingsBtn);
-        showSettingsMenu();
+    private void handleStaff() {
+        setActiveButton(staffBtn);
+        navigateToPage("/fxml/staff.fxml", "/css/staff.css");
     }
 
     @FXML
@@ -301,33 +297,6 @@ public class DashboardController {
 
         if (confirmed) {
             performLogout();
-        }
-    }
-
-
-    private void showSettingsMenu() {
-        Alert settingsAlert = new Alert(Alert.AlertType.INFORMATION);
-        settingsAlert.setTitle("Settings");
-        settingsAlert.setHeaderText("Admin Settings");
-        settingsAlert.setContentText("Choose an action:");
-
-        // Create custom buttons
-        ButtonType createStaffBtn = new ButtonType("Create Staff Account");
-        ButtonType resetPasswordBtn = new ButtonType("Reset Password");
-        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-        settingsAlert.getButtonTypes().setAll(createStaffBtn, resetPasswordBtn, cancelBtn);
-
-        // Wait for user to click a button
-        Optional<ButtonType> result = settingsAlert.showAndWait();
-
-        // Handle the choice
-        if (result.isPresent()) {
-            if (result.get() == createStaffBtn) {
-                showCreateStaffDialog();
-            } else if (result.get() == resetPasswordBtn) {
-                showResetPasswordDialog();
-            }
         }
     }
 
@@ -501,8 +470,7 @@ public class DashboardController {
         inventoryBtn.getStyleClass().remove("active");
         salesBtn.getStyleClass().remove("active");
         reportsBtn.getStyleClass().remove("active");
-        suppliersBtn.getStyleClass().remove("active");
-        settingsBtn.getStyleClass().remove("active");
+        staffBtn.getStyleClass().remove("active");
 
         // Add active class to clicked button
         if (!button.getStyleClass().contains("active")) {
@@ -608,6 +576,9 @@ public class DashboardController {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("reports")) {
                 ReportsController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("staff")) {
+                StaffController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
             }
 

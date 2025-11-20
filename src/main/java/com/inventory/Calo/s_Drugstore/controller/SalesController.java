@@ -76,8 +76,7 @@ public class SalesController implements Initializable {
     @FXML private Button inventoryBtn;
     @FXML private Button salesBtn;
     @FXML private Button reportsBtn;
-    @FXML private Button suppliersBtn;
-    @FXML private Button settingsBtn;
+    @FXML private Button staffBtn;
     @FXML private Button logoutBtn;
 
     // User info labels
@@ -404,6 +403,15 @@ public class SalesController implements Initializable {
         productCombo.setPromptText("Select medicine");
         productCombo.setPrefWidth(350);
         productCombo.setItems(allProducts);
+        productCombo.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1.5px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 10px 12px;"
+        );
 
         // Custom cell factory for combo
         productCombo.setCellFactory(lv -> new ListCell<>() {
@@ -466,10 +474,13 @@ public class SalesController implements Initializable {
         selectedLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
         TableView<BulkAddItem> bulkTable = new TableView<>();
+        bulkTable.getStyleClass().add("bulk-add-table");
         bulkTable.setPlaceholder(new Label("No medicines added yet. Search and add items above."));
 
+        bulkTable.setFixedCellSize(50);
+
         TableColumn<BulkAddItem, String> medicineCol = new TableColumn<>("Medicine");
-        medicineCol.setPrefWidth(320);
+        medicineCol.setPrefWidth(220);
         medicineCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getProduct() != null ?
                         data.getValue().getProduct().getName() : ""));
@@ -490,18 +501,28 @@ public class SalesController implements Initializable {
                 String btnStyle =
                         "-fx-background-color: white; " +
                                 "-fx-border-color: #E0E0E0; " +
-                                "-fx-border-width: 1px; " +
-                                "-fx-border-radius: 4px; " +
-                                "-fx-background-radius: 4px; " +
-                                "-fx-min-width: 28px; " +
-                                "-fx-min-height: 28px; " +
+                                "-fx-border-width: 1.5px; " +
+                                "-fx-border-radius: 6px; " +
+                                "-fx-background-radius: 6px; " +
+                                "-fx-min-width: 32px; " +
+                                "-fx-min-height: 32px; " +
+                                "-fx-font-size: 16px; " +
+                                "-fx-font-weight: bold; " +
                                 "-fx-cursor: hand;";
 
                 minusBtn.setStyle(btnStyle);
                 plusBtn.setStyle(btnStyle);
-                qtyLabel.setStyle("-fx-min-width: 40px; -fx-alignment: CENTER;");
 
-                controls.getChildren().addAll(minusBtn, qtyLabel, plusBtn);
+                // Add hover effects
+                minusBtn.setOnMouseEntered(e -> minusBtn.setStyle(
+                        btnStyle.replace("white", "#F8F9FA")
+                ));
+                minusBtn.setOnMouseExited(e -> minusBtn.setStyle(btnStyle));
+
+                plusBtn.setOnMouseEntered(e -> plusBtn.setStyle(
+                        btnStyle.replace("white", "#F8F9FA")
+                ));
+                plusBtn.setOnMouseExited(e -> plusBtn.setStyle(btnStyle));
             }
 
             @Override
@@ -557,18 +578,48 @@ public class SalesController implements Initializable {
         });
 
         TableColumn<BulkAddItem, Void> actionCol = new TableColumn<>("Action");
-        actionCol.setPrefWidth(100);
+        actionCol.setPrefWidth(120);
         actionCol.setCellFactory(column -> new TableCell<>() {
             private final Button removeBtn = new Button("✕ Remove");
             {
                 removeBtn.setStyle(
-                        "-fx-background-color: #F44336; " +
-                                "-fx-text-fill: white; " +
-                                "-fx-font-size: 12px; " +
-                                "-fx-padding: 6px 12px; " +
+                        "-fx-background-color: white; " +
+                                "-fx-text-fill: #F44336; " +
+                                "-fx-font-size: 13px; " +
+                                "-fx-font-weight: 600; " +
+                                "-fx-padding: 8px 16px; " +
                                 "-fx-background-radius: 6px; " +
+                                "-fx-border-color: #FFCDD2; " +
+                                "-fx-border-width: 1.5px; " +
+                                "-fx-border-radius: 6px; " +
                                 "-fx-cursor: hand;"
                 );
+
+// Add hover effect right after the removeBtn.setStyle()
+                removeBtn.setOnMouseEntered(e -> removeBtn.setStyle(
+                        "-fx-background-color: #FFEBEE; " +
+                                "-fx-text-fill: #F44336; " +
+                                "-fx-font-size: 13px; " +
+                                "-fx-font-weight: 600; " +
+                                "-fx-padding: 8px 16px; " +
+                                "-fx-background-radius: 6px; " +
+                                "-fx-border-color: #F44336; " +
+                                "-fx-border-width: 1.5px; " +
+                                "-fx-border-radius: 6px; " +
+                                "-fx-cursor: hand;"
+                ));
+                removeBtn.setOnMouseExited(e -> removeBtn.setStyle(
+                        "-fx-background-color: white; " +
+                                "-fx-text-fill: #F44336; " +
+                                "-fx-font-size: 13px; " +
+                                "-fx-font-weight: 600; " +
+                                "-fx-padding: 8px 16px; " +
+                                "-fx-background-radius: 6px; " +
+                                "-fx-border-color: #FFCDD2; " +
+                                "-fx-border-width: 1.5px; " +
+                                "-fx-border-radius: 6px; " +
+                                "-fx-cursor: hand;"
+                ));
                 removeBtn.setOnAction(e -> {
                     BulkAddItem item = getTableRow().getItem();
                     if (item != null) {
@@ -765,6 +816,16 @@ public class SalesController implements Initializable {
         VBox.setVgrow(bulkTable, Priority.ALWAYS);
 
         Scene scene = new Scene(mainContainer);
+
+        // Load the CSS file for the dialog
+        try {
+            String css = getClass().getResource("/css/sales.css").toExternalForm();
+            scene.getStylesheets().add(css);
+            System.out.println("✅ Loaded CSS for Bulk Add dialog: " + css);
+        } catch (Exception ex) {
+            System.err.println("❌ Could not load CSS for Bulk Add dialog: " + ex.getMessage());
+        }
+
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
 
@@ -836,8 +897,7 @@ public class SalesController implements Initializable {
         inventoryBtn.getStyleClass().remove("active");
         salesBtn.getStyleClass().remove("active");
         reportsBtn.getStyleClass().remove("active");
-        suppliersBtn.getStyleClass().remove("active");
-        settingsBtn.getStyleClass().remove("active");
+        staffBtn.getStyleClass().remove("active");
 
         activeButton.getStyleClass().add("active");
     }
@@ -864,14 +924,11 @@ public class SalesController implements Initializable {
         navigateToPage("/fxml/reports.fxml", "/css/reports.css");
     }
 
-    @FXML
-    private void handleSuppliers() {
-        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon", "Suppliers module coming soon!");
-    }
 
     @FXML
-    private void handleSettings() {
-        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon", "Settings module coming soon!");
+    private void handleStaff() {
+        setActiveButton(staffBtn);
+        navigateToPage("/fxml/staff.fxml", "/css/staff.css");
     }
 
     @FXML
@@ -1392,20 +1449,6 @@ public class SalesController implements Initializable {
         dialogStage.showAndWait();
     }
 
-//    // Helper class for bulk add
-//    private static class BulkAddItem {
-//        private Product product;
-//        private int quantity;
-//
-//        public BulkAddItem(Product product, int quantity) {
-//            this.product = product;
-//            this.quantity = quantity;
-//        }
-//
-//        public Product getProduct() { return product; }
-//        public int getQuantity() { return quantity; }
-//    }
-
     private void updateCartUI() {
         if (cartItems.isEmpty()) {
             emptyCartState.setVisible(true);
@@ -1516,15 +1559,11 @@ public class SalesController implements Initializable {
         // Remove button
         Button removeBtn = new Button("✕");
         removeBtn.setStyle(
-                "-fx-background-color: white; " +
-                        "-fx-text-fill: #F44336; " +
-                        "-fx-font-size: 16px; " +
-                        "-fx-min-width: 36px; " +
-                        "-fx-min-height: 36px; " +
+                "-fx-background-color: #F44336; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 12px; " +
+                        "-fx-padding: 6px 12px; " +
                         "-fx-background-radius: 6px; " +
-                        "-fx-border-color: #E0E0E0; " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-border-radius: 6px; " +
                         "-fx-cursor: hand;"
         );
         removeBtn.setOnAction(e -> {

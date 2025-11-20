@@ -65,8 +65,7 @@ public class InventoryController implements Initializable {
     @FXML private Button inventoryBtn;
     @FXML private Button salesBtn;
     @FXML private Button reportsBtn;
-    @FXML private Button suppliersBtn;
-    @FXML private Button settingsBtn;
+    @FXML private Button staffBtn;
     @FXML private Button logoutBtn;
 
     // User info labels
@@ -251,10 +250,10 @@ public class InventoryController implements Initializable {
 
             {
                 // Edit button with text icon
-                editBtn.setText("✏");
+                editBtn.setText("🔧");
                 editBtn.setStyle(
                         "-fx-background-color: white; " +
-                                "-fx-text-fill: #2196F3; " +
+                                "-fx-text-fill: #2c3e50; " +
                                 "-fx-font-size: 16px; " +
                                 "-fx-cursor: hand; " +
                                 "-fx-padding: 8px 12px; " +
@@ -1346,8 +1345,7 @@ public class InventoryController implements Initializable {
         inventoryBtn.getStyleClass().remove("active");
         salesBtn.getStyleClass().remove("active");
         reportsBtn.getStyleClass().remove("active");
-        suppliersBtn.getStyleClass().remove("active");
-        settingsBtn.getStyleClass().remove("active");
+        staffBtn.getStyleClass().remove("active");
 
         activeButton.getStyleClass().add("active");
     }
@@ -1376,14 +1374,9 @@ public class InventoryController implements Initializable {
     }
 
     @FXML
-    private void handleSuppliers() {
-        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon", "Suppliers module coming soon!");
-    }
-
-    @FXML
-    private void handleSettings() {
-        setActiveButton(settingsBtn);
-        showSettingsMenu();
+    private void handleStaff() {
+        setActiveButton(staffBtn);
+        navigateToPage("/fxml/staff.fxml", "/css/staff.css");
     }
 
     @FXML
@@ -1544,211 +1537,6 @@ public class InventoryController implements Initializable {
             e.printStackTrace();
             showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to logout: " + e.getMessage());
         }
-    }
-
-    private void showSettingsMenu() {
-        Alert settingsAlert = new Alert(Alert.AlertType.INFORMATION);
-        settingsAlert.setTitle("Settings");
-        settingsAlert.setHeaderText("Admin Settings");
-        settingsAlert.setContentText("Choose an action:");
-
-        // Create custom buttons
-        ButtonType createStaffBtn = new ButtonType("Create Staff Account");
-        ButtonType resetPasswordBtn = new ButtonType("Reset Password");
-        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-        settingsAlert.getButtonTypes().setAll(createStaffBtn, resetPasswordBtn, cancelBtn);
-
-        // Wait for user to click a button
-        Optional<ButtonType> result = settingsAlert.showAndWait();
-
-        // Handle the choice
-        if (result.isPresent()) {
-            if (result.get() == createStaffBtn) {
-                showCreateStaffDialog();
-            } else if (result.get() == resetPasswordBtn) {
-                showResetPasswordDialog();
-            }
-        }
-    }
-
-    private void showCreateStaffDialog() {
-        // Create dialog
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Create Staff Account");
-        dialog.setHeaderText("Enter new staff member details");
-
-        // Create form grid
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        // Create input fields
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Username");
-
-        TextField emailField = new TextField();
-        emailField.setPromptText("Email");
-
-        TextField fullNameField = new TextField();
-        fullNameField.setPromptText("Full Name");
-
-        PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Password");
-
-        PasswordField confirmPasswordField = new PasswordField();
-        confirmPasswordField.setPromptText("Confirm Password");
-
-        ComboBox<String> roleComboBox = new ComboBox<>();
-        roleComboBox.getItems().addAll("ADMIN", "MANAGER", "STAFF");
-        roleComboBox.setValue("STAFF");  // Default to STAFF role
-
-        // Add fields to grid
-        grid.add(new Label("Username:"), 0, 0);
-        grid.add(usernameField, 1, 0);
-        grid.add(new Label("Email:"), 0, 1);
-        grid.add(emailField, 1, 1);
-        grid.add(new Label("Full Name:"), 0, 2);
-        grid.add(fullNameField, 1, 2);
-        grid.add(new Label("Password:"), 0, 3);
-        grid.add(passwordField, 1, 3);
-        grid.add(new Label("Confirm Password:"), 0, 4);
-        grid.add(confirmPasswordField, 1, 4);
-        grid.add(new Label("Role:"), 0, 5);
-        grid.add(roleComboBox, 1, 5);
-
-        dialog.getDialogPane().setContent(grid);
-
-        // Add buttons
-        ButtonType createBtn = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(createBtn, ButtonType.CANCEL);
-
-        // Show dialog and wait for response
-        Optional<ButtonType> result = dialog.showAndWait();
-
-        // If user clicked Create, validate and create account
-        if (result.isPresent() && result.get() == createBtn) {
-            String username = usernameField.getText().trim();
-            String email = emailField.getText().trim();
-            String fullName = fullNameField.getText().trim();
-            String password = passwordField.getText();
-            String confirmPassword = confirmPasswordField.getText();
-            String role = roleComboBox.getValue();
-
-            // Validation
-            if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() ||
-                    password.isEmpty() || confirmPassword.isEmpty()) {
-                showError("All fields are required!");
-                return;
-            }
-
-            if (!password.equals(confirmPassword)) {
-                showError("Passwords do not match!");
-                return;
-            }
-
-            if (password.length() < 6) {
-                showError("Password must be at least 6 characters!");
-                return;
-            }
-
-            // Try to create account
-            try {
-                userManagementService.createStaffAccount(username, email, password, fullName, role);
-                showSuccess("Staff account created successfully!\n\n" +
-                        "Username: " + username + "\n" +
-                        "Password: " + password + "\n\n" +
-                        "Please share these credentials with the staff member.");
-            } catch (Exception e) {
-                showError("Error creating account: " + e.getMessage());
-            }
-        }
-    }
-
-    private void showResetPasswordDialog() {
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Reset Staff Password");
-        dialog.setHeaderText("Enter username and new password");
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Username");
-
-        PasswordField newPasswordField = new PasswordField();
-        newPasswordField.setPromptText("New Password");
-
-        PasswordField confirmPasswordField = new PasswordField();
-        confirmPasswordField.setPromptText("Confirm Password");
-
-        grid.add(new Label("Username:"), 0, 0);
-        grid.add(usernameField, 1, 0);
-        grid.add(new Label("New Password:"), 0, 1);
-        grid.add(newPasswordField, 1, 1);
-        grid.add(new Label("Confirm Password:"), 0, 2);
-        grid.add(confirmPasswordField, 1, 2);
-
-        dialog.getDialogPane().setContent(grid);
-
-        ButtonType resetBtn = new ButtonType("Reset", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(resetBtn, ButtonType.CANCEL);
-
-        Optional<ButtonType> result = dialog.showAndWait();
-
-        if (result.isPresent() && result.get() == resetBtn) {
-            String username = usernameField.getText().trim();
-            String newPassword = newPasswordField.getText();
-            String confirmPassword = confirmPasswordField.getText();
-
-            // Validation
-            if (username.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-                showError("All fields are required!");
-                return;
-            }
-
-            if (!newPassword.equals(confirmPassword)) {
-                showError("Passwords do not match!");
-                return;
-            }
-
-            if (newPassword.length() < 6) {
-                showError("Password must be at least 6 characters!");
-                return;
-            }
-
-            // Try to reset password
-            try {
-                boolean success = userManagementService.resetPassword(username, newPassword);
-                if (success) {
-                    showSuccess("Password reset successfully!\n\n" +
-                            "Username: " + username + "\n" +
-                            "New Password: " + newPassword);
-                } else {
-                    showError("User not found!");
-                }
-            } catch (Exception e) {
-                showError("Error resetting password: " + e.getMessage());
-            }
-        }
-    }
-    private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText("An error occurred");
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showSuccess(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Success");
-        alert.setHeaderText("Operation Successful");
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 
 }

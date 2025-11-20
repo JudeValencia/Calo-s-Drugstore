@@ -61,17 +61,10 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="suppliersBtn" text="Suppliers" styleClass="menu-item"
-                        onAction="#handleSuppliers">
+                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item"
+                        onAction="#handleStaff">
                     <graphic>
-                        <Label text="🚚" styleClass="menu-icon"/>
-                    </graphic>
-                </Button>
-
-                <Button fx:id="settingsBtn" text="Settings" styleClass="menu-item"
-                        onAction="#handleSettings">
-                    <graphic>
-                        <Label text="⚙️" styleClass="menu-icon"/>
+                        <Label text="👥" styleClass="menu-icon"/>
                     </graphic>
                 </Button>
             </VBox>
