@@ -137,7 +137,7 @@
 
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <StackPane styleClass="kpi-icon,kpi-icon-green">
-                                <Label text="💲" styleClass="kpi-icon-text"/>
+                                <Label text="📈" styleClass="kpi-icon-text"/>
                             </StackPane>
                             <Label text="Total Sales (Today)" styleClass="kpi-title"/>
                         </HBox>
