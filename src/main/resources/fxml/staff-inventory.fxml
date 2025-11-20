@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.StaffInventoryController"
+            styleClass="inventory-root">
+
+    <!-- Sidebar -->
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
+            <padding>
+                <Insets top="20" bottom="20"/>
+            </padding>
+
+            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="15">
+                <padding>
+                    <Insets top="10" right="20" bottom="10" left="20"/>
+                </padding>
+
+                <StackPane styleClass="sidebar-logo">
+                    <Label text="💊" styleClass="sidebar-logo-icon"/>
+                </StackPane>
+                <Label text="PharmaTrack" styleClass="sidebar-title"/>
+            </HBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox spacing="5" styleClass="sidebar-menu" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Button fx:id="dashboardBtn" text="Dashboard" styleClass="menu-item"
+                        onAction="#handleDashboard">
+                    <graphic>
+                        <Label text="📊" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item,active"
+                        onAction="#handleInventory">
+                    <graphic>
+                        <Label text="📦" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item"
+                        onAction="#handleSales">
+                    <graphic>
+                        <Label text="🛒" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="reportsBtn" text="Reports" styleClass="menu-item"
+                        onAction="#handleReports">
+                    <graphic>
+                        <Label text="📈" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox styleClass="sidebar-user" spacing="5">
+                <padding>
+                    <Insets top="15" right="20" bottom="15" left="20"/>
+                </padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <StackPane styleClass="user-avatar">
+                        <Label text="👤" styleClass="user-avatar-icon"/>
+                    </StackPane>
+                    <VBox spacing="2">
+                        <Label fx:id="userNameLabel" text="Admin User" styleClass="user-name"/>
+                        <Label fx:id="userRoleLabel" text="Cashier/Pharmacist" styleClass="user-role"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <Button fx:id="logoutBtn" text="Logout" styleClass="logout-btn"
+                    onAction="#handleLogout">
+                <graphic>
+                    <Label text="🚪" styleClass="menu-icon"/>
+                </graphic>
+            </Button>
+
+        </VBox>
+    </left>
+
+    <!-- Main Content -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+            <VBox styleClass="main-content" spacing="25">
+                <padding>
+                    <Insets top="30" right="30" bottom="30" left="30"/>
+                </padding>
+
+                <!-- Page Header -->
+                <VBox spacing="8">
+                    <Label text="Inventory (View Only)" styleClass="page-title"/>
+                    <Label text="Browse medicines and check stock levels" styleClass="page-subtitle"/>
+                </VBox>
+
+                <!-- KPI Cards Row -->
+                <HBox spacing="20" styleClass="kpi-row">
+                    <!-- Card 1: Total Items -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Total Items" styleClass="kpi-title"/>
+                                <Label fx:id="totalItemsLabel" text="0" styleClass="kpi-value"/>
+                                <Label text="Medicines in inventory" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="📦" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 2: Low Stock Items -->
+                    <VBox styleClass="kpi-card,kpi-card-alert" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Low Stock Items" styleClass="kpi-title"/>
+                                <Label fx:id="lowStockLabel" text="0" styleClass="kpi-value,kpi-value-alert"/>
+                                <Label text="Need restocking" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="⚠️" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 3: Total Inventory Value -->
+                    <VBox styleClass="kpi-card,kpi-card-sales" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Total Inventory Value" styleClass="kpi-title"/>
+                                <Label fx:id="totalValueLabel" text="₱0.00" styleClass="kpi-value,kpi-value-sales"/>
+                                <Label text="Current stock value" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="💰" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+                </HBox>
+
+                <!-- Medicine Inventory Section -->
+                <VBox styleClass="dashboard-card" spacing="20">
+                    <padding>
+                        <Insets top="20" right="20" bottom="20" left="20"/>
+                    </padding>
+
+                    <!-- Section Header -->
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="📦" style="-fx-font-size: 24px;"/>
+                        <VBox spacing="4">
+                            <Label text="Medicine Inventory" styleClass="section-title"/>
+                            <Label text="View-only access to inventory. Contact manager for stock updates." styleClass="section-subtitle"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Search and Filter Bar -->
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <TextField fx:id="searchField" promptText="Search by name, ID, or supplier..."
+                                   HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <ComboBox fx:id="categoryCombo" promptText="All Categories"
+                                  prefWidth="200" styleClass="filter-combo"/>
+                    </HBox>
+
+                    <!-- Low Stock Alert Banner -->
+                    <HBox fx:id="lowStockAlert" styleClass="alert-banner,alert-warning" spacing="15"
+                          alignment="CENTER_LEFT" managed="false" visible="false">
+                        <padding>
+                            <Insets top="15" right="20" bottom="15" left="20"/>
+                        </padding>
+                        <Label text="⚠️" style="-fx-font-size: 24px;"/>
+                        <VBox spacing="4">
+                            <Label fx:id="lowStockAlertTitle" text="2 items running low on stock"
+                                   styleClass="alert-title"/>
+                            <Label text="Please inform your manager about items that need restocking"
+                                   styleClass="alert-message"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Inventory Table -->
+                    <TableView fx:id="inventoryTable" styleClass="inventory-table">
+                        <columns>
+                            <TableColumn fx:id="medicineIdCol" text="Medicine ID" prefWidth="100"/>
+                            <TableColumn fx:id="nameCol" text="Name" prefWidth="180"/>
+                            <TableColumn fx:id="categoryCol" text="Category" prefWidth="130"/>
+                            <TableColumn fx:id="priceCol" text="Price" prefWidth="100"/>
+                            <TableColumn fx:id="stockCol" text="Stock" prefWidth="80"/>
+                            <TableColumn fx:id="statusCol" text="Status" prefWidth="110"/>
+                            <TableColumn fx:id="expiryDateCol" text="Expiry Date" prefWidth="130"/>
+                            <TableColumn fx:id="supplierCol" text="Supplier" prefWidth="150"/>
+                        </columns>
+                    </TableView>
+
+                    <!-- Results Summary -->
+                    <Label fx:id="resultsLabel" text="Showing 0 of 0 medicines" styleClass="results-label"/>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

@@ -1,0 +1,375 @@
+/* ============================================
+   STAFF REPORTS SPECIFIC STYLES
+   Extends reports.css with staff-specific styling
+   ============================================ */
+
+/* Import base reports styles */
+@import "reports.css";
+
+/* Override/Add Staff-Specific Styles */
+
+/* Staff Portal Subtitle in Sidebar */
+.portal-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #4CAF50;
+    -fx-font-weight: 600;
+    -fx-padding: 2px 0 0 0;
+}
+
+/* User Role Label (Staff view has role instead of email) */
+.user-role {
+    -fx-font-size: 12px;
+    -fx-text-fill: #7f8c8d;
+}
+
+/* Time Filter ComboBox */
+.filter-combo {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 10px 15px;
+    -fx-font-size: 14px;
+}
+
+.filter-combo .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #2c3e50;
+    -fx-padding: 8px 12px;
+}
+
+.filter-combo .list-cell:hover {
+    -fx-background-color: #F5F5F5;
+}
+
+/* KPI Cards - Staff View */
+.kpi-card-sales {
+    -fx-background-color: linear-gradient(to bottom right, #4CAF50, #45a049);
+}
+
+.kpi-value-sales {
+    -fx-text-fill: white !important;
+}
+
+.kpi-card-sales .kpi-title {
+    -fx-text-fill: rgba(255, 255, 255, 0.9);
+}
+
+.kpi-card-sales .kpi-subtitle {
+    -fx-text-fill: rgba(255, 255, 255, 0.8);
+}
+
+/* Dashboard Card (for charts container) */
+.dashboard-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 12, 0, 0, 2);
+    -fx-padding: 20px;
+    -fx-spacing: 20px;
+}
+
+/* Section Titles inside Cards */
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.section-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #95a5a6;
+}
+
+/* Reports Table - Staff Specific */
+.reports-table {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.reports-table .column-header-background {
+    -fx-background-color: #F8F9FA;
+}
+
+.reports-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #E0E0E0 transparent;
+    -fx-border-width: 0 0 2px 0;
+    -fx-padding: 15px 10px;
+}
+
+.reports-table .column-header .label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #2c3e50;
+}
+
+.reports-table .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent;
+    -fx-padding: 12px 0;
+}
+
+.reports-table .table-row-cell:odd {
+    -fx-background-color: #FAFAFA;
+}
+
+.reports-table .table-row-cell:hover {
+    -fx-background-color: #F0F0F0;
+}
+
+.reports-table .table-cell {
+    -fx-padding: 12px 10px;
+    -fx-font-size: 14px;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Bar Chart - Staff View */
+.default-color0.chart-bar {
+    -fx-bar-fill: #4CAF50;
+}
+
+.default-color0.chart-bar:hover {
+    -fx-bar-fill: #45a049;
+}
+
+/* Line Chart - Staff View */
+.default-color0.chart-series-line {
+    -fx-stroke: #2196F3;
+    -fx-stroke-width: 3px;
+}
+
+.default-color0.chart-line-symbol {
+    -fx-background-color: #2196F3, white;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+.default-color0.chart-line-symbol:hover {
+    -fx-background-color: #1976D2, white;
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+}
+
+/* Alert Banner - Limited Access Notice */
+.alert-banner {
+    -fx-background-radius: 12px;
+    -fx-padding: 20px 25px;
+    -fx-spacing: 15px;
+}
+
+.alert-info {
+    -fx-background-color: #E3F2FD;
+    -fx-border-color: #2196F3;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 12px;
+}
+
+.alert-title-info {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1976D2;
+}
+
+.alert-message-info {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1565C0;
+    -fx-line-spacing: 2px;
+}
+
+/* KPI Row Layout */
+.kpi-row {
+    -fx-spacing: 20px;
+    -fx-alignment: center;
+}
+
+/* Ensure proper spacing in main content */
+.main-content {
+    -fx-spacing: 25px;
+}
+
+/* ============================================
+   STAFF REPORTS TABLE STYLING
+   ============================================ */
+
+/* Staff Table Base */
+.staff-table {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0;
+}
+
+/* Column Headers */
+.staff-table .column-header-background {
+    -fx-background-color: #F8F9FA;
+    -fx-background-radius: 0;
+}
+
+.staff-table .column-header-background .filler {
+    -fx-background-color: #F8F9FA;
+}
+
+.staff-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #E0E0E0 transparent;
+    -fx-border-width: 0 0 2px 0;
+    -fx-padding: 16px 12px;
+}
+
+.staff-table .column-header .label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Specific Column Alignments */
+.staff-table .rank-column .label,
+.staff-table .quantity-column .label,
+.staff-table .transactions-column .label,
+.staff-table .items-column .label,
+.staff-table .avg-column .label {
+    -fx-alignment: CENTER;
+}
+
+/* Table Rows */
+.staff-table .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #F1F3F5 transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 0;
+}
+
+.staff-table .table-row-cell:odd {
+    -fx-background-color: #FAFBFC;
+}
+
+.staff-table .table-row-cell:hover {
+    -fx-background-color: #F0F4F8;
+    -fx-cursor: hand;
+}
+
+.staff-table .table-row-cell:selected {
+    -fx-background-color: #E3F2FD;
+}
+
+/* Table Cells */
+.staff-table .table-cell {
+    -fx-padding: 16px 12px;
+    -fx-font-size: 14px;
+    -fx-text-fill: #2c3e50;
+    -fx-alignment: CENTER_LEFT;
+    -fx-border-width: 0;
+}
+
+/* Rank Column Styling */
+.staff-table .rank-column .table-cell {
+    -fx-alignment: CENTER;
+}
+
+/* Medicine Column Styling */
+.staff-table .medicine-column .table-cell {
+    -fx-font-weight: 600;
+    -fx-text-fill: #1a1a1a;
+}
+
+/* Category Column Styling */
+.staff-table .category-column .table-cell {
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Quantity Column Styling */
+.staff-table .quantity-column .table-cell {
+    -fx-alignment: CENTER;
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+
+/* Date Column Styling */
+.staff-table .date-column .table-cell {
+    -fx-font-weight: 600;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Transactions Column Styling */
+.staff-table .transactions-column .table-cell {
+    -fx-alignment: CENTER;
+}
+
+/* Items Sold Column Styling */
+.staff-table .items-column .table-cell {
+    -fx-alignment: CENTER;
+    -fx-font-weight: bold;
+}
+
+/* Average Column Styling */
+.staff-table .avg-column .table-cell {
+    -fx-alignment: CENTER;
+}
+
+/* Empty Table Placeholder */
+.staff-table .placeholder .label {
+    -fx-text-fill: #95a5a6;
+    -fx-font-size: 14px;
+    -fx-font-style: italic;
+}
+
+/* Remove default focus border */
+.staff-table:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}
+
+/* Scrollbar for tables */
+.staff-table .scroll-bar:vertical {
+    -fx-pref-width: 10px;
+}
+
+.staff-table .scroll-bar:vertical .track {
+    -fx-background-color: #F8F9FA;
+    -fx-background-radius: 5px;
+}
+
+.staff-table .scroll-bar:vertical .thumb {
+    -fx-background-color: #CBD5E0;
+    -fx-background-radius: 5px;
+}
+
+.staff-table .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #A0AEC0;
+}
+
+/* Rank Badge Styling (Green numbers) */
+.rank-badge {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4CAF50;
+}
+
+/* Category Badge Styling */
+.category-badge {
+    -fx-background-color: #F5F5F5;
+    -fx-text-fill: #2c3e50;
+    -fx-padding: 6px 14px;
+    -fx-background-radius: 14px;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+/* Items Sold Highlight (Green) */
+.items-highlight {
+    -fx-text-fill: #4CAF50;
+    -fx-font-weight: bold;
+}
+
+/* Table Container Card Enhancement */
+.dashboard-card .staff-table {
+    -fx-effect: none;
+}
+
+/* Ensure proper spacing in table sections */
+.table-section {
+    -fx-spacing: 15px;
+}

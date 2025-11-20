@@ -247,9 +247,20 @@ public class LoginController {
 
     private void loadDashboard(User user) {
         try {
-            java.net.URL dashboardUrl = getClass().getResource("/fxml/dashboard.fxml");
+            // Determine which dashboard to load based on role
+            String fxmlPath;
+            String cssPath = "/css/dashboard.css";
+
+            if (user.getRole().equalsIgnoreCase("ADMIN")) {
+                fxmlPath = "/fxml/dashboard.fxml";
+            } else {
+                fxmlPath = "/fxml/staff-dashboard.fxml";
+            }
+
+            // Load the appropriate FXML
+            java.net.URL dashboardUrl = getClass().getResource(fxmlPath);
             if (dashboardUrl == null) {
-                showError("Error: dashboard.fxml not found!");
+                showError("Error: " + fxmlPath + " not found!");
                 return;
             }
 
@@ -257,24 +268,33 @@ public class LoginController {
             loader.setControllerFactory(springContext::getBean);
             Parent root = loader.load();
 
-            DashboardController dashboardController = loader.getController();
-            if (dashboardController != null) {
-                dashboardController.setCurrentUser(user);
+            // Set current user based on role
+            if (user.getRole().equalsIgnoreCase("ADMIN")) {
+                DashboardController dashboardController = loader.getController();
+                if (dashboardController != null) {
+                    dashboardController.setCurrentUser(user);
+                    dashboardController.refreshDashboard();
+                }
+            } else {
+                StaffDashboardController staffDashboardController = loader.getController();
+                if (staffDashboardController != null) {
+                    staffDashboardController.setCurrentUser(user);
+                }
             }
 
             Stage stage = (Stage) rootPane.getScene().getWindow();
             Scene scene = new Scene(root);
 
-            // LOAD DASHBOARD.CSS instead of styles.css
-            java.net.URL cssUrl = getClass().getResource("/css/dashboard.css");
+            // Load CSS
+            java.net.URL cssUrl = getClass().getResource(cssPath);
             if (cssUrl != null) {
                 scene.getStylesheets().add(cssUrl.toExternalForm());
             }
 
             stage.setWidth(1200);
             stage.setHeight(700);
-            stage.setMaximized(false);  // Prevent auto-maximize
-            stage.setFullScreen(false); // Prevent fullscreen
+            stage.setMaximized(false);
+            stage.setFullScreen(false);
             stage.centerOnScreen();
 
             stage.setScene(scene);

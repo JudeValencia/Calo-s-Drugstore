@@ -257,4 +257,108 @@ public class DashboardService {
         long days = hours / 24;
         return days + " day" + (days == 1 ? "" : "s") + " ago";
     }
+
+    /**
+     * Get metrics for a specific staff member
+     */
+    public Map<String, Object> getStaffMetrics(Long userId) {
+        Map<String, Object> metrics = new HashMap<>();
+
+        try {
+            // Get today's sales
+            LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
+            LocalDateTime endOfToday = LocalDate.now().atTime(23, 59, 59);
+            List<Sale> todaySales = salesService.getSalesBetweenDates(startOfToday, endOfToday);
+
+            // Filter by user ID
+            List<Sale> mySales = todaySales.stream()
+                    .filter(sale -> sale.getUserId().equals(userId))
+                    .collect(java.util.stream.Collectors.toList());
+
+            // Calculate staff metrics
+            int myTransactions = mySales.size();
+            int myItemsSold = mySales.stream()
+                    .mapToInt(Sale::getTotalItems)
+                    .sum();
+
+            BigDecimal myRevenue = mySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            metrics.put("myTransactions", myTransactions);
+            metrics.put("myItemsSold", myItemsSold);
+            metrics.put("myRevenue", myRevenue.doubleValue());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            metrics.put("myTransactions", 0);
+            metrics.put("myItemsSold", 0);
+            metrics.put("myRevenue", 0.0);
+        }
+
+        return metrics;
+    }
+
+    /**
+     * Get recent activity for a specific staff member
+     */
+    public List<Map<String, Object>> getStaffRecentActivity(Long userId) {
+        List<Map<String, Object>> activities = new ArrayList<>();
+
+        try {
+            // Get today's sales by this staff member
+            List<Sale> todaySales = salesService.getTodaysTransactions();
+
+            // Filter by user ID
+            List<Sale> mySales = todaySales.stream()
+                    .filter(sale -> sale.getUserId().equals(userId))
+                    .collect(java.util.stream.Collectors.toList());
+
+            // Add sales to activities (limit to 5)
+            for (Sale sale : mySales) {
+                if (activities.size() >= 5) break;
+
+                Map<String, Object> activity = new HashMap<>();
+                activity.put("type", "sale");
+                activity.put("description", sale.getTransactionId());
+
+                // Get first item name
+                String itemName = sale.getTotalItems() + " items";
+                if (!sale.getItems().isEmpty()) {
+                    itemName = sale.getItems().get(0).getMedicineName();
+                    if (sale.getItems().size() > 1) {
+                        itemName = sale.getTotalItems() + " items";
+                    }
+                }
+                activity.put("details", itemName);
+
+                activity.put("amount", "₱" + String.format("%,.2f", sale.getTotalAmount()));
+                activity.put("timestamp", formatTimeAgo(sale.getCreatedAt()));
+                activity.put("status", "completed");
+                activities.add(activity);
+            }
+
+            // Add low stock items (limit to 3)
+            List<Product> lowStockProducts = productService.getLowStockProducts();
+            int count = 0;
+            for (Product product : lowStockProducts) {
+                if (count >= 3) break;
+
+                Map<String, Object> activity = new HashMap<>();
+                activity.put("type", "alert");
+                activity.put("description", "Low stock alert");
+                activity.put("details", product.getName());
+                activity.put("amount", product.getStock() + " units left");
+                activity.put("timestamp", "Now");
+                activity.put("status", "warning");
+                activities.add(activity);
+                count++;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return activities;
+    }
 }

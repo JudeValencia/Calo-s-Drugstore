@@ -82,6 +82,7 @@ public class SalesController implements Initializable {
     // User info labels
     @FXML private Label userNameLabel;
     @FXML private Label userEmailLabel;
+    @FXML private Label userRoleLabel;
 
     // Cart data
     private ObservableList<SaleItem> cartItems = FXCollections.observableArrayList();
@@ -104,11 +105,22 @@ public class SalesController implements Initializable {
     public void setCurrentUser(User user) {
         this.currentUser = user;
         if (user != null) {
-            userNameLabel.setText(user.getFullName());
-            userEmailLabel.setText(user.getEmail());
+            // Set user name (both admin and staff views have this)
+            if (userNameLabel != null) {
+                userNameLabel.setText(user.getFullName());
+            }
+
+            // Set user email (only admin view has this)
+            if (userEmailLabel != null) {
+                userEmailLabel.setText(user.getEmail());
+            }
+
+            // Set user role (only staff view has this)
+            if (userRoleLabel != null) {
+                userRoleLabel.setText(user.getRole());
+            }
         }
     }
-
     private void setupMedicineCombo() {
         medicineCombo.setCellFactory(lv -> new ListCell<Product>() {
             @Override
@@ -892,24 +904,50 @@ public class SalesController implements Initializable {
     }
 
     // Navigation methods
-    private void setActiveButton(Button activeButton) {
+    private void setActiveButton(Button activeBtn) {
+        // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
         inventoryBtn.getStyleClass().remove("active");
         salesBtn.getStyleClass().remove("active");
         reportsBtn.getStyleClass().remove("active");
-        staffBtn.getStyleClass().remove("active");
 
-        activeButton.getStyleClass().add("active");
+        // Only remove active from staffBtn if it exists (admin view has it, staff view doesn't)
+        if (staffBtn != null) {
+            staffBtn.getStyleClass().remove("active");
+        }
+
+        // Add active class to the clicked button
+        if (activeBtn != null) {
+            activeBtn.getStyleClass().add("active");
+        }
     }
 
     @FXML
     private void handleDashboard() {
-        navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
+        setActiveButton(dashboardBtn);
+
+        // Check if staff user
+        if (currentUser != null && !currentUser.getRole().equalsIgnoreCase("ADMIN")) {
+            System.out.println("Staff user detected - navigating to staff-dashboard");
+            navigateToPage("/fxml/staff-dashboard.fxml", "/css/dashboard.css");
+        } else {
+            System.out.println("Admin user detected - navigating to admin dashboard");
+            navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
+        }
     }
 
     @FXML
     private void handleInventory() {
-        navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
+        setActiveButton(inventoryBtn);
+
+        // Check if staff user
+        if (currentUser != null && !currentUser.getRole().equalsIgnoreCase("ADMIN")) {
+            System.out.println("Staff user detected - navigating to staff-inventory");
+            navigateToPage("/fxml/staff-inventory.fxml", "/css/dashboard.css");
+        } else {
+            System.out.println("Admin user detected - navigating to admin inventory");
+            navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
+        }
     }
 
     @FXML
@@ -921,7 +959,15 @@ public class SalesController implements Initializable {
     @FXML
     private void handleReports() {
         setActiveButton(reportsBtn);
-        navigateToPage("/fxml/reports.fxml", "/css/reports.css");
+
+        // Check if staff user
+        if (currentUser != null && !currentUser.getRole().equalsIgnoreCase("ADMIN")) {
+            System.out.println("Staff user detected - navigating to staff-reports");
+            navigateToPage("/fxml/staff-reports.fxml", "/css/staff-reports.css");
+        } else {
+            System.out.println("Admin user detected - navigating to admin reports");
+            navigateToPage("/fxml/reports.fxml", "/css/reports.css");
+        }
     }
 
 
@@ -1030,22 +1076,46 @@ public class SalesController implements Initializable {
             Parent root = loader.load();
 
             // Pass current user to the next controller
+            // Pass current user to the next controller
             if (fxmlPath.contains("inventory")) {
-                InventoryController controller = loader.getController();
-                controller.setCurrentUser(currentUser);
+                if (fxmlPath.contains("staff-inventory")) {
+                    // Staff inventory controller
+                    StaffInventoryController controller = loader.getController();
+                    controller.setCurrentUser(currentUser);
+                    System.out.println("✅ Set user for StaffInventoryController");
+                } else {
+                    // Admin inventory controller
+                    InventoryController controller = loader.getController();
+                    controller.setCurrentUser(currentUser);
+                    System.out.println("✅ Set user for InventoryController");
+                }
             } else if (fxmlPath.contains("dashboard")) {
-                DashboardController controller = loader.getController();
-                controller.refreshDashboard();
-                controller.setCurrentUser(currentUser);
+                if (fxmlPath.contains("staff-dashboard")) {
+                    // Staff dashboard controller
+                    StaffDashboardController controller = loader.getController();
+                    controller.setCurrentUser(currentUser);
+                    System.out.println("✅ Set user for StaffDashboardController");
+                } else {
+                    // Admin dashboard controller
+                    DashboardController controller = loader.getController();
+                    controller.setCurrentUser(currentUser);
+                    controller.refreshDashboard();
+                    System.out.println("✅ Set user for DashboardController");
+                }
             } else if (fxmlPath.contains("sales")) {
                 SalesController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
+                System.out.println("✅ Set user for SalesController");
             } else if (fxmlPath.contains("reports")) {
-                ReportsController controller = loader.getController();
-                controller.setCurrentUser(currentUser);
-            } else if (fxmlPath.contains("staff")) {
-                StaffController controller = loader.getController();
-                controller.setCurrentUser(currentUser);
+                if (fxmlPath.contains("staff-reports")) {
+                    StaffReportsController controller = loader.getController();
+                    controller.setCurrentUser(currentUser);
+                    System.out.println("✅ Set user for StaffReportsController");
+                } else {
+                    ReportsController controller = loader.getController();
+                    controller.setCurrentUser(currentUser);
+                    System.out.println("✅ Set user for ReportsController");
+                }
             }
 
 

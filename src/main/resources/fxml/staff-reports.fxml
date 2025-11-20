@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.StaffReportsController"
+            styleClass="reports-root">
+
+    <!-- Sidebar -->
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
+            <padding>
+                <Insets top="20" bottom="20"/>
+            </padding>
+
+            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="15">
+                <padding>
+                    <Insets top="10" right="20" bottom="10" left="20"/>
+                </padding>
+
+                <StackPane styleClass="sidebar-logo">
+                    <Label text="💊" styleClass="sidebar-logo-icon"/>
+                </StackPane>
+                <Label text="PharmaTrack" styleClass="sidebar-title"/>
+            </HBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox spacing="5" styleClass="sidebar-menu" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Button fx:id="dashboardBtn" text="Dashboard" styleClass="menu-item"
+                        onAction="#handleDashboard">
+                    <graphic>
+                        <Label text="📊" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item,active"
+                        onAction="#handleInventory">
+                    <graphic>
+                        <Label text="📦" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item"
+                        onAction="#handleSales">
+                    <graphic>
+                        <Label text="🛒" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="reportsBtn" text="Reports" styleClass="menu-item"
+                        onAction="#handleReports">
+                    <graphic>
+                        <Label text="📈" styleClass="menu-icon"/>
+                    </graphic>
+                </Button>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox styleClass="sidebar-user" spacing="5">
+                <padding>
+                    <Insets top="15" right="20" bottom="15" left="20"/>
+                </padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <StackPane styleClass="user-avatar">
+                        <Label text="👤" styleClass="user-avatar-icon"/>
+                    </StackPane>
+                    <VBox spacing="2">
+                        <Label fx:id="userNameLabel" text="Admin User" styleClass="user-name"/>
+                        <Label fx:id="userRoleLabel" text="Cashier/Pharmacist" styleClass="user-role"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <Button fx:id="logoutBtn" text="Logout" styleClass="logout-btn"
+                    onAction="#handleLogout">
+                <graphic>
+                    <Label text="🚪" styleClass="menu-icon"/>
+                </graphic>
+            </Button>
+
+        </VBox>
+    </left>
+
+    <!-- Main Content -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+            <VBox styleClass="main-content" spacing="25">
+                <padding>
+                    <Insets top="30" right="30" bottom="30" left="30"/>
+                </padding>
+
+                <!-- Page Header with Time Filter -->
+                <HBox alignment="CENTER_LEFT">
+                    <VBox spacing="8" HBox.hgrow="ALWAYS">
+                        <Label text="Sales Reports" styleClass="page-title"/>
+                        <Label text="View sales activity and trends" styleClass="page-subtitle"/>
+                    </VBox>
+                    <ComboBox fx:id="timeFilterCombo" prefWidth="150" styleClass="filter-combo"/>
+                </HBox>
+
+                <!-- KPI Cards Row -->
+                <HBox spacing="20" styleClass="kpi-row">
+                    <!-- Card 1: My Total Transactions -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <VBox spacing="8">
+                            <Label text="My Total Transactions" styleClass="kpi-title"/>
+                            <Label fx:id="totalTransactionsLabel" text="0" styleClass="kpi-value"/>
+                            <Label fx:id="transactionsPeriodLabel" text="This week" styleClass="kpi-subtitle"/>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Card 2: Items Sold -->
+                    <VBox styleClass="kpi-card,kpi-card-sales" HBox.hgrow="ALWAYS">
+                        <VBox spacing="8">
+                            <Label text="Items Sold" styleClass="kpi-title"/>
+                            <Label fx:id="itemsSoldLabel" text="0" styleClass="kpi-value,kpi-value-sales"/>
+                            <Label text="Total items" styleClass="kpi-subtitle"/>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Card 3: Avg Items per Sale -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <VBox spacing="8">
+                            <Label text="Avg. Items per Sale" styleClass="kpi-title"/>
+                            <Label fx:id="avgItemsLabel" text="0.0" styleClass="kpi-value" style="-fx-text-fill: #2196F3;"/>
+                            <Label text="Items per transaction" styleClass="kpi-subtitle"/>
+                        </VBox>
+                    </VBox>
+                </HBox>
+
+                <!-- Daily Transactions Chart -->
+                <VBox styleClass="dashboard-card" spacing="20">
+                    <padding>
+                        <Insets top="20" right="20" bottom="20" left="20"/>
+                    </padding>
+
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="📊" style="-fx-font-size: 24px;"/>
+                        <VBox spacing="4">
+                            <Label text="Daily Transactions" styleClass="section-title"/>
+                            <Label text="Number of transactions per day this week" styleClass="section-subtitle"/>
+                        </VBox>
+                    </HBox>
+
+                    <BarChart fx:id="dailyTransactionsChart" animated="false">
+                        <xAxis>
+                            <CategoryAxis side="BOTTOM" label="Day"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis side="LEFT" label="Transactions"/>
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+
+                <!-- Items Sold Trend Chart -->
+                <VBox styleClass="dashboard-card" spacing="20">
+                    <padding>
+                        <Insets top="20" right="20" bottom="20" left="20"/>
+                    </padding>
+
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="📈" style="-fx-font-size: 24px;"/>
+                        <VBox spacing="4">
+                            <Label text="Items Sold Trend" styleClass="section-title"/>
+                            <Label text="Number of items sold per day" styleClass="section-subtitle"/>
+                        </VBox>
+                    </HBox>
+
+                    <LineChart fx:id="itemsSoldChart" animated="false">
+                        <xAxis>
+                            <CategoryAxis side="BOTTOM" label="Day"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis side="LEFT" label="Items"/>
+                        </yAxis>
+                    </LineChart>
+                </VBox>
+
+                <!-- Top Selling Medicines Table -->
+                <VBox styleClass="dashboard-card" spacing="20">
+                    <padding>
+                        <Insets top="20" right="20" bottom="20" left="20"/>
+                    </padding>
+
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="🛒" style="-fx-font-size: 24px;"/>
+                        <VBox spacing="4">
+                            <Label text="Top Selling Medicines" styleClass="section-title"/>
+                            <Label text="Most popular items this week" styleClass="section-subtitle"/>
+                        </VBox>
+                    </HBox>
+
+                    <TableView fx:id="topSellingTable" styleClass="staff-table">
+                        <columns>
+                            <TableColumn fx:id="rankCol" text="Rank" prefWidth="100" styleClass="rank-column"/>
+                            <TableColumn fx:id="medicineCol" text="Medicine" prefWidth="350" styleClass="medicine-column"/>
+                            <TableColumn fx:id="categoryCol" text="Category" prefWidth="200" styleClass="category-column"/>
+                            <TableColumn fx:id="quantityCol" text="Quantity" prefWidth="150" styleClass="quantity-column"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </VBox>
+
+                <!-- My Recent Sales Activity Table -->
+                <VBox styleClass="dashboard-card" spacing="20">
+                    <padding>
+                        <Insets top="20" right="20" bottom="20" left="20"/>
+                    </padding>
+
+                    <VBox spacing="4">
+                        <Label text="My Recent Sales Activity" styleClass="section-title"/>
+                        <Label text="Your daily sales performance" styleClass="section-subtitle"/>
+                    </VBox>
+
+                    <TableView fx:id="recentActivityTable" styleClass="staff-table">
+                        <columns>
+                            <TableColumn fx:id="dateCol" text="Date" prefWidth="250" styleClass="date-column"/>
+                            <TableColumn fx:id="transactionsCol" text="Transactions" prefWidth="200" styleClass="transactions-column"/>
+                            <TableColumn fx:id="itemsCol" text="Items Sold" prefWidth="200" styleClass="items-column"/>
+                            <TableColumn fx:id="avgCol" text="Avg. Items/Transaction" prefWidth="250" styleClass="avg-column"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </VBox>
+
+                <!-- Limited Access Notice -->
+                <HBox styleClass="alert-banner,alert-info" spacing="15" alignment="CENTER_LEFT">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    <Label text="ℹ️" style="-fx-font-size: 24px;"/>
+                    <VBox spacing="6">
+                        <Label text="Limited Access" styleClass="alert-title-info"/>
+                        <Label text="As a staff member, you have view-only access to sales reports. Financial details and advanced analytics are only available to administrators."
+                               styleClass="alert-message-info" wrapText="true"/>
+                    </VBox>
+                </HBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>
