@@ -804,6 +804,9 @@ public class ReportsController implements Initializable {
             } else if (fxmlPath.contains("reports")) {
                 ReportsController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("staff")) {
+                StaffController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
             }
 
             Stage stage = (Stage) dashboardBtn.getScene().getWindow();

@@ -1,7 +1,7 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
 import com.inventory.Calo.s_Drugstore.entity.User;
-import com.inventory.Calo.s_Drugstore.Service.AuthenticationService;
+import com.inventory.Calo.s_Drugstore.service.AuthenticationService;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
