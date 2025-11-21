@@ -764,10 +764,51 @@ public class StaffReportsController implements Initializable {
             }
 
             Stage stage = (Stage) dashboardBtn.getScene().getWindow();
+            Scene currentScene = stage.getScene();
+
+            // Save window size and position
+            double currentWidth = stage.getWidth();
+            double currentHeight = stage.getHeight();
+            double currentX = stage.getX();
+            double currentY = stage.getY();
+            boolean isMaximized = stage.isMaximized();
+
             Scene newScene = new Scene(root);
             newScene.getStylesheets().add(getClass().getResource(cssPath).toExternalForm());
 
-            stage.setScene(newScene);
+            root.setOpacity(0);
+
+            javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(30),
+                    currentScene.getRoot()
+            );
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+
+            fadeOut.setOnFinished(e -> {
+                stage.setScene(newScene);
+
+                // Restore window size and position
+                if (isMaximized) {
+                    stage.setMaximized(true);
+                } else {
+                    stage.setWidth(currentWidth);
+                    stage.setHeight(currentHeight);
+                    stage.setX(currentX);
+                    stage.setY(currentY);
+                }
+
+                javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                        javafx.util.Duration.millis(30),
+                        root
+                );
+                fadeIn.setFromValue(0.0);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+            });
+
+            fadeOut.play();
+
 
         } catch (Exception e) {
             e.printStackTrace();
