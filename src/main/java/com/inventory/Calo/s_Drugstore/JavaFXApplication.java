@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -27,6 +28,9 @@ public class JavaFXApplication extends Application {
 
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/css/login.css").toExternalForm());
+
+        Image icon = new Image(getClass().getResourceAsStream("/icons/pharmatrack-icon.png"));
+        primaryStage.getIcons().add(icon);
 
         primaryStage.setTitle("PharmaTrack - Calo's Drugstore");
         primaryStage.setScene(scene);
