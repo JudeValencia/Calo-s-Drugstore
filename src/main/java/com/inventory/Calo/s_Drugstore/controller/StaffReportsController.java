@@ -364,8 +364,17 @@ public class StaffReportsController implements Initializable {
                         dailyCounts.merge(saleDate, 1, Integer::sum);
                     });
 
+            // Choose formatter based on period
+            DateTimeFormatter formatter;
+            if (selectedPeriod.contains("Month")) {
+                // For monthly view, show date number (1, 2, 3... 31)
+                formatter = DateTimeFormatter.ofPattern("d");
+            } else {
+                // For weekly view, show day name (Mon, Tue, Wed...)
+                formatter = DateTimeFormatter.ofPattern("EEE");
+            }
+
             // Add data to chart
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE");
             for (Map.Entry<LocalDate, Integer> entry : dailyCounts.entrySet()) {
                 String dayLabel = entry.getKey().format(formatter);
                 series.getData().add(new XYChart.Data<>(dayLabel, entry.getValue()));
@@ -377,7 +386,6 @@ public class StaffReportsController implements Initializable {
             e.printStackTrace();
         }
     }
-
     private void loadItemsSoldChart(LocalDate startDate, LocalDate endDate) {
         try {
             itemsSoldChart.getData().clear();
@@ -403,8 +411,17 @@ public class StaffReportsController implements Initializable {
                         dailyItems.merge(saleDate, items, Integer::sum);
                     });
 
+            // Choose formatter based on period
+            DateTimeFormatter formatter;
+            if (selectedPeriod.contains("Month")) {
+                // For monthly view, show date number (1, 2, 3... 31)
+                formatter = DateTimeFormatter.ofPattern("d");
+            } else {
+                // For weekly view, show day name (Mon, Tue, Wed...)
+                formatter = DateTimeFormatter.ofPattern("EEE");
+            }
+
             // Add data to chart
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE");
             for (Map.Entry<LocalDate, Integer> entry : dailyItems.entrySet()) {
                 String dayLabel = entry.getKey().format(formatter);
                 series.getData().add(new XYChart.Data<>(dayLabel, entry.getValue()));
