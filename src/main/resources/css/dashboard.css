@@ -486,6 +486,7 @@
 
 /* KPI Cards */
 .kpi-card {
+    -fx-max-width: Infinity;
     -fx-background-color: white;
     -fx-background-radius: 12px;
     -fx-padding: 20px;
