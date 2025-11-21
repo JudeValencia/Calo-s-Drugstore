@@ -4,6 +4,7 @@ import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -369,6 +370,7 @@ public class InventoryController implements Initializable {
     private void showBulkAddDialog() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Bulk Add Medicines");
         dialogStage.setResizable(false);
@@ -835,6 +837,7 @@ public class InventoryController implements Initializable {
     private void showProductDialog(Product product) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(product == null ? "Add New Medicine" : "Edit Medicine");
         dialogStage.setResizable(false);
@@ -1101,6 +1104,7 @@ public class InventoryController implements Initializable {
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -1186,6 +1190,7 @@ public class InventoryController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -1264,6 +1269,7 @@ public class InventoryController implements Initializable {
     private boolean showDeleteConfirmation(String productName) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Delete Product");
         dialogStage.setResizable(false);

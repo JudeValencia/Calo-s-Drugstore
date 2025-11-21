@@ -3,6 +3,7 @@ package com.inventory.Calo.s_Drugstore.controller;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.DashboardService;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -259,6 +260,20 @@ public class DashboardController {
         loadInventoryDistributionChart();
     }
 
+    private void setActiveButton(Button activeButton) {
+        // Remove active class from all buttons
+        dashboardBtn.getStyleClass().remove("active");
+        inventoryBtn.getStyleClass().remove("active");
+        salesBtn.getStyleClass().remove("active");
+        reportsBtn.getStyleClass().remove("active");
+        staffBtn.getStyleClass().remove("active");
+
+        // Add active class to clicked button
+        if (!activeButton.getStyleClass().contains("active")) {
+            activeButton.getStyleClass().add("active");
+        }
+    }
+
     @FXML
     private void handleDashboard() {
         setActiveButton(dashboardBtn);
@@ -461,20 +476,6 @@ public class DashboardController {
             } catch (Exception e) {
                 showError("Error resetting password: " + e.getMessage());
             }
-        }
-    }
-
-    private void setActiveButton(Button activeButton) {
-        // Remove active class from all buttons
-        dashboardBtn.getStyleClass().remove("active");
-        inventoryBtn.getStyleClass().remove("active");
-        salesBtn.getStyleClass().remove("active");
-        reportsBtn.getStyleClass().remove("active");
-        staffBtn.getStyleClass().remove("active");
-
-        // Add active class to clicked button
-        if (!activeButton.getStyleClass().contains("active")) {
-            activeButton.getStyleClass().add("active");
         }
     }
 
@@ -715,6 +716,7 @@ public class DashboardController {
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -790,6 +792,7 @@ public class DashboardController {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);

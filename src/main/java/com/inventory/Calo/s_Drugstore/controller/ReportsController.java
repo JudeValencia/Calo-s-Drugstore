@@ -6,6 +6,7 @@ import com.inventory.Calo.s_Drugstore.entity.SaleItem;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
 import com.inventory.Calo.s_Drugstore.service.SalesService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -575,6 +576,7 @@ public class ReportsController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -724,6 +726,7 @@ public class ReportsController implements Initializable {
 
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);

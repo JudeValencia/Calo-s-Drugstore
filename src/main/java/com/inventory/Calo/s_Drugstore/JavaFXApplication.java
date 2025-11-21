@@ -1,5 +1,6 @@
 package com.inventory.Calo.s_Drugstore;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -29,8 +30,7 @@ public class JavaFXApplication extends Application {
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/css/login.css").toExternalForm());
 
-        Image icon = new Image(getClass().getResourceAsStream("/icons/pharmatrack-icon.png"));
-        primaryStage.getIcons().add(icon);
+        IconUtil.setApplicationIcon(primaryStage);
 
         primaryStage.setTitle("PharmaTrack - Calo's Drugstore");
         primaryStage.setScene(scene);

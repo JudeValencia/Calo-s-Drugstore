@@ -3,6 +3,7 @@ package com.inventory.Calo.s_Drugstore.controller;
 import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -340,6 +341,7 @@ public class StaffInventoryController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
