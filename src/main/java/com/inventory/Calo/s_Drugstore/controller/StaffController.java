@@ -86,6 +86,16 @@ public class StaffController implements Initializable {
     }
 
     private void setupStaffTable() {
+
+        // CRITICAL: Set fixed cell size to prevent cell recycling issues
+        staffTable.setFixedCellSize(70);
+
+        // Prevent table from losing items on scroll
+        //staffTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Ensure table maintains its items
+        staffTable.setEditable(true);
+
         staffIdColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getUsername()));
 
@@ -95,30 +105,38 @@ public class StaffController implements Initializable {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                if (empty) {
                     setGraphic(null);
-                } else {
-                    User user = getTableRow().getItem();
-                    HBox container = new HBox(10);
-                    container.setAlignment(Pos.CENTER_LEFT);
-
-                    StackPane avatar = new StackPane();
-                    avatar.setStyle(
-                            "-fx-background-color: #E0E0E0; " +
-                                    "-fx-background-radius: 25px; " +
-                                    "-fx-pref-width: 40px; " +
-                                    "-fx-pref-height: 40px;"
-                    );
-                    Label avatarIcon = new Label("👤");
-                    avatarIcon.setStyle("-fx-font-size: 20px;");
-                    avatar.getChildren().add(avatarIcon);
-
-                    Label nameLabel = new Label(user.getFullName());
-                    nameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-
-                    container.getChildren().addAll(avatar, nameLabel);
-                    setGraphic(container);
+                    setText(null);
+                    return;
                 }
+
+                User user = getTableRow() != null ? getTableRow().getItem() : null;
+                if (user == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+
+                HBox container = new HBox(10);
+                container.setAlignment(Pos.CENTER_LEFT);
+
+                StackPane avatar = new StackPane();
+                avatar.setStyle(
+                        "-fx-background-color: #E0E0E0; " +
+                                "-fx-background-radius: 25px; " +
+                                "-fx-pref-width: 40px; " +
+                                "-fx-pref-height: 40px;"
+                );
+                Label avatarIcon = new Label("👤");
+                avatarIcon.setStyle("-fx-font-size: 20px;");
+                avatar.getChildren().add(avatarIcon);
+
+                Label nameLabel = new Label(user.getFullName());
+                nameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+
+                container.getChildren().addAll(avatar, nameLabel);
+                setGraphic(container);
             }
         });
 
@@ -126,29 +144,37 @@ public class StaffController implements Initializable {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                if (empty) {
                     setGraphic(null);
-                } else {
-                    User user = getTableRow().getItem();
-                    VBox container = new VBox(3);
-
-                    HBox emailBox = new HBox(5);
-                    emailBox.setAlignment(Pos.CENTER_LEFT);
-                    Label emailIcon = new Label("✉");
-                    Label emailLabel = new Label(user.getEmail());
-                    emailLabel.setStyle("-fx-font-size: 13px;");
-                    emailBox.getChildren().addAll(emailIcon, emailLabel);
-
-                    HBox usernameBox = new HBox(5);
-                    usernameBox.setAlignment(Pos.CENTER_LEFT);
-                    Label usernameIcon = new Label("👤");
-                    Label usernameLabel = new Label("@" + user.getUsername());
-                    usernameLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
-                    usernameBox.getChildren().addAll(usernameIcon, usernameLabel);
-
-                    container.getChildren().addAll(emailBox, usernameBox);
-                    setGraphic(container);
+                    setText(null);
+                    return;
                 }
+
+                User user = getTableRow() != null ? getTableRow().getItem() : null;
+                if (user == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+
+                VBox container = new VBox(3);
+
+                HBox emailBox = new HBox(5);
+                emailBox.setAlignment(Pos.CENTER_LEFT);
+                Label emailIcon = new Label("✉");
+                Label emailLabel = new Label(user.getEmail());
+                emailLabel.setStyle("-fx-font-size: 13px;");
+                emailBox.getChildren().addAll(emailIcon, emailLabel);
+
+                HBox usernameBox = new HBox(5);
+                usernameBox.setAlignment(Pos.CENTER_LEFT);
+                Label usernameIcon = new Label("👤");
+                Label usernameLabel = new Label("@" + user.getUsername());
+                usernameLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+                usernameBox.getChildren().addAll(usernameIcon, usernameLabel);
+
+                container.getChildren().addAll(emailBox, usernameBox);
+                setGraphic(container);
             }
         });
         contactColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
@@ -157,44 +183,52 @@ public class StaffController implements Initializable {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                if (empty) {
                     setGraphic(null);
-                } else {
-                    User user = getTableRow().getItem();
-                    HBox container = new HBox();
-                    container.setAlignment(Pos.CENTER_LEFT);
-
-                    Label roleBadge = new Label();
-                    boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
-
-                    if (isAdmin) {
-                        roleBadge.setText("🛡 Admin");
-                        roleBadge.setStyle(
-                                "-fx-background-color: #1a1a1a; " +
-                                        "-fx-text-fill: white; " +
-                                        "-fx-padding: 6px 12px; " +
-                                        "-fx-background-radius: 6px; " +
-                                        "-fx-font-size: 13px; " +
-                                        "-fx-font-weight: 600;"
-                        );
-                    } else {
-                        roleBadge.setText("👤 Staff");
-                        roleBadge.setStyle(
-                                "-fx-background-color: white; " +
-                                        "-fx-text-fill: #2c3e50; " +
-                                        "-fx-padding: 6px 12px; " +
-                                        "-fx-background-radius: 6px; " +
-                                        "-fx-border-color: #E0E0E0; " +
-                                        "-fx-border-width: 1.5px; " +
-                                        "-fx-border-radius: 6px; " +
-                                        "-fx-font-size: 13px; " +
-                                        "-fx-font-weight: 600;"
-                        );
-                    }
-
-                    container.getChildren().add(roleBadge);
-                    setGraphic(container);
+                    setText(null);
+                    return;
                 }
+
+                User user = getTableRow() != null ? getTableRow().getItem() : null;
+                if (user == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+
+                HBox container = new HBox();
+                container.setAlignment(Pos.CENTER_LEFT);
+
+                Label roleBadge = new Label();
+                boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
+
+                if (isAdmin) {
+                    roleBadge.setText("🛡 Admin");
+                    roleBadge.setStyle(
+                            "-fx-background-color: #1a1a1a; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-padding: 6px 12px; " +
+                                    "-fx-background-radius: 6px; " +
+                                    "-fx-font-size: 13px; " +
+                                    "-fx-font-weight: 600;"
+                    );
+                } else {
+                    roleBadge.setText("👤 Staff");
+                    roleBadge.setStyle(
+                            "-fx-background-color: white; " +
+                                    "-fx-text-fill: #2c3e50; " +
+                                    "-fx-padding: 6px 12px; " +
+                                    "-fx-background-radius: 6px; " +
+                                    "-fx-border-color: #E0E0E0; " +
+                                    "-fx-border-width: 1.5px; " +
+                                    "-fx-border-radius: 6px; " +
+                                    "-fx-font-size: 13px; " +
+                                    "-fx-font-weight: 600;"
+                    );
+                }
+
+                container.getChildren().add(roleBadge);
+                setGraphic(container);
             }
         });
         roleColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
@@ -203,36 +237,44 @@ public class StaffController implements Initializable {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                if (empty) {
                     setGraphic(null);
-                } else {
-                    User user = getTableRow().getItem();
-                    Label statusBadge = new Label();
-
-                    if (user.isActive()) {
-                        statusBadge.setText("Active");
-                        statusBadge.setStyle(
-                                "-fx-background-color: #4CAF50; " +
-                                        "-fx-text-fill: white; " +
-                                        "-fx-padding: 6px 16px; " +
-                                        "-fx-background-radius: 6px; " +
-                                        "-fx-font-size: 13px; " +
-                                        "-fx-font-weight: 600;"
-                        );
-                    } else {
-                        statusBadge.setText("Inactive");
-                        statusBadge.setStyle(
-                                "-fx-background-color: #E0E0E0; " +
-                                        "-fx-text-fill: #7f8c8d; " +
-                                        "-fx-padding: 6px 16px; " +
-                                        "-fx-background-radius: 6px; " +
-                                        "-fx-font-size: 13px; " +
-                                        "-fx-font-weight: 600;"
-                        );
-                    }
-
-                    setGraphic(statusBadge);
+                    setText(null);
+                    return;
                 }
+
+                User user = getTableRow() != null ? getTableRow().getItem() : null;
+                if (user == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+
+                Label statusBadge = new Label();
+
+                if (user.isActive()) {
+                    statusBadge.setText("Active");
+                    statusBadge.setStyle(
+                            "-fx-background-color: #4CAF50; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-padding: 6px 16px; " +
+                                    "-fx-background-radius: 6px; " +
+                                    "-fx-font-size: 13px; " +
+                                    "-fx-font-weight: 600;"
+                    );
+                } else {
+                    statusBadge.setText("Inactive");
+                    statusBadge.setStyle(
+                            "-fx-background-color: #E0E0E0; " +
+                                    "-fx-text-fill: #7f8c8d; " +
+                                    "-fx-padding: 6px 16px; " +
+                                    "-fx-background-radius: 6px; " +
+                                    "-fx-font-size: 13px; " +
+                                    "-fx-font-weight: 600;"
+                    );
+                }
+
+                setGraphic(statusBadge);
             }
         });
         statusColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
@@ -248,82 +290,86 @@ public class StaffController implements Initializable {
                 super.updateItem(item, empty);
                 if (empty) {
                     setGraphic(null);
-                } else {
-                    User user = getTableRow().getItem();
-                    if (user == null) return;
+                    return;
+                }
 
-                    HBox buttons = new HBox(10);
-                    buttons.setAlignment(Pos.CENTER_LEFT);
+                User user = getTableRow() != null ? getTableRow().getItem() : null;
+                if (user == null) {
+                    setGraphic(null);
+                    return;
+                }
 
-                    // Edit button
-                    Button editBtn = new Button("🔧");
-                    editBtn.setStyle(
+                HBox buttons = new HBox(10);
+                buttons.setAlignment(Pos.CENTER_LEFT);
+
+                // Edit button
+                Button editBtn = new Button("🔧");
+                editBtn.setStyle(
+                        "-fx-background-color: white; " +
+                                "-fx-text-fill: #2c3e50; " +
+                                "-fx-font-size: 20px; " +
+                                "-fx-min-width: 40px; " +
+                                "-fx-min-height: 40px; " +
+                                "-fx-background-radius: 6px; " +
+                                "-fx-border-color: #E0E0E0; " +
+                                "-fx-border-width: 1.5px; " +
+                                "-fx-border-radius: 6px; " +
+                                "-fx-cursor: hand;"
+                );
+                editBtn.setOnAction(e -> handleEditStaff(user));
+
+                // Activate/Deactivate button
+                Button toggleBtn = new Button(user.isActive() ? "Deactivate" : "Activate");
+                if (user.isActive()) {
+                    toggleBtn.setStyle(
                             "-fx-background-color: white; " +
-                                    "-fx-text-fill: #2c3e50; " +
-                                    "-fx-font-size: 20px; " +
-                                    "-fx-min-width: 40px; " +
-                                    "-fx-min-height: 40px; " +
+                                    "-fx-text-fill: #F44336; " +
+                                    "-fx-font-size: 14px; " +
+                                    "-fx-padding: 8px 16px; " +
                                     "-fx-background-radius: 6px; " +
-                                    "-fx-border-color: #E0E0E0; " +
+                                    "-fx-border-color: #FFCDD2; " +
                                     "-fx-border-width: 1.5px; " +
                                     "-fx-border-radius: 6px; " +
                                     "-fx-cursor: hand;"
                     );
-                    editBtn.setOnAction(e -> handleEditStaff(user));
-
-                    // Activate/Deactivate button
-                    Button toggleBtn = new Button(user.isActive() ? "Deactivate" : "Activate");
-                    if (user.isActive()) {
-                        toggleBtn.setStyle(
-                                "-fx-background-color: white; " +
-                                        "-fx-text-fill: #F44336; " +
-                                        "-fx-font-size: 14px; " +
-                                        "-fx-padding: 8px 16px; " +
-                                        "-fx-background-radius: 6px; " +
-                                        "-fx-border-color: #FFCDD2; " +
-                                        "-fx-border-width: 1.5px; " +
-                                        "-fx-border-radius: 6px; " +
-                                        "-fx-cursor: hand;"
-                        );
-                    } else {
-                        toggleBtn.setStyle(
-                                "-fx-background-color: white; " +
-                                        "-fx-text-fill: #4CAF50; " +
-                                        "-fx-font-size: 14px; " +
-                                        "-fx-padding: 8px 16px; " +
-                                        "-fx-background-radius: 6px; " +
-                                        "-fx-border-color: #C8E6C9; " +
-                                        "-fx-border-width: 1.5px; " +
-                                        "-fx-border-radius: 6px; " +
-                                        "-fx-cursor: hand;"
-                        );
-                    }
-                    toggleBtn.setOnAction(e -> handleToggleStatus(user));
-
-                    buttons.getChildren().addAll(editBtn, toggleBtn);
-
-                    // Only show delete button for non-admin users or if current user is different
-                    if (!"ADMIN".equalsIgnoreCase(user.getRole()) ||
-                            (currentUser != null && !currentUser.getId().equals(user.getId()))) {
-                        Button deleteBtn = new Button("🗑");
-                        deleteBtn.setStyle(
-                                "-fx-background-color: white; " +
-                                        "-fx-text-fill: #F44336; " +
-                                        "-fx-font-size: 20px; " +
-                                        "-fx-min-width: 40px; " +
-                                        "-fx-min-height: 40px; " +
-                                        "-fx-background-radius: 6px; " +
-                                        "-fx-border-color: #FFCDD2; " +
-                                        "-fx-border-width: 1.5px; " +
-                                        "-fx-border-radius: 6px; " +
-                                        "-fx-cursor: hand;"
-                        );
-                        deleteBtn.setOnAction(e -> handleDeleteStaff(user));
-                        buttons.getChildren().add(deleteBtn);
-                    }
-
-                    setGraphic(buttons);
+                } else {
+                    toggleBtn.setStyle(
+                            "-fx-background-color: white; " +
+                                    "-fx-text-fill: #4CAF50; " +
+                                    "-fx-font-size: 14px; " +
+                                    "-fx-padding: 8px 16px; " +
+                                    "-fx-background-radius: 6px; " +
+                                    "-fx-border-color: #C8E6C9; " +
+                                    "-fx-border-width: 1.5px; " +
+                                    "-fx-border-radius: 6px; " +
+                                    "-fx-cursor: hand;"
+                    );
                 }
+                toggleBtn.setOnAction(e -> handleToggleStatus(user));
+
+                buttons.getChildren().addAll(editBtn, toggleBtn);
+
+                // Only show delete button for non-admin users or if current user is different
+                if (!"ADMIN".equalsIgnoreCase(user.getRole()) ||
+                        (currentUser != null && !currentUser.getId().equals(user.getId()))) {
+                    Button deleteBtn = new Button("🗑");
+                    deleteBtn.setStyle(
+                            "-fx-background-color: white; " +
+                                    "-fx-text-fill: #F44336; " +
+                                    "-fx-font-size: 20px; " +
+                                    "-fx-min-width: 40px; " +
+                                    "-fx-min-height: 40px; " +
+                                    "-fx-background-radius: 6px; " +
+                                    "-fx-border-color: #FFCDD2; " +
+                                    "-fx-border-width: 1.5px; " +
+                                    "-fx-border-radius: 6px; " +
+                                    "-fx-cursor: hand;"
+                    );
+                    deleteBtn.setOnAction(e -> handleDeleteStaff(user));
+                    buttons.getChildren().add(deleteBtn);
+                }
+
+                setGraphic(buttons);
             }
         });
     }
