@@ -48,7 +48,7 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item,active"
+                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item"
                         onAction="#handleSales">
                     <graphic>
                         <Label text="🛒" styleClass="menu-icon"/>
@@ -62,7 +62,7 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item,active"
+                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item"
                         onAction="#handleStaff">
                     <graphic>
                         <Label text="👥" styleClass="menu-icon"/>

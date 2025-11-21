@@ -21,9 +21,13 @@
 .sidebar-separator { -fx-background-color: #E0E0E0; }
 .sidebar-menu { -fx-background-color: transparent; }
 .menu-item { -fx-background-color: transparent; -fx-text-fill: #2c3e50; -fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 12px 15px; -fx-alignment: CENTER_LEFT; -fx-background-radius: 8px; -fx-graphic-text-gap: 12px; }
-.menu-item:hover { -fx-background-color: rgba(76, 175, 80, 0.1); }
-.menu-item.active { -fx-background-color: #4CAF50; -fx-text-fill: white; }
 .menu-icon { -fx-font-size: 18px; }
+.menu-item.active { -fx-background-color: #4CAF50; -fx-text-fill: white; }
+.menu-item.active .menu-icon {
+    -fx-text-fill: white;
+}
+.menu-item:hover { -fx-background-color: rgba(76, 175, 80, 0.1); }
+.menu-item.active:hover { -fx-background-color: #4CAF50; }
 .sidebar-user { -fx-background-color: #F8F9FA; -fx-background-radius: 10px; }
 .user-avatar { -fx-background-color: #E0E0E0; -fx-background-radius: 25px; -fx-pref-width: 50px; -fx-pref-height: 50px; }
 .user-avatar-icon { -fx-font-size: 24px; }

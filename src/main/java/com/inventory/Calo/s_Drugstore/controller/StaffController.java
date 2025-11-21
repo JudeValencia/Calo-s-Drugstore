@@ -579,31 +579,38 @@ public class StaffController implements Initializable {
         reportsBtn.getStyleClass().remove("active");
         staffBtn.getStyleClass().remove("active");
 
-        activeButton.getStyleClass().add("active");
+        if (!activeButton.getStyleClass().contains("active")) {
+            activeButton.getStyleClass().add("active");
+        }
     }
 
     @FXML
     private void handleDashboard() {
+        setActiveButton(dashboardBtn);
         navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
     }
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
     @FXML
     private void handleSales() {
+        setActiveButton(salesBtn);
         navigateToPage("/fxml/sales.fxml", "/css/sales.css");
     }
 
     @FXML
     private void handleReports() {
+        setActiveButton(reportsBtn);
         navigateToPage("/fxml/reports.fxml", "/css/reports.css");
     }
 
     @FXML
     private void handleStaff() {
+        setActiveButton(staffBtn);
         // Already on staff page
     }
 

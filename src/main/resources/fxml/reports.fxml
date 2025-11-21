@@ -45,7 +45,7 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item,active"
+                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item"
                         onAction="#handleInventory">
                     <graphic>
                         <Label text="📦" styleClass="menu-icon"/>
@@ -66,7 +66,7 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item,active"
+                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item"
                         onAction="#handleStaff">
                     <graphic>
                         <Label text="👥" styleClass="menu-icon"/>
@@ -204,7 +204,7 @@
                                         <Label text="Low Stock Items" styleClass="kpi-title"/>
                                         <Label fx:id="lowStockItemsLabel" text="8" styleClass="kpi-value"/>
                                     </VBox>
-                                    <Label text="⚠️" style="-fx-font-size: 32px;"/>
+                                    <Label text="⚠" style="-fx-font-size: 32px;"/>
                                 </HBox>
                             </VBox>
                         </VBox>
@@ -214,7 +214,7 @@
                     <!-- Expiring Medicines Alert -->
                     <VBox styleClass="filter-card">
                         <HBox alignment="CENTER_LEFT" spacing="15">
-                            <Label text="⚠️" style="-fx-font-size: 24px;"/>
+                            <Label text="⚠" style="-fx-font-size: 24px;"/>
                             <VBox>
                                 <Label text="Expiring Medicines Alert" styleClass="card-title"/>
                                 <Label text="Medicines expiring within 30 days or already expired" styleClass="card-subtitle"/>

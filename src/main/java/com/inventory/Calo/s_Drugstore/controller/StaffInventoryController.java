@@ -180,7 +180,7 @@ public class StaffInventoryController implements Initializable {
                     );
 
                     if (daysUntilExpiry <= 30) {
-                        Label dateLabel = new Label(item + " ⚠️");
+                        Label dateLabel = new Label(item + "⚠");
                         dateLabel.setStyle("-fx-text-fill: #d32f2f; -fx-font-weight: bold;");
                         setGraphic(dateLabel);
                         setText(null);

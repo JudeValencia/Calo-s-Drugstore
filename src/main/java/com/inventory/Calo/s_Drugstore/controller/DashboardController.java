@@ -464,7 +464,7 @@ public class DashboardController {
         }
     }
 
-    private void setActiveButton(Button button) {
+    private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
         inventoryBtn.getStyleClass().remove("active");
@@ -473,8 +473,8 @@ public class DashboardController {
         staffBtn.getStyleClass().remove("active");
 
         // Add active class to clicked button
-        if (!button.getStyleClass().contains("active")) {
-            button.getStyleClass().add("active");
+        if (!activeButton.getStyleClass().contains("active")) {
+            activeButton.getStyleClass().add("active");
         }
     }
 

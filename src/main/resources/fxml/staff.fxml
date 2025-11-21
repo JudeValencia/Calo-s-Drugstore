@@ -62,7 +62,7 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item,active"
+                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item"
                         onAction="#handleStaff">
                     <graphic>
                         <Label text="👥" styleClass="menu-icon"/>

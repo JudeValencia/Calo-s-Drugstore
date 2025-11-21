@@ -253,7 +253,7 @@ public class ReportsController implements Initializable {
         }
     }
 
-    private void setActiveButton(Button activeBtn) {
+    private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
         inventoryBtn.getStyleClass().remove("active");
@@ -262,8 +262,8 @@ public class ReportsController implements Initializable {
         staffBtn.getStyleClass().remove("active");
 
         // Add active class to the clicked button
-        if (activeBtn != null) {
-            activeBtn.getStyleClass().add("active");
+        if (!activeButton.getStyleClass().contains("active")) {
+            activeButton.getStyleClass().add("active");
         }
     }
 
@@ -531,21 +531,25 @@ public class ReportsController implements Initializable {
     // Navigation methods
     @FXML
     private void handleDashboard() {
+        setActiveButton(dashboardBtn);
         navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
     }
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
     @FXML
     private void handleSales() {
+        setActiveButton(salesBtn);
         navigateToPage("/fxml/sales.fxml", "/css/sales.css");
     }
 
     @FXML
     private void handleReports() {
+        setActiveButton(reportsBtn);
         // Already on reports page
     }
 
