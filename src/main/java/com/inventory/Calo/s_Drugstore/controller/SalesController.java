@@ -105,7 +105,7 @@ public class SalesController implements Initializable {
     public void setCurrentUser(User user) {
         this.currentUser = user;
         if (user != null) {
-            // Set user name (both admin and staff views have this)
+            // Set username (both admin and staff views have this)
             if (userNameLabel != null) {
                 userNameLabel.setText(user.getFullName());
             }
@@ -490,73 +490,86 @@ public class SalesController implements Initializable {
         bulkTable.setPlaceholder(new Label("No medicines added yet. Search and add items above."));
 
         bulkTable.setFixedCellSize(50);
+        bulkTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
 
         TableColumn<BulkAddItem, String> medicineCol = new TableColumn<>("Medicine");
-        medicineCol.setPrefWidth(220);
+        medicineCol.setMinWidth(220);
+        medicineCol.setMaxWidth(220);
         medicineCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getProduct() != null ?
                         data.getValue().getProduct().getName() : ""));
 
         TableColumn<BulkAddItem, Integer> quantityCol = new TableColumn<>("Quantity");
-        quantityCol.setPrefWidth(100);
+        quantityCol.setMinWidth(150);
+        quantityCol.setMaxWidth(150);
         quantityCol.setCellValueFactory(data ->
                 new javafx.beans.property.SimpleIntegerProperty(data.getValue().getQuantity()).asObject());
-        quantityCol.setCellFactory(column -> new TableCell<>() {
-            private final HBox controls = new HBox(8);
-            private final Button minusBtn = new Button("−");
-            private final Label qtyLabel = new Label();
-            private final Button plusBtn = new Button("+");
-
-            {
-                controls.setAlignment(Pos.CENTER);
-
-                String btnStyle =
-                        "-fx-background-color: white; " +
-                                "-fx-border-color: #E0E0E0; " +
-                                "-fx-border-width: 1.5px; " +
-                                "-fx-border-radius: 6px; " +
-                                "-fx-background-radius: 6px; " +
-                                "-fx-min-width: 32px; " +
-                                "-fx-min-height: 32px; " +
-                                "-fx-font-size: 16px; " +
-                                "-fx-font-weight: bold; " +
-                                "-fx-cursor: hand;";
-
-                minusBtn.setStyle(btnStyle);
-                plusBtn.setStyle(btnStyle);
-
-                // Add hover effects
-                minusBtn.setOnMouseEntered(e -> minusBtn.setStyle(
-                        btnStyle.replace("white", "#F8F9FA")
-                ));
-                minusBtn.setOnMouseExited(e -> minusBtn.setStyle(btnStyle));
-
-                plusBtn.setOnMouseEntered(e -> plusBtn.setStyle(
-                        btnStyle.replace("white", "#F8F9FA")
-                ));
-                plusBtn.setOnMouseExited(e -> plusBtn.setStyle(btnStyle));
-            }
+        quantityCol.setCellFactory(column -> new TableCell<BulkAddItem, Integer>() {
+            private HBox controls;
+            private Button minusBtn;
+            private Label qtyLabel;
+            private Button plusBtn;
 
             @Override
             protected void updateItem(Integer item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+
+                BulkAddItem bulkItem = getTableRow() != null ? getTableRow().getItem() : null;
+
+                if (empty || bulkItem == null) {
                     setGraphic(null);
+                    setText(null);
                 } else {
-                    BulkAddItem bulkItem = getTableRow().getItem();
+                    if (controls == null) {
+                        controls = new HBox(6);  // Reduced spacing
+                        controls.setAlignment(Pos.CENTER);
+
+                        minusBtn = new Button("−");
+                        qtyLabel = new Label();
+                        plusBtn = new Button("+");
+
+                        // Apply CSS classes
+                        minusBtn.getStyleClass().add("qty-btn");
+                        plusBtn.getStyleClass().add("qty-btn");
+                        qtyLabel.getStyleClass().add("qty-label");
+
+                        // Override sizes inline (smaller)
+                        String compactBtnStyle =
+                                "-fx-min-width: 28px; " +
+                                        "-fx-min-height: 28px; " +
+                                        "-fx-max-width: 28px; " +
+                                        "-fx-max-height: 28px; " +
+                                        "-fx-font-size: 14px; " +
+                                        "-fx-padding: 0;";
+
+                        minusBtn.setStyle(compactBtnStyle);
+                        plusBtn.setStyle(compactBtnStyle);
+
+                        qtyLabel.setStyle(
+                                "-fx-font-size: 14px; " +
+                                        "-fx-min-width: 35px; " +
+                                        "-fx-alignment: CENTER;"
+                        );
+
+                        controls.getChildren().addAll(minusBtn, qtyLabel, plusBtn);
+                    }
+
                     qtyLabel.setText(String.valueOf(bulkItem.getQuantity()));
 
                     minusBtn.setOnAction(e -> {
                         if (bulkItem.getQuantity() > 1) {
                             bulkItem.setQuantity(bulkItem.getQuantity() - 1);
-                            bulkTable.refresh();
+                            qtyLabel.setText(String.valueOf(bulkItem.getQuantity()));
+                            getTableView().refresh();
                         }
                     });
 
                     plusBtn.setOnAction(e -> {
-                        if (bulkItem.getQuantity() < bulkItem.getProduct().getStock()) {
+                        Product product = bulkItem.getProduct();
+                        if (product != null && bulkItem.getQuantity() < product.getStock()) {
                             bulkItem.setQuantity(bulkItem.getQuantity() + 1);
-                            bulkTable.refresh();
+                            qtyLabel.setText(String.valueOf(bulkItem.getQuantity()));
+                            getTableView().refresh();
                         }
                     });
 
@@ -564,21 +577,23 @@ public class SalesController implements Initializable {
                 }
             }
         });
-
         TableColumn<BulkAddItem, String> stockCol = new TableColumn<>("Available");
-        stockCol.setPrefWidth(100);
+        stockCol.setMinWidth(100);
+        stockCol.setMaxWidth(100);
         stockCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getProduct() != null ?
                         String.valueOf(data.getValue().getProduct().getStock()) : ""));
 
         TableColumn<BulkAddItem, String> priceCol = new TableColumn<>("Unit Price");
-        priceCol.setPrefWidth(100);
+        priceCol.setMinWidth(120);
+        priceCol.setMaxWidth(120);
         priceCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getProduct() != null ?
                         "₱" + String.format("%.2f", data.getValue().getProduct().getPrice()) : ""));
 
         TableColumn<BulkAddItem, String> subtotalCol = new TableColumn<>("Subtotal");
-        subtotalCol.setPrefWidth(120);
+        subtotalCol.setMinWidth(120);
+        subtotalCol.setMaxWidth(120);
         subtotalCol.setCellValueFactory(data -> {
             BulkAddItem item = data.getValue();
             if (item.getProduct() != null) {
@@ -590,7 +605,9 @@ public class SalesController implements Initializable {
         });
 
         TableColumn<BulkAddItem, Void> actionCol = new TableColumn<>("Action");
-        actionCol.setPrefWidth(120);
+        actionCol.setMinWidth(140);
+        actionCol.setMaxWidth(140);
+
         actionCol.setCellFactory(column -> new TableCell<>() {
             private final Button removeBtn = new Button("✕ Remove");
             {
@@ -903,8 +920,28 @@ public class SalesController implements Initializable {
         showStyledAlert(Alert.AlertType.INFORMATION, "Download", "Download receipt for " + sale.getTransactionId());
     }
 
-    // Navigation methods
-    private void setActiveButton(Button activeBtn) {
+//    // Navigation methods
+//    private void setActiveButton(Button activeBtn) {
+//        // Remove active class from all buttons
+//        dashboardBtn.getStyleClass().remove("active");
+//        inventoryBtn.getStyleClass().remove("active");
+//        salesBtn.getStyleClass().remove("active");
+//        reportsBtn.getStyleClass().remove("active");
+//
+//        // Only remove active from staffBtn if it exists (admin view has it, staff view doesn't)
+//        if (staffBtn != null) {
+//            staffBtn.getStyleClass().remove("active");
+//        }
+//
+//        // Add active class to the clicked button
+//        if (activeBtn != null) {
+//            activeBtn.getStyleClass().add("active");
+//        }
+//    }
+
+    // Replace the setActiveButton method in all controllers with this version:
+
+    private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
         inventoryBtn.getStyleClass().remove("active");
@@ -917,9 +954,24 @@ public class SalesController implements Initializable {
         }
 
         // Add active class to the clicked button
-        if (activeBtn != null) {
-            activeBtn.getStyleClass().add("active");
+        if (activeButton != null) {
+            activeButton.getStyleClass().add("active");
         }
+
+        // Force JavaFX to refresh the buttons and their graphics
+        Platform.runLater(() -> {
+            dashboardBtn.requestLayout();
+            inventoryBtn.requestLayout();
+            salesBtn.requestLayout();
+            reportsBtn.requestLayout();
+            staffBtn.requestLayout();
+
+            // Specifically refresh the dashboard button's graphic
+            if (dashboardBtn.getGraphic() != null) {
+                dashboardBtn.getGraphic().setVisible(false);
+                dashboardBtn.getGraphic().setVisible(true);
+            }
+        });
     }
 
     @FXML
