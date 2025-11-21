@@ -34,40 +34,21 @@
                     <Insets top="10" right="10" bottom="10" left="10"/>
                 </padding>
 
-                <Button fx:id="dashboardBtn" text="Dashboard" styleClass="menu-item"
-                        onAction="#handleDashboard">
-                    <graphic>
-                        <Label text="📊" styleClass="menu-icon"/>
-                    </graphic>
-                </Button>
+                <Button fx:id="dashboardBtn" text="📊  Dashboard" styleClass="menu-item"
+                        onAction="#handleDashboard"/>
 
-                <Button fx:id="inventoryBtn" text="Inventory" styleClass="menu-item"
-                        onAction="#handleInventory">
-                    <graphic>
-                        <Label text="📦" styleClass="menu-icon"/>
-                    </graphic>
-                </Button>
+                <!-- Do the same for all buttons: -->
+                <Button fx:id="inventoryBtn" text="📦  Inventory" styleClass="menu-item"
+                        onAction="#handleInventory"/>
 
-                <Button fx:id="salesBtn" text="Sales" styleClass="menu-item"
-                        onAction="#handleSales">
-                    <graphic>
-                        <Label text="🛒" styleClass="menu-icon"/>
-                    </graphic>
-                </Button>
+                <Button fx:id="salesBtn" text="🛒  Sales" styleClass="menu-item"
+                        onAction="#handleSales"/>
 
-                <Button fx:id="reportsBtn" text="Reports" styleClass="menu-item"
-                        onAction="#handleReports">
-                    <graphic>
-                        <Label text="📈" styleClass="menu-icon"/>
-                    </graphic>
-                </Button>
+                <Button fx:id="reportsBtn" text="📈  Reports" styleClass="menu-item"
+                        onAction="#handleReports"/>
 
-                <Button fx:id="staffBtn" text="Staff" styleClass="menu-item,active"
-                        onAction="#handleStaff">
-                    <graphic>
-                        <Label text="👥" styleClass="menu-icon"/>
-                    </graphic>
-                </Button>
+                <Button fx:id="staffBtn" text="👥  Staff" styleClass="menu-item"
+                        onAction="#handleStaff"/>
             </VBox>
 
             <Separator styleClass="sidebar-separator"/>
