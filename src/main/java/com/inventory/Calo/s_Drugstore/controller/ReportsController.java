@@ -6,6 +6,7 @@ import com.inventory.Calo.s_Drugstore.entity.SaleItem;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
 import com.inventory.Calo.s_Drugstore.service.SalesService;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -253,7 +254,7 @@ public class ReportsController implements Initializable {
         }
     }
 
-    private void setActiveButton(Button activeBtn) {
+    private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
         inventoryBtn.getStyleClass().remove("active");
@@ -261,10 +262,23 @@ public class ReportsController implements Initializable {
         reportsBtn.getStyleClass().remove("active");
         staffBtn.getStyleClass().remove("active");
 
-        // Add active class to the clicked button
-        if (activeBtn != null) {
-            activeBtn.getStyleClass().add("active");
-        }
+        // Add active class to the selected button
+        activeButton.getStyleClass().add("active");
+
+        // Force JavaFX to refresh the buttons and their graphics
+        Platform.runLater(() -> {
+            dashboardBtn.requestLayout();
+            inventoryBtn.requestLayout();
+            salesBtn.requestLayout();
+            reportsBtn.requestLayout();
+            staffBtn.requestLayout();
+
+            // Specifically refresh the dashboard button's graphic
+            if (dashboardBtn.getGraphic() != null) {
+                dashboardBtn.getGraphic().setVisible(false);
+                dashboardBtn.getGraphic().setVisible(true);
+            }
+        });
     }
 
     private void loadDashboardData() {

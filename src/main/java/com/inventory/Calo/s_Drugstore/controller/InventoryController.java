@@ -1340,14 +1340,33 @@ public class InventoryController implements Initializable {
     }
 
     // Navigation methods
+    // Replace the setActiveButton method in all controllers with this version:
+
     private void setActiveButton(Button activeButton) {
+        // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
         inventoryBtn.getStyleClass().remove("active");
         salesBtn.getStyleClass().remove("active");
         reportsBtn.getStyleClass().remove("active");
         staffBtn.getStyleClass().remove("active");
 
+        // Add active class to the selected button
         activeButton.getStyleClass().add("active");
+
+        // Force JavaFX to refresh the buttons and their graphics
+        Platform.runLater(() -> {
+            dashboardBtn.requestLayout();
+            inventoryBtn.requestLayout();
+            salesBtn.requestLayout();
+            reportsBtn.requestLayout();
+            staffBtn.requestLayout();
+
+            // Specifically refresh the dashboard button's graphic
+            if (dashboardBtn.getGraphic() != null) {
+                dashboardBtn.getGraphic().setVisible(false);
+                dashboardBtn.getGraphic().setVisible(true);
+            }
+        });
     }
 
     @FXML

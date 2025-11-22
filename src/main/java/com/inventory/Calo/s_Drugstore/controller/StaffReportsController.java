@@ -1,7 +1,6 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
 import com.inventory.Calo.s_Drugstore.entity.Sale;
-import com.inventory.Calo.s_Drugstore.entity.SaleItem;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.SalesService;
 import javafx.beans.property.SimpleStringProperty;

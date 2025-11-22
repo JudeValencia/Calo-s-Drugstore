@@ -422,33 +422,151 @@ public class StaffInventoryController implements Initializable {
 
     private void performLogout() {
         try {
+            // Load login page
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
             loader.setControllerFactory(springContext::getBean);
             Parent root = loader.load();
 
-            Stage stage = (Stage) logoutBtn.getScene().getWindow();
+            Stage stage = (Stage) dashboardBtn.getScene().getWindow();
+            Scene currentScene = stage.getScene();
+
+            // Create new scene
             Scene newScene = new Scene(root);
 
+            // Try to load CSS if it exists (handle null gracefully)
             try {
                 java.net.URL cssUrl = getClass().getResource("/css/styles.css");
                 if (cssUrl != null) {
                     newScene.getStylesheets().add(cssUrl.toExternalForm());
+                } else {
+                    // Try alternative CSS paths
+                    cssUrl = getClass().getResource("/css/login.css");
+                    if (cssUrl != null) {
+                        newScene.getStylesheets().add(cssUrl.toExternalForm());
+                    }
                 }
             } catch (Exception cssEx) {
-                System.err.println("Warning: Could not load CSS for login page");
+                // CSS loading failed, continue without it
+                System.err.println("Warning: Could not load CSS for login page: " + cssEx.getMessage());
             }
 
-            this.currentUser = null;
-            stage.setScene(newScene);
-            stage.setWidth(800);
-            stage.setHeight(600);
-            stage.centerOnScreen();
-            stage.setMaximized(false);
+            // Set initial opacity to 0 for fade-in effect
+            root.setOpacity(0);
+
+            // Create fade-out animation for current scene
+            javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(30),
+                    currentScene.getRoot()
+            );
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+
+            fadeOut.setOnFinished(e -> {
+                // Clear current user
+                this.currentUser = null;
+
+                // Switch to login scene
+                stage.setScene(newScene);
+
+                // Reset window size to login page size
+                stage.setWidth(800);
+                stage.setHeight(600);
+                stage.centerOnScreen();
+                stage.setMaximized(false);
+
+                // Create fade-in animation for login scene
+                javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                        javafx.util.Duration.millis(30),
+                        root
+                );
+                fadeIn.setFromValue(0.0);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+            });
+
+            fadeOut.play();
 
         } catch (Exception e) {
             e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to logout: " + e.getMessage());
         }
     }
+
+    private void showStyledAlert(Alert.AlertType type, String title, String message) {
+        // Create custom dialog
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle(title);
+        dialogStage.setResizable(false);
+
+        // Main container
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(500);
+
+        // Title
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        titleLabel.setWrapText(true);
+
+        // Message
+        Label messageLabel = new Label(message);
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-line-spacing: 3px;");
+
+        // Button
+        HBox buttonBox = new HBox();
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button okButton = new Button("OK");
+
+        // Button color based on alert type
+        String buttonColor = "#4CAF50"; // Success - Green
+        String buttonHoverColor = "#45a049";
+
+        if (type == Alert.AlertType.ERROR) {
+            buttonColor = "#dc3545"; // Red
+            buttonHoverColor = "#c82333";
+        } else if (type == Alert.AlertType.WARNING) {
+            buttonColor = "#FF9800"; // Orange
+            buttonHoverColor = "#f57c00";
+        } else if (type == Alert.AlertType.INFORMATION) {
+            buttonColor = "#4CAF50"; // Green
+            buttonHoverColor = "#45a049";
+        }
+
+        final String finalButtonColor = buttonColor;
+        final String finalHoverColor = buttonHoverColor;
+
+        okButton.setStyle(
+                "-fx-background-color: " + buttonColor + "; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 40px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        okButton.setOnAction(e -> dialogStage.close());
+
+        okButton.setOnMouseEntered(e -> okButton.setStyle(
+                okButton.getStyle().replace(finalButtonColor, finalHoverColor)
+        ));
+        okButton.setOnMouseExited(e -> okButton.setStyle(
+                okButton.getStyle().replace(finalHoverColor, finalButtonColor)
+        ));
+
+        buttonBox.getChildren().add(okButton);
+        mainContainer.getChildren().addAll(titleLabel, messageLabel, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+    }
+
 
     private void navigateToPage(String fxmlPath, String cssPath) {
         try {
