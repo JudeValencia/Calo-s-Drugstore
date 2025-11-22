@@ -2,6 +2,7 @@ package com.inventory.Calo.s_Drugstore.controller;
 
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -453,6 +454,7 @@ public class StaffController implements Initializable {
         boolean isEdit = editUser != null;
 
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(isEdit ? "Edit Staff Account" : "Add New Staff Account");
         dialogStage.setResizable(false);
@@ -625,31 +627,38 @@ public class StaffController implements Initializable {
         reportsBtn.getStyleClass().remove("active");
         staffBtn.getStyleClass().remove("active");
 
-        activeButton.getStyleClass().add("active");
+        if (!activeButton.getStyleClass().contains("active")) {
+            activeButton.getStyleClass().add("active");
+        }
     }
 
     @FXML
     private void handleDashboard() {
+        setActiveButton(dashboardBtn);
         navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
     }
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
     @FXML
     private void handleSales() {
+        setActiveButton(salesBtn);
         navigateToPage("/fxml/sales.fxml", "/css/sales.css");
     }
 
     @FXML
     private void handleReports() {
+        setActiveButton(reportsBtn);
         navigateToPage("/fxml/reports.fxml", "/css/reports.css");
     }
 
     @FXML
     private void handleStaff() {
+        setActiveButton(staffBtn);
         // Already on staff page
     }
 
@@ -663,6 +672,7 @@ public class StaffController implements Initializable {
 
     private boolean showLogoutConfirmation() {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -861,6 +871,7 @@ public class StaffController implements Initializable {
 
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -907,6 +918,7 @@ public class StaffController implements Initializable {
 
     private boolean showStyledConfirmation(String title, String message) {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);

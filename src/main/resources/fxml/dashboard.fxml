@@ -40,7 +40,7 @@
 
                 <Button fx:id="dashboardBtn" text="📊  Dashboard" styleClass="menu-item"
                         onAction="#handleDashboard"/>
-
+                
                 <!-- Do the same for all buttons: -->
                 <Button fx:id="inventoryBtn" text="📦  Inventory" styleClass="menu-item"
                         onAction="#handleInventory"/>
@@ -50,7 +50,7 @@
 
                 <Button fx:id="reportsBtn" text="📈  Reports" styleClass="menu-item"
                         onAction="#handleReports"/>
-
+                
                 <Button fx:id="staffBtn" text="👥  Staff" styleClass="menu-item"
                         onAction="#handleStaff"/>
             </VBox>
