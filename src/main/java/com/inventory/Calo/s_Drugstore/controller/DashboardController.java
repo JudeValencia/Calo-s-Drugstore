@@ -1,5 +1,6 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.DashboardService;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
@@ -298,7 +299,6 @@ public class DashboardController {
     }
 
     // Replace the setActiveButton method in all controllers with this version:
-
     private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
@@ -539,6 +539,7 @@ public class DashboardController {
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -614,6 +615,7 @@ public class DashboardController {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);

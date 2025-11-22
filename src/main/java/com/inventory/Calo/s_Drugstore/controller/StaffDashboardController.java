@@ -1,5 +1,7 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.DashboardService;
 import javafx.fxml.FXML;
@@ -289,6 +291,7 @@ public class StaffDashboardController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);

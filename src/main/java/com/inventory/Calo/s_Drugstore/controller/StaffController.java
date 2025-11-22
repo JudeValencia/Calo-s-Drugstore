@@ -1,8 +1,8 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -453,6 +453,7 @@ public class StaffController implements Initializable {
         boolean isEdit = editUser != null;
 
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(isEdit ? "Edit Staff Account" : "Add New Staff Account");
         dialogStage.setResizable(false);
@@ -663,6 +664,7 @@ public class StaffController implements Initializable {
 
     private boolean showLogoutConfirmation() {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -861,6 +863,7 @@ public class StaffController implements Initializable {
 
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -907,6 +910,7 @@ public class StaffController implements Initializable {
 
     private boolean showStyledConfirmation(String title, String message) {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);

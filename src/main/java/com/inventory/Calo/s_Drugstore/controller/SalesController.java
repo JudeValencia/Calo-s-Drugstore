@@ -1,5 +1,6 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.Sale;
 import com.inventory.Calo.s_Drugstore.entity.SaleItem;
@@ -371,6 +372,7 @@ public class SalesController implements Initializable {
     private void handleBulkAdd() {
         // Create bulk add dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Bulk Add Medicines");
         dialogStage.setResizable(true);
@@ -1004,6 +1006,7 @@ public class SalesController implements Initializable {
 
     @FXML
     private void handleSales() {
+        setActiveButton(salesBtn);
         // Already on sales page
     }
 
@@ -1041,6 +1044,7 @@ public class SalesController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -1326,6 +1330,7 @@ public class SalesController implements Initializable {
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -1401,6 +1406,7 @@ public class SalesController implements Initializable {
     private boolean showStyledConfirmation(String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality( Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -1480,6 +1486,7 @@ public class SalesController implements Initializable {
         if (sale == null) return;
 
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Transaction Details");
         dialogStage.setResizable(false);

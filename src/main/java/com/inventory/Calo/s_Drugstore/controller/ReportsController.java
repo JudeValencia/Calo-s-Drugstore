@@ -1,5 +1,6 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.Sale;
 import com.inventory.Calo.s_Drugstore.entity.SaleItem;
@@ -585,6 +586,7 @@ public class ReportsController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -734,6 +736,7 @@ public class ReportsController implements Initializable {
 
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
