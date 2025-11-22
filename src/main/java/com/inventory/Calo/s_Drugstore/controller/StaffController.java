@@ -101,7 +101,7 @@ public class StaffController implements Initializable {
 
         nameColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getFullName()));
-        nameColumn.setCellFactory(column -> new TableCell<User, String>() {
+        nameColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
