@@ -6,6 +6,7 @@ import com.inventory.Calo.s_Drugstore.entity.SaleItem;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
 import com.inventory.Calo.s_Drugstore.service.SalesService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -253,7 +254,7 @@ public class ReportsController implements Initializable {
         }
     }
 
-    private void setActiveButton(Button activeBtn) {
+    private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
         inventoryBtn.getStyleClass().remove("active");
@@ -262,8 +263,8 @@ public class ReportsController implements Initializable {
         staffBtn.getStyleClass().remove("active");
 
         // Add active class to the clicked button
-        if (activeBtn != null) {
-            activeBtn.getStyleClass().add("active");
+        if (!activeButton.getStyleClass().contains("active")) {
+            activeButton.getStyleClass().add("active");
         }
     }
 
@@ -531,21 +532,25 @@ public class ReportsController implements Initializable {
     // Navigation methods
     @FXML
     private void handleDashboard() {
+        setActiveButton(dashboardBtn);
         navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
     }
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
     @FXML
     private void handleSales() {
+        setActiveButton(salesBtn);
         navigateToPage("/fxml/sales.fxml", "/css/sales.css");
     }
 
     @FXML
     private void handleReports() {
+        setActiveButton(reportsBtn);
         // Already on reports page
     }
 
@@ -571,6 +576,7 @@ public class ReportsController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -720,6 +726,7 @@ public class ReportsController implements Initializable {
 
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);

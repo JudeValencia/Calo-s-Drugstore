@@ -4,6 +4,7 @@ import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -217,7 +218,7 @@ public class InventoryController implements Initializable {
                 } else {
                     Product product = getTableRow().getItem();
                     if (product.getExpirationDate() != null) {
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
                         setText(product.getExpirationDate().format(formatter));
                         if (product.isExpiringSoon()) {
                             setStyle("-fx-text-fill: #FF6B35; -fx-font-weight: normal;");
@@ -233,7 +234,7 @@ public class InventoryController implements Initializable {
         });
         expirationColumn.setCellValueFactory(data -> {
             if (data.getValue().getExpirationDate() != null) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
                 return new SimpleStringProperty(data.getValue().getExpirationDate().format(formatter));
             }
             return new SimpleStringProperty("N/A");
@@ -369,6 +370,7 @@ public class InventoryController implements Initializable {
     private void showBulkAddDialog() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Bulk Add Medicines");
         dialogStage.setResizable(false);
@@ -835,6 +837,7 @@ public class InventoryController implements Initializable {
     private void showProductDialog(Product product) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(product == null ? "Add New Medicine" : "Edit Medicine");
         dialogStage.setResizable(false);
@@ -1101,6 +1104,7 @@ public class InventoryController implements Initializable {
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(title);
         dialogStage.setResizable(false);
@@ -1186,6 +1190,7 @@ public class InventoryController implements Initializable {
     private boolean showLogoutConfirmation() {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Logout");
         dialogStage.setResizable(false);
@@ -1264,6 +1269,7 @@ public class InventoryController implements Initializable {
     private boolean showDeleteConfirmation(String productName) {
         // Create custom dialog
         Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Delete Product");
         dialogStage.setResizable(false);
@@ -1347,7 +1353,9 @@ public class InventoryController implements Initializable {
         reportsBtn.getStyleClass().remove("active");
         staffBtn.getStyleClass().remove("active");
 
-        activeButton.getStyleClass().add("active");
+        if (!activeButton.getStyleClass().contains("active")) {
+            activeButton.getStyleClass().add("active");
+        }
     }
 
     @FXML
@@ -1358,6 +1366,7 @@ public class InventoryController implements Initializable {
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         // Already on inventory page
     }
 
