@@ -185,7 +185,7 @@
                                         <Label text="Low Stock Items" styleClass="kpi-title"/>
                                         <Label fx:id="lowStockItemsLabel" text="8" styleClass="kpi-value"/>
                                     </VBox>
-                                    <Label text=" ⚠ "  style="-fx-font-size: 32px;"/>
+                                    <Label text="⚠️" style="-fx-font-size: 32px;"/>
                                 </HBox>
                             </VBox>
                         </VBox>
