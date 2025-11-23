@@ -245,7 +245,31 @@ public class UserManagementService {
                 .count();
     }
 
-    public User updateUser(User user) {
-        return userRepository.save(user);
+    /**
+     * UPDATE USERNAME
+     *
+     * Updates a user's username
+     *
+     * @param userId - The user's database ID
+     * @param newUsername - The new username
+     * @return true if successful, false if username already exists
+     */
+    public boolean updateUsername(Long userId, String newUsername) {
+        // Check if new username already exists
+        if (userRepository.existsByUsername(newUsername)) {
+            return false;
+        }
+
+        Optional<User> userOpt = userRepository.findById(userId);
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setUsername(newUsername);
+            userRepository.save(user);
+            return true;
+        }
+
+        return false;
     }
+
 }

@@ -797,7 +797,7 @@ public class StaffController implements Initializable {
         if (isEdit) nameField.setText(editUser.getFullName());
         nameBox.getChildren().addAll(nameLabel, nameField);
 
-        // Username
+        // Username - NOW EDITABLE
         VBox usernameBox = new VBox(8);
         Label usernameLabel = new Label("Username *");
         usernameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
@@ -806,7 +806,7 @@ public class StaffController implements Initializable {
         usernameField.setStyle(nameField.getStyle());
         if (isEdit) {
             usernameField.setText(editUser.getUsername());
-            usernameField.setDisable(true); // Cannot change username
+            // REMOVED: usernameField.setDisable(true); - Now username is editable!
         }
         usernameBox.getChildren().addAll(usernameLabel, usernameField);
 
@@ -820,17 +820,78 @@ public class StaffController implements Initializable {
         if (isEdit) emailField.setText(editUser.getEmail());
         emailBox.getChildren().addAll(emailLabel, emailField);
 
-        // Password (only for new users)
+        // Password - NOW SHOWN FOR BOTH CREATE AND EDIT
+        // Password field with show/hide toggle
         VBox passwordBox = new VBox(8);
-        if (!isEdit) {
-            Label passwordLabel = new Label("Password *");
-            passwordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
-            PasswordField passwordField = new PasswordField();
-            passwordField.setPromptText("Enter password (min 6 characters)");
-            passwordField.setStyle(nameField.getStyle());
-            passwordBox.getChildren().addAll(passwordLabel, passwordField);
-            passwordBox.setUserData(passwordField);
-        }
+        Label passwordLabel = new Label(isEdit ? "New Password (leave blank to keep current)" : "Password *");
+        passwordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+
+        HBox passwordInputBox = new HBox(10);
+        passwordInputBox.setAlignment(Pos.CENTER_LEFT);
+
+// Create both TextField and PasswordField
+        TextField passwordTextField = new TextField();
+        PasswordField passwordField = new PasswordField();
+
+// Style both the same way
+        String fieldStyle =
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 12px 15px;";
+
+        passwordTextField.setStyle(fieldStyle);
+        passwordField.setStyle(fieldStyle);
+        passwordTextField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
+        passwordField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
+
+// Initially show PasswordField (hidden)
+        passwordTextField.setVisible(false);
+        passwordTextField.setManaged(false);
+
+// Bind text properties so they stay in sync
+        passwordTextField.textProperty().bindBidirectional(passwordField.textProperty());
+
+// Show/Hide button
+        Button toggleButton = new Button("👁");
+        toggleButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-font-size: 16px; " +
+                        "-fx-min-width: 45px; " +
+                        "-fx-min-height: 45px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        toggleButton.setOnAction(e -> {
+            if (passwordField.isVisible()) {
+                // Switch to visible (TextField)
+                passwordField.setVisible(false);
+                passwordField.setManaged(false);
+                passwordTextField.setVisible(true);
+                passwordTextField.setManaged(true);
+                toggleButton.setText("👁‍🗨");
+            } else {
+                // Switch to hidden (PasswordField)
+                passwordTextField.setVisible(false);
+                passwordTextField.setManaged(false);
+                passwordField.setVisible(true);
+                passwordField.setManaged(true);
+                toggleButton.setText("👁");
+            }
+        });
+
+        HBox.setHgrow(passwordField, Priority.ALWAYS);
+        HBox.setHgrow(passwordTextField, Priority.ALWAYS);
+
+        passwordInputBox.getChildren().addAll(passwordField, passwordTextField, toggleButton);
+        passwordBox.getChildren().addAll(passwordLabel, passwordInputBox);
 
         // Role
         VBox roleBox = new VBox(8);
@@ -876,6 +937,7 @@ public class StaffController implements Initializable {
             String name = nameField.getText().trim();
             String username = usernameField.getText().trim();
             String email = emailField.getText().trim();
+            String password = passwordField.getText().trim();
             String role = roleCombo.getValue();
 
             if (name.isEmpty() || email.isEmpty() || username.isEmpty()) {
@@ -886,8 +948,7 @@ public class StaffController implements Initializable {
 
             try {
                 if (!isEdit) {
-                    PasswordField passwordField = (PasswordField) passwordBox.getUserData();
-                    String password = passwordField != null ? passwordField.getText() : "";
+                    // CREATE NEW STAFF
                     if (password.isEmpty() || password.length() < 6) {
                         showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
                                 "Password must be at least 6 characters long.");
@@ -898,8 +959,33 @@ public class StaffController implements Initializable {
                     showStyledAlert(Alert.AlertType.INFORMATION, "Success",
                             "Staff account created successfully!");
                 } else {
+                    // UPDATE EXISTING STAFF
+                    // Check if username changed and validate it's not taken
+                    if (!username.equals(editUser.getUsername())) {
+                        // Username changed - need to update it
+                        boolean usernameUpdated = userManagementService.updateUsername(
+                                editUser.getId(), username);
+
+                        if (!usernameUpdated) {
+                            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                                    "Username already taken. Please choose a different username.");
+                            return;
+                        }
+                    }
+
+                    // Update user info (name, email, role)
                     User updatedUser = userManagementService.updateUserInfo(
                             editUser.getId(), name, email, role);
+
+                    // Update password if provided
+                    if (!password.isEmpty()) {
+                        if (password.length() < 6) {
+                            showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
+                                    "Password must be at least 6 characters long.");
+                            return;
+                        }
+                        userManagementService.resetPassword(editUser.getUsername(), password);
+                    }
 
                     if (updatedUser != null) {
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
@@ -922,16 +1008,13 @@ public class StaffController implements Initializable {
 
         buttonBox.getChildren().addAll(cancelButton, saveButton);
 
-        mainContainer.getChildren().addAll(titleLabel, nameBox, usernameBox, emailBox);
-        if (!isEdit) mainContainer.getChildren().add(passwordBox);
-        mainContainer.getChildren().addAll(roleBox, buttonBox);
+        mainContainer.getChildren().addAll(titleLabel, nameBox, usernameBox, emailBox, passwordBox, roleBox, buttonBox);
 
         Scene scene = new Scene(mainContainer);
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
         dialogStage.showAndWait();
     }
-
     // Navigation methods
     private void setActiveButton(Button activeButton) {
         dashboardBtn.getStyleClass().remove("active");
