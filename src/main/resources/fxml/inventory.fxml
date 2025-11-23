@@ -105,7 +105,7 @@
                     </padding>
 
                     <VBox spacing="8">
-                        <Label text="Search &amp; Filters" styleClass="filter-title"/>
+                        <Label text="🔎 Search &amp; Filters" styleClass="filter-title"/>
                         <Label text="Find medicines quickly using search and filters" styleClass="filter-subtitle"/>
                     </VBox>
 
@@ -134,7 +134,7 @@
 
                     <HBox alignment="CENTER_LEFT">
                         <VBox spacing="5" HBox.hgrow="ALWAYS">
-                            <Label text="Inventory List" styleClass="table-title"/>
+                            <Label text="📦 Inventory List" styleClass="table-title"/>
                             <Label fx:id="totalCountLabel" text="Total: 0 medicines" styleClass="table-subtitle"/>
                         </VBox>
                     </HBox>

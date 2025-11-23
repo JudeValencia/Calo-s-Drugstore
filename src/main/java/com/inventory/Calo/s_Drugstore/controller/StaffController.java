@@ -84,46 +84,34 @@ public class StaffController implements Initializable {
             userEmailLabel.setText(user.getEmail());
         }
     }
-
     private void setupStaffTable() {
-
-        // CRITICAL: Set fixed cell size to prevent cell recycling issues
-        staffTable.setFixedCellSize(70);
-
-        // Prevent table from losing items on scroll
-        //staffTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        // Ensure table maintains its items
         staffTable.setEditable(false);
-
-        staffTable.itemsProperty().addListener((obs, oldItems, newItems) -> {
-            if (newItems == null || newItems.isEmpty()) {
-                staffTable.setItems(staffList);
-            }
-        });
+        staffTable.setItems(staffList);
+        //staffTable.setFixedCellSize(70);
 
         staffIdColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getUsername()));
 
         nameColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getFullName()));
-        nameColumn.setCellFactory(column -> new TableCell<>() {
+        nameColumn.setCellFactory(column -> new TableCell<User, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
+                // Create graphics fresh each time
                 HBox container = new HBox(10);
                 container.setAlignment(Pos.CENTER_LEFT);
 
@@ -142,24 +130,29 @@ public class StaffController implements Initializable {
                 nameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
                 container.getChildren().addAll(avatar, nameLabel);
+
+                // CRITICAL: Set graphic and ensure it's managed
                 setGraphic(container);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
 
+        contactColumn.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getEmail()));
         contactColumn.setCellFactory(column -> new TableCell<User, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
@@ -180,25 +173,28 @@ public class StaffController implements Initializable {
                 usernameBox.getChildren().addAll(usernameIcon, usernameLabel);
 
                 container.getChildren().addAll(emailBox, usernameBox);
+
                 setGraphic(container);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
-        contactColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
+        roleColumn.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getRole()));
         roleColumn.setCellFactory(column -> new TableCell<User, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
@@ -235,24 +231,26 @@ public class StaffController implements Initializable {
 
                 container.getChildren().add(roleBadge);
                 setGraphic(container);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
-        roleColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
+        statusColumn.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().isActive() ? "Active" : "Inactive"));
         statusColumn.setCellFactory(column -> new TableCell<User, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
@@ -281,12 +279,12 @@ public class StaffController implements Initializable {
                 }
 
                 setGraphic(statusBadge);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
-        statusColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
         createdDateColumn.setCellValueFactory(data -> {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
             return new SimpleStringProperty(data.getValue().getCreatedAt().format(formatter));
         });
 
@@ -294,6 +292,8 @@ public class StaffController implements Initializable {
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
+                setText(null);
+
                 if (empty) {
                     setGraphic(null);
                     return;
@@ -308,7 +308,6 @@ public class StaffController implements Initializable {
                 HBox buttons = new HBox(10);
                 buttons.setAlignment(Pos.CENTER_LEFT);
 
-                // Edit button
                 Button editBtn = new Button("🔧");
                 editBtn.setStyle(
                         "-fx-background-color: white; " +
@@ -318,13 +317,12 @@ public class StaffController implements Initializable {
                                 "-fx-min-height: 40px; " +
                                 "-fx-background-radius: 6px; " +
                                 "-fx-border-color: #E0E0E0; " +
-                                "-fx-border-width: 1.5px; " +
+                                "-fx-border-width: 2px; " +
                                 "-fx-border-radius: 6px; " +
                                 "-fx-cursor: hand;"
                 );
                 editBtn.setOnAction(e -> handleEditStaff(user));
 
-                // Activate/Deactivate button
                 Button toggleBtn = new Button(user.isActive() ? "Deactivate" : "Activate");
                 if (user.isActive()) {
                     toggleBtn.setStyle(
@@ -355,7 +353,6 @@ public class StaffController implements Initializable {
 
                 buttons.getChildren().addAll(editBtn, toggleBtn);
 
-                // Only show delete button for non-admin users or if current user is different
                 if (!"ADMIN".equalsIgnoreCase(user.getRole()) ||
                         (currentUser != null && !currentUser.getId().equals(user.getId()))) {
                     Button deleteBtn = new Button("🗑");
@@ -367,7 +364,7 @@ public class StaffController implements Initializable {
                                     "-fx-min-height: 40px; " +
                                     "-fx-background-radius: 6px; " +
                                     "-fx-border-color: #FFCDD2; " +
-                                    "-fx-border-width: 1.5px; " +
+                                    "-fx-border-width: 2px; " +
                                     "-fx-border-radius: 6px; " +
                                     "-fx-cursor: hand;"
                     );
@@ -376,9 +373,320 @@ public class StaffController implements Initializable {
                 }
 
                 setGraphic(buttons);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
     }
+//    private void setupStaffTable() {
+//
+//        // Basic table configuration
+//        staffTable.setFixedCellSize(70);
+//        staffTable.setEditable(false);
+//        staffTable.setItems(staffList);
+//
+//        // CRITICAL FIX: Force graphics to persist after scrollbar interaction
+//        staffTable.setOnMouseReleased(event -> {
+//            javafx.application.Platform.runLater(() -> staffTable.refresh());
+//        });
+//
+//        // Staff ID Column - Simple text column
+//        staffIdColumn.setCellValueFactory(data ->
+//                new SimpleStringProperty(data.getValue().getUsername()));
+//
+//        // Name Column with Avatar
+//        nameColumn.setCellValueFactory(data ->
+//                new SimpleStringProperty(data.getValue().getFullName()));
+//        nameColumn.setCellFactory(column -> new TableCell<User, String>() {
+//            private final HBox container = new HBox(10);
+//            private final StackPane avatar = new StackPane();
+//            private final Label avatarIcon = new Label("👤");
+//            private final Label nameLabel = new Label();
+//
+//            {
+//                // Initialize graphics once
+//                container.setAlignment(Pos.CENTER_LEFT);
+//                avatar.setStyle(
+//                        "-fx-background-color: #E0E0E0; " +
+//                                "-fx-background-radius: 25px; " +
+//                                "-fx-pref-width: 40px; " +
+//                                "-fx-pref-height: 40px;"
+//                );
+//                avatarIcon.setStyle("-fx-font-size: 20px;");
+//                avatar.getChildren().add(avatarIcon);
+//                nameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+//                container.getChildren().addAll(avatar, nameLabel);
+//            }
+//
+//            @Override
+//            protected void updateItem(String item, boolean empty) {
+//                super.updateItem(item, empty);
+//
+//                if (empty || item == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                User user = getTableRow() != null ? getTableRow().getItem() : null;
+//                if (user == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                nameLabel.setText(user.getFullName());
+//                setGraphic(container);
+//            }
+//        });
+//
+//        // Contact Column
+//        contactColumn.setCellValueFactory(data ->
+//                new SimpleStringProperty(data.getValue().getEmail()));
+//        contactColumn.setCellFactory(column -> new TableCell<User, String>() {
+//            private final VBox container = new VBox(3);
+//            private final HBox emailBox = new HBox(5);
+//            private final Label emailIcon = new Label("✉");
+//            private final Label emailLabel = new Label();
+//            private final HBox usernameBox = new HBox(5);
+//            private final Label usernameIcon = new Label("👤");
+//            private final Label usernameLabel = new Label();
+//
+//            {
+//                // Initialize graphics once
+//                emailBox.setAlignment(Pos.CENTER_LEFT);
+//                emailLabel.setStyle("-fx-font-size: 13px;");
+//                emailBox.getChildren().addAll(emailIcon, emailLabel);
+//
+//                usernameBox.setAlignment(Pos.CENTER_LEFT);
+//                usernameLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+//                usernameBox.getChildren().addAll(usernameIcon, usernameLabel);
+//
+//                container.getChildren().addAll(emailBox, usernameBox);
+//            }
+//
+//            @Override
+//            protected void updateItem(String item, boolean empty) {
+//                super.updateItem(item, empty);
+//
+//                if (empty || item == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                User user = getTableRow() != null ? getTableRow().getItem() : null;
+//                if (user == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                emailLabel.setText(user.getEmail());
+//                usernameLabel.setText("@" + user.getUsername());
+//                setGraphic(container);
+//            }
+//        });
+//
+//        // Role Column
+//        roleColumn.setCellValueFactory(data ->
+//                new SimpleStringProperty(data.getValue().getRole()));
+//        roleColumn.setCellFactory(column -> new TableCell<User, String>() {
+//            private final HBox container = new HBox();
+//            private final Label roleBadge = new Label();
+//
+//            {
+//                // Initialize graphics once
+//                container.setAlignment(Pos.CENTER_LEFT);
+//                container.getChildren().add(roleBadge);
+//            }
+//
+//            @Override
+//            protected void updateItem(String item, boolean empty) {
+//                super.updateItem(item, empty);
+//
+//                if (empty || item == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                User user = getTableRow() != null ? getTableRow().getItem() : null;
+//                if (user == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
+//
+//                if (isAdmin) {
+//                    roleBadge.setText("🛡 Admin");
+//                    roleBadge.setStyle(
+//                            "-fx-background-color: #1a1a1a; " +
+//                                    "-fx-text-fill: white; " +
+//                                    "-fx-padding: 6px 12px; " +
+//                                    "-fx-background-radius: 6px; " +
+//                                    "-fx-font-size: 13px; " +
+//                                    "-fx-font-weight: 600;"
+//                    );
+//                } else {
+//                    roleBadge.setText("👤 Staff");
+//                    roleBadge.setStyle(
+//                            "-fx-background-color: white; " +
+//                                    "-fx-text-fill: #2c3e50; " +
+//                                    "-fx-padding: 6px 12px; " +
+//                                    "-fx-background-radius: 6px; " +
+//                                    "-fx-border-color: #E0E0E0; " +
+//                                    "-fx-border-width: 1.5px; " +
+//                                    "-fx-border-radius: 6px; " +
+//                                    "-fx-font-size: 13px; " +
+//                                    "-fx-font-weight: 600;"
+//                    );
+//                }
+//
+//                setGraphic(container);
+//            }
+//        });
+//
+//        // Status Column
+//        statusColumn.setCellValueFactory(data ->
+//                new SimpleStringProperty(data.getValue().isActive() ? "Active" : "Inactive"));
+//        statusColumn.setCellFactory(column -> new TableCell<User, String>() {
+//            private final Label statusBadge = new Label();
+//
+//            @Override
+//            protected void updateItem(String item, boolean empty) {
+//                super.updateItem(item, empty);
+//
+//                if (empty || item == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                User user = getTableRow() != null ? getTableRow().getItem() : null;
+//                if (user == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                if (user.isActive()) {
+//                    statusBadge.setText("Active");
+//                    statusBadge.setStyle(
+//                            "-fx-background-color: #4CAF50; " +
+//                                    "-fx-text-fill: white; " +
+//                                    "-fx-padding: 6px 16px; " +
+//                                    "-fx-background-radius: 6px; " +
+//                                    "-fx-font-size: 13px; " +
+//                                    "-fx-font-weight: 600;"
+//                    );
+//                } else {
+//                    statusBadge.setText("Inactive");
+//                    statusBadge.setStyle(
+//                            "-fx-background-color: #E0E0E0; " +
+//                                    "-fx-text-fill: #7f8c8d; " +
+//                                    "-fx-padding: 6px 16px; " +
+//                                    "-fx-background-radius: 6px; " +
+//                                    "-fx-font-size: 13px; " +
+//                                    "-fx-font-weight: 600;"
+//                    );
+//                }
+//
+//                setGraphic(statusBadge);
+//            }
+//        });
+//
+//        // Created Date Column
+//        createdDateColumn.setCellValueFactory(data -> {
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+//            return new SimpleStringProperty(data.getValue().getCreatedAt().format(formatter));
+//        });
+//
+//        // Actions Column
+//        actionsColumn.setCellFactory(column -> new TableCell<User, Void>() {
+//            @Override
+//            protected void updateItem(Void item, boolean empty) {
+//                super.updateItem(item, empty);
+//
+//                if (empty) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                User user = getTableRow() != null ? getTableRow().getItem() : null;
+//                if (user == null) {
+//                    setGraphic(null);
+//                    return;
+//                }
+//
+//                // Create fresh buttons each time to ensure they work
+//                HBox buttons = new HBox(10);
+//                buttons.setAlignment(Pos.CENTER_LEFT);
+//
+//                // Edit button
+//                Button editBtn = new Button("🔧");
+//                editBtn.setStyle(
+//                        "-fx-background-color: white; " +
+//                                "-fx-text-fill: #2c3e50; " +
+//                                "-fx-font-size: 20px; " +
+//                                "-fx-min-width: 40px; " +
+//                                "-fx-min-height: 40px; " +
+//                                "-fx-background-radius: 6px; " +
+//                                "-fx-border-color: #E0E0E0; " +
+//                                "-fx-border-width: 1.5px; " +
+//                                "-fx-border-radius: 6px; " +
+//                                "-fx-cursor: hand;"
+//                );
+//                editBtn.setOnAction(e -> handleEditStaff(user));
+//
+//                // Activate/Deactivate button
+//                Button toggleBtn = new Button(user.isActive() ? "Deactivate" : "Activate");
+//                if (user.isActive()) {
+//                    toggleBtn.setStyle(
+//                            "-fx-background-color: white; " +
+//                                    "-fx-text-fill: #F44336; " +
+//                                    "-fx-font-size: 14px; " +
+//                                    "-fx-padding: 8px 16px; " +
+//                                    "-fx-background-radius: 6px; " +
+//                                    "-fx-border-color: #FFCDD2; " +
+//                                    "-fx-border-width: 1.5px; " +
+//                                    "-fx-border-radius: 6px; " +
+//                                    "-fx-cursor: hand;"
+//                    );
+//                } else {
+//                    toggleBtn.setStyle(
+//                            "-fx-background-color: white; " +
+//                                    "-fx-text-fill: #4CAF50; " +
+//                                    "-fx-font-size: 14px; " +
+//                                    "-fx-padding: 8px 16px; " +
+//                                    "-fx-background-radius: 6px; " +
+//                                    "-fx-border-color: #C8E6C9; " +
+//                                    "-fx-border-width: 1.5px; " +
+//                                    "-fx-border-radius: 6px; " +
+//                                    "-fx-cursor: hand;"
+//                    );
+//                }
+//                toggleBtn.setOnAction(e -> handleToggleStatus(user));
+//
+//                buttons.getChildren().addAll(editBtn, toggleBtn);
+//
+//                // Delete button
+//                if (!"ADMIN".equalsIgnoreCase(user.getRole()) ||
+//                        (currentUser != null && !currentUser.getId().equals(user.getId()))) {
+//                    Button deleteBtn = new Button("🗑");
+//                    deleteBtn.setStyle(
+//                            "-fx-background-color: white; " +
+//                                    "-fx-text-fill: #F44336; " +
+//                                    "-fx-font-size: 20px; " +
+//                                    "-fx-min-width: 40px; " +
+//                                    "-fx-min-height: 40px; " +
+//                                    "-fx-background-radius: 6px; " +
+//                                    "-fx-border-color: #FFCDD2; " +
+//                                    "-fx-border-width: 1.5px; " +
+//                                    "-fx-border-radius: 6px; " +
+//                                    "-fx-cursor: hand;"
+//                    );
+//                    deleteBtn.setOnAction(e -> handleDeleteStaff(user));
+//                    buttons.getChildren().add(deleteBtn);
+//                }
+//
+//                setGraphic(buttons);
+//            }
+//        });
+//    }
 
     private void loadStaffData() {
         List<User> users = userManagementService.getAllUsers();

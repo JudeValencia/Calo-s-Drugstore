@@ -244,4 +244,8 @@ public class UserManagementService {
                 .filter(User::isActive)
                 .count();
     }
+
+    public User updateUser(User user) {
+        return userRepository.save(user);
+    }
 }

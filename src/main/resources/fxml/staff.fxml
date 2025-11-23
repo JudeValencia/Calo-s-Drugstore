@@ -156,7 +156,10 @@
                         <Label text="Manage all staff accounts, roles, and permissions" styleClass="card-subtitle"/>
                     </VBox>
 
-                    <TableView fx:id="staffTable" styleClass="staff-table">
+                    <TableView fx:id="staffTable" styleClass="staff-table"
+                               VBox.vgrow="ALWAYS"
+                               prefHeight="400"
+                               minHeight="400">
                         <columns>
                             <TableColumn fx:id="staffIdColumn" text="Staff ID" minWidth="100" prefWidth="120"/>
                             <TableColumn fx:id="nameColumn" text="Name" minWidth="150" prefWidth="200"/>

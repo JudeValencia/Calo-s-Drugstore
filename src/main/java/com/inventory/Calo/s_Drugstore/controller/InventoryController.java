@@ -216,7 +216,7 @@ public class InventoryController implements Initializable {
                 } else {
                     Product product = getTableRow().getItem();
                     if (product.getExpirationDate() != null) {
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
                         setText(product.getExpirationDate().format(formatter));
                         if (product.isExpiringSoon()) {
                             setStyle("-fx-text-fill: #FF6B35; -fx-font-weight: normal;");
