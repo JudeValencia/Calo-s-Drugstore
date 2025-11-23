@@ -280,7 +280,7 @@ public class StaffController implements Initializable {
         statusColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
         createdDateColumn.setCellValueFactory(data -> {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
             return new SimpleStringProperty(data.getValue().getCreatedAt().format(formatter));
         });
 

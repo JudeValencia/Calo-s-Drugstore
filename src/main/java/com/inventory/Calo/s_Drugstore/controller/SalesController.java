@@ -242,7 +242,7 @@ public class SalesController implements Initializable {
                 new SimpleStringProperty("₱" + String.format("%.2f", data.getValue().getTotalAmount())));
 
         dateTimeColumn.setCellValueFactory(data -> {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy, h:mm a");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. d, yyyy h:mm a");
             return new SimpleStringProperty(data.getValue().getSaleDate().format(formatter));
         });
 
