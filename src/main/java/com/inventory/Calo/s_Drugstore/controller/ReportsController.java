@@ -546,21 +546,25 @@ public class ReportsController implements Initializable {
     // Navigation methods
     @FXML
     private void handleDashboard() {
+        setActiveButton(dashboardBtn);
         navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
     }
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
     @FXML
     private void handleSales() {
+        setActiveButton(salesBtn);
         navigateToPage("/fxml/sales.fxml", "/css/sales.css");
     }
 
     @FXML
     private void handleReports() {
+        setActiveButton(reportsBtn);
         // Already on reports page
     }
 
@@ -570,13 +574,14 @@ public class ReportsController implements Initializable {
         navigateToPage("/fxml/staff.fxml", "/css/staff.css");
     }
 
-    private void showComingSoon(String feature) {
-        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon",
-                feature + " module is under development and will be available soon!");
-    }
+//    private void showComingSoon(String feature) {
+//        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon",
+//                feature + " module is under development and will be available soon!");
+//    }
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
         if (confirmed) {
             performLogout();

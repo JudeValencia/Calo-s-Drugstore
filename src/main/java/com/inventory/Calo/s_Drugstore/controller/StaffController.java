@@ -96,6 +96,19 @@ public class StaffController implements Initializable {
         // Ensure table maintains its items
         staffTable.setEditable(true);
 
+        staffIdColumn.setCellFactory(column -> new TableCell<User, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setAlignment(Pos.CENTER_LEFT);
+
+                if (empty || item == null) {
+                    setText(null);
+                    return;
+                }
+                setText(item);
+            }
+        });
         staffIdColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getUsername()));
 
@@ -110,6 +123,7 @@ public class StaffController implements Initializable {
                     setText(null);
                     return;
                 }
+                setAlignment(Pos.CENTER_LEFT);
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
@@ -120,6 +134,7 @@ public class StaffController implements Initializable {
 
                 HBox container = new HBox(10);
                 container.setAlignment(Pos.CENTER_LEFT);
+                container.setMaxHeight(Double.MAX_VALUE);
 
                 StackPane avatar = new StackPane();
                 avatar.setStyle(
@@ -128,6 +143,8 @@ public class StaffController implements Initializable {
                                 "-fx-pref-width: 40px; " +
                                 "-fx-pref-height: 40px;"
                 );
+
+
                 Label avatarIcon = new Label("👤");
                 avatarIcon.setStyle("-fx-font-size: 20px;");
                 avatar.getChildren().add(avatarIcon);
@@ -149,6 +166,7 @@ public class StaffController implements Initializable {
                     setText(null);
                     return;
                 }
+                setAlignment(Pos.CENTER_LEFT);
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
@@ -158,6 +176,8 @@ public class StaffController implements Initializable {
                 }
 
                 VBox container = new VBox(3);
+                container.setAlignment(Pos.CENTER_LEFT);
+                container.setMaxHeight(Double.MAX_VALUE);
 
                 HBox emailBox = new HBox(5);
                 emailBox.setAlignment(Pos.CENTER_LEFT);
@@ -179,7 +199,7 @@ public class StaffController implements Initializable {
         });
         contactColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
-        roleColumn.setCellFactory(column -> new TableCell<User, String>() {
+        roleColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -188,6 +208,7 @@ public class StaffController implements Initializable {
                     setText(null);
                     return;
                 }
+                setAlignment(Pos.CENTER_LEFT);
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
@@ -198,6 +219,7 @@ public class StaffController implements Initializable {
 
                 HBox container = new HBox();
                 container.setAlignment(Pos.CENTER_LEFT);
+                container.setMaxHeight(Double.MAX_VALUE);
 
                 Label roleBadge = new Label();
                 boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
@@ -233,7 +255,7 @@ public class StaffController implements Initializable {
         });
         roleColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
-        statusColumn.setCellFactory(column -> new TableCell<User, String>() {
+        statusColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -242,6 +264,7 @@ public class StaffController implements Initializable {
                     setText(null);
                     return;
                 }
+                setAlignment(Pos.CENTER_LEFT);
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
@@ -249,6 +272,10 @@ public class StaffController implements Initializable {
                     setText(null);
                     return;
                 }
+
+                HBox container = new HBox();
+                container.setAlignment(Pos.CENTER_LEFT);
+                container.setMaxHeight(Double.MAX_VALUE);
 
                 Label statusBadge = new Label();
 
@@ -274,17 +301,31 @@ public class StaffController implements Initializable {
                     );
                 }
 
-                setGraphic(statusBadge);
+                container.getChildren().add(statusBadge);
+                setGraphic(container);
             }
         });
         statusColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
+        createdDateColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setAlignment(Pos.CENTER_LEFT);
+
+                if (empty || item == null) {
+                    setText(null);
+                    return;
+                }
+                setText(item);
+            }
+        });
         createdDateColumn.setCellValueFactory(data -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
             return new SimpleStringProperty(data.getValue().getCreatedAt().format(formatter));
         });
 
-        actionsColumn.setCellFactory(column -> new TableCell<User, Void>() {
+        actionsColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
@@ -292,6 +333,7 @@ public class StaffController implements Initializable {
                     setGraphic(null);
                     return;
                 }
+                setAlignment(Pos.CENTER_LEFT);
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
@@ -301,6 +343,7 @@ public class StaffController implements Initializable {
 
                 HBox buttons = new HBox(10);
                 buttons.setAlignment(Pos.CENTER_LEFT);
+                buttons.setMaxHeight(Double.MAX_VALUE);
 
                 // Edit button
                 Button editBtn = new Button("🔧");
@@ -631,31 +674,37 @@ public class StaffController implements Initializable {
 
     @FXML
     private void handleDashboard() {
+        setActiveButton(dashboardBtn);
         navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
     }
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
     @FXML
     private void handleSales() {
+        setActiveButton(salesBtn);
         navigateToPage("/fxml/sales.fxml", "/css/sales.css");
     }
 
     @FXML
     private void handleReports() {
+        setActiveButton(reportsBtn);
         navigateToPage("/fxml/reports.fxml", "/css/reports.css");
     }
 
     @FXML
     private void handleStaff() {
+        setActiveButton(staffBtn);
         // Already on staff page
     }
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
         if (confirmed) {
             performLogout();

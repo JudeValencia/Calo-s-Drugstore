@@ -98,10 +98,12 @@
 }
 
 /* Staff Table */
-.staff-table {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-table-cell-border-color: transparent;
+.staff-table .table-cell {
+    -fx-padding: 0 12px;
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER;
+    -fx-wrap-text: false;
 }
 
 .staff-table .column-header-background {

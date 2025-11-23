@@ -282,6 +282,7 @@ public class StaffDashboardController implements Initializable {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
         if (confirmed) {
             performLogout();

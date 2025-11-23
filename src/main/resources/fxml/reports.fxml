@@ -195,7 +195,7 @@
                     <!-- Expiring Medicines Alert -->
                     <VBox styleClass="filter-card">
                         <HBox alignment="CENTER_LEFT" spacing="15">
-                            <Label text="⚠️" style="-fx-font-size: 24px;"/>
+                            <Label text="⚠" style="-fx-font-size: 24px;"/>
                             <VBox>
                                 <Label text="Expiring Medicines Alert" styleClass="card-title"/>
                                 <Label text="Medicines expiring within 30 days or already expired" styleClass="card-subtitle"/>

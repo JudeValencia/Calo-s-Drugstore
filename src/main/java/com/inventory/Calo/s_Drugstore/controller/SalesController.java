@@ -1034,6 +1034,7 @@ public class SalesController implements Initializable {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
 
         if (confirmed) {

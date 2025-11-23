@@ -291,6 +291,7 @@ public class DashboardController {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
 
         if (confirmed) {

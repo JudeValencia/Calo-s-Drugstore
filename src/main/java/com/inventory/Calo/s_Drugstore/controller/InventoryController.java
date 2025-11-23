@@ -1381,6 +1381,7 @@ public class InventoryController implements Initializable {
 
     @FXML
     private void handleInventory() {
+        setActiveButton(inventoryBtn);
         // Already on inventory page
     }
 
@@ -1404,6 +1405,7 @@ public class InventoryController implements Initializable {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
 
         if (confirmed) {
