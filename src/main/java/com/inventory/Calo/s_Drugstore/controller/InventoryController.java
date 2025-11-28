@@ -314,7 +314,7 @@ public class InventoryController implements Initializable {
                     setGraphic(null);
                 } else {
                     HBox buttons = new HBox(8, editBtn, deleteBtn);
-                    buttons.setAlignment(Pos.CENTER);
+                    buttons.setAlignment(Pos.CENTER_LEFT);
                     setGraphic(buttons);
                 }
             }
