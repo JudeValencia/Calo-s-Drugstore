@@ -363,7 +363,8 @@
 
 .table-view .column-header {
     -fx-background-color: transparent;
-    -fx-border-width: 0;
+    -fx-border-width: 0 1px 0 0;
+    -fx-border-color: #E0E0E0;
 }
 
 .table-view .column-header .label {
@@ -381,7 +382,8 @@
 }
 
 .table-view .table-cell {
-    -fx-border-width: 0;
+    -fx-border-width: 0 1px 0 0;
+    -fx-border-color: #E0E0E0;;
     -fx-padding: 12px 8px;
     -fx-font-size: 13px;
     -fx-text-fill: #2c3e50;

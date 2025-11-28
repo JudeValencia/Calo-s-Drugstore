@@ -133,6 +133,7 @@ public class ReportsController implements Initializable {
 
     private void setupTopSellingTable() {
         // Setup rank column with green numbering
+        topSellingTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         rankCol.setCellValueFactory(cellData -> {
             Integer rank = (Integer) cellData.getValue().get("rank");
             return new SimpleStringProperty("#" + rank);

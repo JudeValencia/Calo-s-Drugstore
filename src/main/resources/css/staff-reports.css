@@ -230,7 +230,7 @@
 .staff-table .transactions-column .label,
 .staff-table .items-column .label,
 .staff-table .avg-column .label {
-    -fx-alignment: CENTER;
+    -fx-alignment: CENTER-LEFT;
 }
 
 /* Table Rows */
@@ -260,7 +260,8 @@
     -fx-font-size: 14px;
     -fx-text-fill: #2c3e50;
     -fx-alignment: CENTER_LEFT;
-    -fx-border-width: 0;
+    -fx-border-color: transparent #E8EBF0 transparent transparent;
+    -fx-border-width: 0 1px 0 0;
 }
 
 /* Rank Column Styling */

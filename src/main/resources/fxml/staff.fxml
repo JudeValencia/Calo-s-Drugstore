@@ -83,7 +83,7 @@
 
     <!-- CENTER: MAIN CONTENT -->
     <center>
-        <ScrollPane fitToWidth="true" styleClass="content-scroll">
+        <ScrollPane fitToWidth="true" styleClass="scroll-pane">
             <VBox spacing="25" styleClass="main-content">
                 <padding>
                     <Insets top="30" right="30" bottom="30" left="30"/>
