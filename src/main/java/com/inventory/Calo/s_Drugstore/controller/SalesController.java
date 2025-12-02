@@ -335,6 +335,15 @@ public class SalesController implements Initializable {
                 return;
             }
 
+            if (selectedProduct.getExpirationDate() != null &&
+                    selectedProduct.getExpirationDate().isBefore(java.time.LocalDate.now())) {
+                showStyledAlert(Alert.AlertType.ERROR, "Expired Medicine",
+                        selectedProduct.getName() + " has expired on " +
+                                selectedProduct.getExpirationDate().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy")) +
+                                " and cannot be sold.");
+                return;
+            }
+
             if (quantity > selectedProduct.getStock()) {
                 showStyledAlert(Alert.AlertType.WARNING, "Insufficient Stock",
                         "Only " + selectedProduct.getStock() + " units available in stock.");
@@ -756,6 +765,13 @@ public class SalesController implements Initializable {
                     return;
                 }
 
+                // Check if medicine is expired
+                if (selected.getExpirationDate() != null &&
+                        selected.getExpirationDate().isBefore(java.time.LocalDate.now())) {
+                    showStyledAlert(Alert.AlertType.ERROR, "Expired Medicine",
+                            selected.getName() + " has expired and cannot be sold.");
+                    return;
+                }
                 // Check if already in list
                 boolean alreadyAdded = bulkItems.stream()
                         .anyMatch(item -> item.getProduct().getId().equals(selected.getId()));
