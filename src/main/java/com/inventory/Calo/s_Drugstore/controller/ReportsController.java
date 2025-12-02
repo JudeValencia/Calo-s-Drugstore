@@ -1205,12 +1205,12 @@ public class ReportsController implements Initializable {
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(editable ? "Edit Transaction" : "View Transaction");
         dialogStage.setResizable(true);
-        dialogStage.setMinWidth(750);
-        dialogStage.setMinHeight(500);
+        dialogStage.setMinWidth(650);
+        dialogStage.setMinHeight(450);
 
         VBox mainContainer = new VBox(20);
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
-        mainContainer.setPrefWidth(750);
+        mainContainer.setPrefWidth(650);
 
         // STORE ORIGINAL QUANTITIES AT THE START
         Map<String, Integer> originalQuantities = new HashMap<>();
@@ -1251,7 +1251,7 @@ public class ReportsController implements Initializable {
                         "-fx-border-radius: 8px; " +
                         "-fx-background-radius: 8px;"
         );
-        itemsTable.setPrefHeight(300);
+        itemsTable.setPrefHeight(250);
 
         // Medicine Column
         TableColumn<SaleItem, String> itemNameCol = new TableColumn<>("Medicine");
@@ -1466,7 +1466,7 @@ public class ReportsController implements Initializable {
         ScrollPane tableScrollPane = new ScrollPane(itemsTable);
         tableScrollPane.setFitToWidth(true);
         tableScrollPane.setFitToHeight(true);
-        tableScrollPane.setPrefHeight(300);
+        tableScrollPane.setPrefHeight(250);
         tableScrollPane.setStyle(
                 "-fx-background-color: transparent; " +
                         "-fx-background: transparent; " +
@@ -1478,7 +1478,7 @@ public class ReportsController implements Initializable {
         HBox totalBox = new HBox(10);
         totalBox.setAlignment(Pos.CENTER_RIGHT);
         totalBox.setStyle(
-                "-fx-padding: 20px 25px; " +
+                "-fx-padding: 15px 20px; " +
                         "-fx-background-color: #E8F5E9; " +
                         "-fx-background-radius: 10px; " +
                         "-fx-border-color: #81C784; " +
@@ -1488,7 +1488,7 @@ public class ReportsController implements Initializable {
 
         Label totalLabel = new Label("Total Amount:");
         totalLabel.setStyle(
-                "-fx-font-size: 20px; " +
+                "-fx-font-size: 15px; " +
                         "-fx-font-weight: bold; " +
                         "-fx-text-fill: #1B5E20;"
         );
@@ -1664,23 +1664,30 @@ public class ReportsController implements Initializable {
     }
 
     private void handleDeleteTransaction(Sale sale) {
-        if (showConfirmation("Delete Transaction",
-                "Are you sure you want to delete transaction " + sale.getTransactionId() + "?\n\n" +
-                        "⚠ WARNING: This action cannot be undone!\n\n" +
-                        "The following will happen:\n" +
-                        "• Transaction will be permanently deleted\n" +
-                        "• Inventory will be restored for all items\n" +
-                        "• This affects your sales reports and statistics")) {
-            try {
-                salesService.deleteTransaction(sale.getId());
-                showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                        "Transaction deleted successfully!\nInventory has been restored.");
-                loadAllTransactions();
-            } catch (Exception e) {
-                e.printStackTrace();
-                showStyledAlert(Alert.AlertType.ERROR, "Error",
-                        "Failed to delete transaction: " + e.getMessage());
+        LocalDate today = LocalDate.now();
+        LocalDate transactionDate = sale.getSaleDate().toLocalDate();
+
+        if (today.isEqual(transactionDate)) {
+            if (showConfirmation("Delete Transaction",
+                    "Are you sure you want to delete transaction " + sale.getTransactionId() + "?\n\n" +
+                            "⚠ WARNING: This action cannot be undone!\n\n" +
+                            "The following will happen:\n" +
+                            "• Transaction will be permanently deleted\n" +
+                            "• Inventory will be restored for all items\n" +
+                            "• This affects your sales reports and statistics")) {
+                try {
+                    salesService.deleteTransaction(sale.getId());
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "Transaction deleted successfully!\nInventory has been restored.");
+                    loadAllTransactions();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showStyledAlert(Alert.AlertType.ERROR, "Error",
+                            "Failed to delete transaction: " + e.getMessage());
+                }
             }
+        } else {
+            showStyledAlert(Alert.AlertType.ERROR,"Error","Cannot delete transactions that are not within the day!");
         }
     }
 }
