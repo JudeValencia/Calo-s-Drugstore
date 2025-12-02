@@ -39,6 +39,19 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.LineSeparator;
+import com.itextpdf.kernel.pdf.canvas.draw.SolidLine;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.io.font.constants.StandardFonts;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 
 @Controller
 public class ReportsController implements Initializable {
@@ -74,6 +87,9 @@ public class ReportsController implements Initializable {
     @FXML private Label totalTransactionsLabel;
     @FXML private Label avgOrderValueLabel;
     @FXML private Label lowStockItemsLabel;
+
+    private LocalDate selectedMonth = LocalDate.now();
+    @FXML private ComboBox<String> monthSelectorCombo;
 
     // Expiring medicines table
     @FXML private TableView<Product> expiringMedicinesTable;
@@ -118,6 +134,7 @@ public class ReportsController implements Initializable {
         loadCategoryChart();
         loadExpiringMedicines();
         loadTopSellingMedicines();
+        setupMonthSelector();
 
         Platform.runLater(this::loadAllTransactions);
     }
@@ -452,21 +469,27 @@ public class ReportsController implements Initializable {
 
     private void loadCategoryChart() {
         PieChart pieChart = new PieChart();
-        pieChart.setTitle("");
+
+        // Set title based on selected month
+        DateTimeFormatter titleFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        pieChart.setTitle("Sales by Category - " + selectedMonth.format(titleFormatter));
         pieChart.setLegendVisible(true);
         pieChart.setAnimated(true);
 
         try {
-            // Get all sales
-            // Get sales from last 30 days
-            LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-            LocalDateTime now = LocalDateTime.now();
-            List<Sale> allSales = salesService.getSalesBetweenDates(thirtyDaysAgo, now);
+            // Get sales for selected month
+            LocalDate monthStart = selectedMonth.with(TemporalAdjusters.firstDayOfMonth());
+            LocalDate monthEnd = selectedMonth.with(TemporalAdjusters.lastDayOfMonth());
+
+            LocalDateTime startOfMonth = monthStart.atStartOfDay();
+            LocalDateTime endOfMonth = monthEnd.atTime(23, 59, 59);
+
+            List<Sale> monthSales = salesService.getSalesBetweenDates(startOfMonth, endOfMonth);
 
             // Count quantities by category
             Map<String, Integer> categoryCount = new HashMap<>();
 
-            for (Sale sale : allSales) {
+            for (Sale sale : monthSales) {
                 for (SaleItem item : sale.getItems()) {
                     Optional<Product> productOpt = productService.getProductByMedicineId(item.getMedicineId());
                     if (productOpt.isPresent()) {
@@ -477,8 +500,12 @@ public class ReportsController implements Initializable {
             }
 
             // Create pie chart data
-            for (Map.Entry<String, Integer> entry : categoryCount.entrySet()) {
-                pieChart.getData().add(new PieChart.Data(entry.getKey(), entry.getValue()));
+            if (categoryCount.isEmpty()) {
+                pieChart.getData().add(new PieChart.Data("No Sales", 1));
+            } else {
+                for (Map.Entry<String, Integer> entry : categoryCount.entrySet()) {
+                    pieChart.getData().add(new PieChart.Data(entry.getKey() + " (" + entry.getValue() + ")", entry.getValue()));
+                }
             }
 
         } catch (Exception e) {
@@ -552,6 +579,42 @@ public class ReportsController implements Initializable {
         });
     }
 
+    private void setupMonthSelector() {
+        if (monthSelectorCombo != null) {
+            // Generate last 12 months
+            List<String> months = new ArrayList<>();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+
+            for (int i = 0; i < 12; i++) {
+                LocalDate month = LocalDate.now().minusMonths(i);
+                months.add(month.format(formatter));
+            }
+
+            monthSelectorCombo.setItems(FXCollections.observableArrayList(months));
+            monthSelectorCombo.setValue(months.get(0)); // Current month
+
+            // Add listener for month selection
+            monthSelectorCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    handleMonthSelection(newVal);
+                }
+            });
+        }
+    }
+
+    private void handleMonthSelection(String monthYear) {
+        try {
+            // Parse as "MMMM yyyy" and set to first day of month
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+            java.time.YearMonth yearMonth = java.time.YearMonth.parse(monthYear, formatter);
+            selectedMonth = yearMonth.atDay(1);
+            loadCategoryChart();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error parsing month: " + monthYear);
+        }
+    }
+
     private void loadExpiringMedicines() {
         try {
             // getExpiringProducts() already returns products expiring within 30 days
@@ -593,11 +656,6 @@ public class ReportsController implements Initializable {
         setActiveButton(staffBtn);
         navigateToPage("/fxml/staff.fxml", "/css/staff.css");
     }
-
-//    private void showComingSoon(String feature) {
-//        showStyledAlert(Alert.AlertType.INFORMATION, "Coming Soon",
-//                feature + " module is under development and will be available soon!");
-//    }
 
     @FXML
     private void handleLogout() {
@@ -1689,5 +1747,260 @@ public class ReportsController implements Initializable {
         } else {
             showStyledAlert(Alert.AlertType.ERROR,"Error","Cannot delete transactions that are not within the day!");
         }
+    }
+
+    @FXML
+    private void handleExportReport() {
+        try {
+            // Create file chooser
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Save Report as PDF");
+            fileChooser.setInitialFileName("Sales_Report_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + ".pdf");
+            fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("PDF Files", "*.pdf")
+            );
+
+            // Show save dialog
+            java.io.File file = fileChooser.showSaveDialog(dashboardBtn.getScene().getWindow());
+
+            if (file != null) {
+                generatePDFReport(file);
+                showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                        "Report exported successfully to:\n" + file.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                    "Failed to export report: " + e.getMessage());
+        }
+    }
+
+    private void generatePDFReport(java.io.File file) throws Exception {
+        com.itextpdf.kernel.pdf.PdfWriter writer = new com.itextpdf.kernel.pdf.PdfWriter(file);
+        com.itextpdf.kernel.pdf.PdfDocument pdf = new com.itextpdf.kernel.pdf.PdfDocument(writer);
+        com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdf);
+
+        // Set margins
+        document.setMargins(50, 50, 50, 50);
+
+        // Colors
+        com.itextpdf.kernel.colors.Color greenColor = new com.itextpdf.kernel.colors.DeviceRgb(76, 175, 80);
+        com.itextpdf.kernel.colors.Color darkColor = new com.itextpdf.kernel.colors.DeviceRgb(44, 62, 80);
+        com.itextpdf.kernel.colors.Color grayColor = new com.itextpdf.kernel.colors.DeviceRgb(127, 140, 141);
+
+        // Title
+        com.itextpdf.layout.element.Paragraph title = new com.itextpdf.layout.element.Paragraph("Calo's Drugstore")
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
+                .setFontSize(24)
+                .setFontColor(greenColor)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+        document.add(title);
+
+        com.itextpdf.layout.element.Paragraph subtitle = new com.itextpdf.layout.element.Paragraph("Sales & Inventory Report")
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
+                .setFontSize(16)
+                .setFontColor(darkColor)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                .setMarginBottom(5);
+        document.add(subtitle);
+
+        // Date range
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        com.itextpdf.layout.element.Paragraph dateRange = new com.itextpdf.layout.element.Paragraph(selectedMonth.format(formatter))
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
+                .setFontSize(12)
+                .setFontColor(grayColor)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                .setMarginBottom(20);
+        document.add(dateRange);
+
+        // Generated date
+        com.itextpdf.layout.element.Paragraph generatedDate = new com.itextpdf.layout.element.Paragraph("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a")))
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
+                .setFontSize(10)
+                .setFontColor(grayColor)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                .setMarginBottom(30);
+        document.add(generatedDate);
+
+        // Separator
+        document.add(new com.itextpdf.layout.element.LineSeparator(new com.itextpdf.kernel.pdf.canvas.draw.SolidLine()).setMarginBottom(20));
+
+        // === KPI SECTION ===
+        com.itextpdf.layout.element.Paragraph kpiTitle = new com.itextpdf.layout.element.Paragraph("Key Performance Indicators")
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
+                .setFontSize(16)
+                .setFontColor(darkColor)
+                .setMarginBottom(15);
+        document.add(kpiTitle);
+
+        // KPI Table
+        com.itextpdf.layout.element.Table kpiTable = new com.itextpdf.layout.element.Table(new float[]{1, 1, 1, 1});
+        kpiTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
+
+        // Headers
+        kpiTable.addHeaderCell(createHeaderCell("Total Revenue"));
+        kpiTable.addHeaderCell(createHeaderCell("Transactions"));
+        kpiTable.addHeaderCell(createHeaderCell("Avg. Order Value"));
+        kpiTable.addHeaderCell(createHeaderCell("Low Stock Items"));
+
+        // Values
+        kpiTable.addCell(createValueCell(totalRevenueLabel.getText()));
+        kpiTable.addCell(createValueCell(totalTransactionsLabel.getText()));
+        kpiTable.addCell(createValueCell(avgOrderValueLabel.getText()));
+        kpiTable.addCell(createValueCell(lowStockItemsLabel.getText()));
+
+        document.add(kpiTable.setMarginBottom(30));
+
+        com.itextpdf.layout.element.Paragraph topSellingTitle = new com.itextpdf.layout.element.Paragraph("Top Selling Medicines")
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
+                .setFontSize(16)
+                .setFontColor(darkColor)
+                .setMarginBottom(15);
+        document.add(topSellingTitle);
+
+        com.itextpdf.layout.element.Table pdfTopSellingTable = new com.itextpdf.layout.element.Table(new float[]{1, 3, 2, 2});
+        pdfTopSellingTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
+
+        pdfTopSellingTable.addHeaderCell(createHeaderCell("Rank"));
+        pdfTopSellingTable.addHeaderCell(createHeaderCell("Medicine"));
+        pdfTopSellingTable.addHeaderCell(createHeaderCell("Category"));
+        pdfTopSellingTable.addHeaderCell(createHeaderCell("Quantity Sold"));
+
+        for (Map<String, Object> item : topSellingTable.getItems()) {
+            pdfTopSellingTable.addCell(createTableCell("#" + item.get("rank").toString()));
+            pdfTopSellingTable.addCell(createTableCell(item.get("medicineName").toString()));
+            pdfTopSellingTable.addCell(createTableCell(item.get("category").toString()));
+            pdfTopSellingTable.addCell(createTableCell(item.get("quantitySold").toString()));
+        }
+
+        document.add(pdfTopSellingTable.setMarginBottom(30));
+
+        // === EXPIRING MEDICINES ===
+        com.itextpdf.layout.element.Paragraph expiringTitle = new com.itextpdf.layout.element.Paragraph("Expiring Medicines (Next 30 Days)")
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
+                .setFontSize(16)
+                .setFontColor(darkColor)
+                .setMarginBottom(15);
+        document.add(expiringTitle);
+
+        com.itextpdf.layout.element.Table expiringTable = new com.itextpdf.layout.element.Table(new float[]{2, 3, 2, 1, 1, 2});
+        expiringTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
+
+        expiringTable.addHeaderCell(createHeaderCell("ID"));
+        expiringTable.addHeaderCell(createHeaderCell("Medicine"));
+        expiringTable.addHeaderCell(createHeaderCell("Expiration"));
+        expiringTable.addHeaderCell(createHeaderCell("Days"));
+        expiringTable.addHeaderCell(createHeaderCell("Stock"));
+        expiringTable.addHeaderCell(createHeaderCell("Status"));
+
+        for (Product product : expiringMedicinesTable.getItems()) {
+            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate());
+            String status = daysLeft < 0 ? "Expired" :
+                    daysLeft <= 7 ? "Critical" :
+                            daysLeft <= 30 ? "Warning" : "Good";
+
+            expiringTable.addCell(createTableCell(product.getMedicineId()));
+            expiringTable.addCell(createTableCell(product.getName()));
+            expiringTable.addCell(createTableCell(product.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
+            expiringTable.addCell(createTableCell(String.valueOf(Math.max(0, daysLeft))));
+            expiringTable.addCell(createTableCell(String.valueOf(product.getStock())));
+            expiringTable.addCell(createTableCell(status));
+        }
+
+        document.add(expiringTable.setMarginBottom(30));
+
+        // === CATEGORY DISTRIBUTION ===
+        com.itextpdf.layout.element.Paragraph categoryTitle = new com.itextpdf.layout.element.Paragraph("Sales by Category")
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
+                .setFontSize(16)
+                .setFontColor(darkColor)
+                .setMarginBottom(15);
+        document.add(categoryTitle);
+
+        // Get category data
+        LocalDate monthStart = selectedMonth.with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate monthEnd = selectedMonth.with(TemporalAdjusters.lastDayOfMonth());
+        LocalDateTime startOfMonth = monthStart.atStartOfDay();
+        LocalDateTime endOfMonth = monthEnd.atTime(23, 59, 59);
+        List<Sale> monthSales = salesService.getSalesBetweenDates(startOfMonth, endOfMonth);
+
+        Map<String, Integer> categoryCount = new HashMap<>();
+        int totalItems = 0;
+
+        for (Sale sale : monthSales) {
+            for (SaleItem item : sale.getItems()) {
+                Optional<Product> productOpt = productService.getProductByMedicineId(item.getMedicineId());
+                if (productOpt.isPresent()) {
+                    String category = productOpt.get().getCategory();
+                    categoryCount.put(category, categoryCount.getOrDefault(category, 0) + item.getQuantity());
+                    totalItems += item.getQuantity();
+                }
+            }
+        }
+
+        com.itextpdf.layout.element.Table categoryTable = new com.itextpdf.layout.element.Table(new float[]{3, 2, 2});
+        categoryTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
+
+        categoryTable.addHeaderCell(createHeaderCell("Category"));
+        categoryTable.addHeaderCell(createHeaderCell("Quantity"));
+        categoryTable.addHeaderCell(createHeaderCell("Percentage"));
+
+        for (Map.Entry<String, Integer> entry : categoryCount.entrySet()) {
+            double percentage = totalItems > 0 ? (entry.getValue() * 100.0 / totalItems) : 0;
+            categoryTable.addCell(createTableCell(entry.getKey()));
+            categoryTable.addCell(createTableCell(String.valueOf(entry.getValue())));
+            categoryTable.addCell(createTableCell(String.format("%.1f%%", percentage)));
+        }
+
+        document.add(categoryTable);
+
+        // Footer
+        document.add(new com.itextpdf.layout.element.Paragraph("\n"));
+        document.add(new com.itextpdf.layout.element.LineSeparator(new com.itextpdf.kernel.pdf.canvas.draw.SolidLine()).setMarginTop(20));
+
+        com.itextpdf.layout.element.Paragraph footer = new com.itextpdf.layout.element.Paragraph("© " + LocalDate.now().getYear() + " Calo's Drugstore. All rights reserved.")
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
+                .setFontSize(10)
+                .setFontColor(grayColor)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                .setMarginTop(20);
+        document.add(footer);
+
+        document.close();
+    }
+
+    private com.itextpdf.layout.element.Cell createHeaderCell(String text) throws Exception {
+        com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
+                .add(new com.itextpdf.layout.element.Paragraph(text))
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
+                .setFontSize(11)
+                .setBackgroundColor(new com.itextpdf.kernel.colors.DeviceRgb(248, 249, 250))
+                .setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(44, 62, 80))
+                .setPadding(10)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+        return cell;
+    }
+
+    private com.itextpdf.layout.element.Cell createTableCell(String text) throws Exception {
+        com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
+                .add(new com.itextpdf.layout.element.Paragraph(text))
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
+                .setFontSize(10)
+                .setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(44, 62, 80))
+                .setPadding(8)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+        return cell;
+    }
+
+    private com.itextpdf.layout.element.Cell createValueCell(String text) throws Exception {
+        com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
+                .add(new com.itextpdf.layout.element.Paragraph(text))
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
+                .setFontSize(14)
+                .setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(76, 175, 80))
+                .setPadding(10)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+        return cell;
     }
 }

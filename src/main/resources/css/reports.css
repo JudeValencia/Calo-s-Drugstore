@@ -167,6 +167,56 @@
     -fx-padding: 4px 0 0 0;
 }
 
+/* Month Selector ComboBox */
+.filter-combo {
+    -fx-background-color: white;
+    -fx-background-radius: 6px;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 10px 15px;
+    -fx-font-size: 14px;
+    -fx-text-fill: #2c3e50;
+}
+
+.filter-combo:hover {
+    -fx-border-color: #4CAF50;
+}
+
+.filter-combo:focused {
+    -fx-border-color: #4CAF50;
+    -fx-background-color: #F8F9FA;
+}
+
+.filter-combo .list-cell {
+    -fx-background-color: white;
+    -fx-text-fill: #2c3e50;
+    -fx-padding: 8px 12px;
+}
+
+.filter-combo .list-cell:hover {
+    -fx-background-color: rgba(76, 175, 80, 0.1);
+}
+
+.filter-combo .list-cell:selected {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+/* Filter Label */
+.filter-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Filter Row Container */
+.filter-row {
+    -fx-padding: 15px 20px;
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+}
+
 /* ==================== TIME PERIOD TOGGLES ==================== */
 .period-toggle {
     -fx-background-color: #f8f9fa;

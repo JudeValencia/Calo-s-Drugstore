@@ -93,6 +93,7 @@
                 <VBox VBox.vgrow="ALWAYS">
                     <Label text="Reports &amp; Analytics" styleClass="page-title"/>
                     <Label text="Comprehensive insights into your pharmacy operations" styleClass="page-subtitle"/>
+                    <Button text="📄 Export Report" onAction="#handleExportReport" styleClass="period-toggle"/>
                 </VBox>
 <!--                <Button text="📥 Export Report" styleClass="export-button" onAction="#handleExportReport"/>-->
             </HBox>
@@ -147,7 +148,13 @@
                                     <Label text="Distribution of sales across medicine categories" styleClass="filter-subtitle"/>
                                 </VBox>
                             </HBox>
-                            <StackPane fx:id="categoryChartContainer" prefHeight="300" style="-fx-padding: 20 0 0 0;"/>
+                            <VBox spacing="15">
+                                <HBox alignment="CENTER_LEFT" spacing="15" styleClass="table-row-cell">
+                                    <Label text="View Month:" styleClass="label" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                                    <ComboBox fx:id="monthSelectorCombo" prefWidth="200" promptText="Select Month" styleClass="filter-combo"/>
+                                </HBox>
+                                <StackPane fx:id="categoryChartContainer" VBox.vgrow="ALWAYS"/>
+                            </VBox>
                         </VBox>
 
                         <!-- Key Performance Indicators -->
@@ -201,7 +208,6 @@
                                 <Label text="View and manage all sales transactions" styleClass="filter-subtitle"/>
                             </VBox>
                             <Region HBox.hgrow="ALWAYS"/>
-                        <!--<Button fx:id="refreshTransactionsBtn" text="🔄 Refresh" styleClass="refresh-button" onAction="#handleRefreshTransactions"/> -->
                     </HBox>
 
                     <TableView fx:id="transactionsTable" prefHeight="400" styleClass="transactions-table">
