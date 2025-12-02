@@ -122,6 +122,7 @@ public class SalesController implements Initializable {
             }
         }
     }
+
     private void setupMedicineCombo() {
         medicineCombo.setCellFactory(lv -> new ListCell<Product>() {
             @Override
@@ -922,27 +923,6 @@ public class SalesController implements Initializable {
         showStyledAlert(Alert.AlertType.INFORMATION, "Download", "Download receipt for " + sale.getTransactionId());
     }
 
-//    // Navigation methods
-//    private void setActiveButton(Button activeBtn) {
-//        // Remove active class from all buttons
-//        dashboardBtn.getStyleClass().remove("active");
-//        inventoryBtn.getStyleClass().remove("active");
-//        salesBtn.getStyleClass().remove("active");
-//        reportsBtn.getStyleClass().remove("active");
-//
-//        // Only remove active from staffBtn if it exists (admin view has it, staff view doesn't)
-//        if (staffBtn != null) {
-//            staffBtn.getStyleClass().remove("active");
-//        }
-//
-//        // Add active class to the clicked button
-//        if (activeBtn != null) {
-//            activeBtn.getStyleClass().add("active");
-//        }
-//    }
-
-    // Replace the setActiveButton method in all controllers with this version:
-
     private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
@@ -1010,7 +990,6 @@ public class SalesController implements Initializable {
         // Already on sales page
     }
 
-
     @FXML
     private void handleReports() {
         setActiveButton(reportsBtn);
@@ -1024,7 +1003,6 @@ public class SalesController implements Initializable {
             navigateToPage("/fxml/reports.fxml", "/css/reports.css");
         }
     }
-
 
     @FXML
     private void handleStaff() {
@@ -1311,23 +1289,6 @@ public class SalesController implements Initializable {
         }
     }
 
-//    private void showStyledAlert(Alert.AlertType type, String title, String message) {
-//        Alert alert = new Alert(type);
-//        alert.setTitle(title);
-//        alert.setHeaderText(null);
-//        alert.setContentText(message);
-//        alert.showAndWait();
-//    }
-
-//    private boolean showConfirmation(String title, String message) {
-//        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-//        alert.setTitle(title);
-//        alert.setHeaderText(null);
-//        alert.setContentText(message);
-//        Optional<ButtonType> result = alert.showAndWait();
-//        return result.isPresent() && result.get() == ButtonType.OK;
-//    }
-
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
@@ -1613,105 +1574,6 @@ public class SalesController implements Initializable {
         dialogStage.centerOnScreen();
         dialogStage.showAndWait();
     }
-
-//    private void handleViewDetails(Sale sale) {
-//        if (sale == null) return;
-//
-//        Stage dialogStage = new Stage();
-//        IconUtil.setApplicationIcon(dialogStage);
-//        dialogStage.initModality(Modality.APPLICATION_MODAL);
-//        dialogStage.setTitle("Transaction Details");
-//        dialogStage.setResizable(false);
-//
-//        VBox mainContainer = new VBox(20);
-//        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
-//        mainContainer.setPrefWidth(600);
-//
-//        HBox headerBox = new HBox(15);
-//        headerBox.setAlignment(Pos.CENTER_LEFT);
-//
-//        Label iconLabel = new Label("📄");
-//        iconLabel.setStyle("-fx-font-size: 32px;");
-//
-//        VBox titleBox = new VBox(5);
-//        Label titleLabel = new Label("Transaction: " + sale.getTransactionId());
-//        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-//
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' h:mm a");
-//        Label dateLabel = new Label(sale.getSaleDate().format(formatter));
-//        dateLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
-//
-//        titleBox.getChildren().addAll(titleLabel, dateLabel);
-//        headerBox.getChildren().addAll(iconLabel, titleBox);
-//
-//        Separator separator1 = new Separator();
-//
-//        Label itemsTitle = new Label("Items Purchased:");
-//        itemsTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-//
-//        VBox itemsList = new VBox(12);
-//        itemsList.setStyle("-fx-background-color: #F8F9FA; -fx-padding: 15; -fx-background-radius: 8px;");
-//
-//        for (SaleItem item : sale.getItems()) {
-//            VBox itemBox = new VBox(5);
-//
-//            HBox itemNameRow = new HBox();
-//            itemNameRow.setAlignment(Pos.CENTER_LEFT);
-//
-//            Label itemName = new Label(item.getMedicineName());
-//            itemName.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-//            HBox.setHgrow(itemName, Priority.ALWAYS);
-//
-//            Label itemTotal = new Label("₱" + String.format("%.2f", item.getSubtotal()));
-//            itemTotal.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-//
-//            itemNameRow.getChildren().addAll(itemName, itemTotal);
-//
-//            Label itemDetails = new Label(item.getQuantity() + " × ₱" +
-//                    String.format("%.2f", item.getUnitPrice()) + " each");
-//            itemDetails.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
-//
-//            itemBox.getChildren().addAll(itemNameRow, itemDetails);
-//            itemsList.getChildren().add(itemBox);
-//        }
-//
-//        Separator separator2 = new Separator();
-//
-//        HBox totalRow = new HBox();
-//        totalRow.setAlignment(Pos.CENTER_LEFT);
-//        totalRow.setStyle("-fx-background-color: #E8F5E9; -fx-padding: 15; -fx-background-radius: 8px;");
-//
-//        Label totalLabel = new Label("Total Amount:");
-//        totalLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-//        HBox.setHgrow(totalLabel, Priority.ALWAYS);
-//
-//        Label totalAmount = new Label("₱" + String.format("%.2f", sale.getTotalAmount()));
-//        totalAmount.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #4CAF50;");
-//        totalRow.getChildren().addAll(totalLabel, totalAmount);
-//
-//        HBox buttonBox = new HBox(15);
-//        buttonBox.setAlignment(Pos.CENTER_RIGHT);
-//
-//        Button closeButton = new Button("Close");
-//        closeButton.setStyle(
-//                "-fx-background-color: #4CAF50; " +
-//                        "-fx-text-fill: white; " +
-//                        "-fx-font-size: 14px; " +
-//                        "-fx-font-weight: bold; " +
-//                        "-fx-padding: 12px 40px; " +
-//                        "-fx-background-radius: 8px; " +
-//                        "-fx-cursor: hand;"
-//        );
-//        closeButton.setOnAction(e -> dialogStage.close());
-//        buttonBox.getChildren().add(closeButton);
-//
-//        mainContainer.getChildren().addAll(headerBox, separator1, itemsTitle, itemsList, separator2, totalRow, buttonBox);
-//
-//        Scene scene = new Scene(mainContainer);
-//        dialogStage.setScene(scene);
-//        dialogStage.centerOnScreen();
-//        dialogStage.showAndWait();
-//    }
 
     private void updateCartUI() {
         if (cartItems.isEmpty()) {

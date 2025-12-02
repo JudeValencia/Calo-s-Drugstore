@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.chrono.ChronoLocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
@@ -1189,7 +1190,13 @@ public class ReportsController implements Initializable {
     }
 
     private void handleEditTransaction(Sale sale) {
-        showTransactionDetailsDialog(sale, true);
+        LocalDate today = LocalDate.now();
+        LocalDate transactionDate = sale.getSaleDate().toLocalDate();
+
+        if (today.isEqual(transactionDate)) {
+            showTransactionDetailsDialog(sale, true);
+        } else
+            showTransactionDetailsDialog(sale, false);
     }
 
     private void showTransactionDetailsDialog(Sale sale, boolean editable) {
@@ -1205,7 +1212,7 @@ public class ReportsController implements Initializable {
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
         mainContainer.setPrefWidth(750);
 
-        // ⭐ STORE ORIGINAL QUANTITIES AT THE START
+        // STORE ORIGINAL QUANTITIES AT THE START
         Map<String, Integer> originalQuantities = new HashMap<>();
         for (SaleItem item : sale.getItems()) {
             originalQuantities.put(item.getMedicineId(), item.getQuantity());
