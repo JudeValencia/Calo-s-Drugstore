@@ -504,13 +504,14 @@ public class ReportsController implements Initializable {
 
         daysLeftCol.setCellValueFactory(cellData -> {
             long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
-            return new SimpleStringProperty(String.valueOf(daysLeft));
+            if (daysLeft > 0) return new SimpleStringProperty(String.valueOf(daysLeft));
+            else return new SimpleStringProperty(String.valueOf(0));
         });
 
         stockCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getStock())));
 
         statusCol.setCellValueFactory(cellData -> {
-            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
+                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
             if (daysLeft < 0) return new SimpleStringProperty("Expired");
             else if (daysLeft <= 7) return new SimpleStringProperty("Critical");
             else if (daysLeft <= 30) return new SimpleStringProperty("Warning");
@@ -1535,7 +1536,7 @@ public class ReportsController implements Initializable {
                 }
 
                 if (showConfirmation("Save Changes",
-                        "Are you sure you want to save changes to this transaction?\n\n" +
+                        "Are you sure you want to save changes to this transaction?\n" +
                                 "This will update inventory levels accordingly.")) {
                     try {
                         // Use the originalQuantities map we created at the start
