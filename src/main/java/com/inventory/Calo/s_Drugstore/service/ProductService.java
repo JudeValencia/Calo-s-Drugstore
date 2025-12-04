@@ -101,7 +101,7 @@ public class ProductService {
             Product product = existingProduct.get();
 
             // Update fields
-            product.setName(updatedProduct.getName());
+            product.setBrandName(updatedProduct.getBrandName());
             product.setStock(updatedProduct.getStock());
             product.setPrice(updatedProduct.getPrice());
             product.setExpirationDate(updatedProduct.getExpirationDate());

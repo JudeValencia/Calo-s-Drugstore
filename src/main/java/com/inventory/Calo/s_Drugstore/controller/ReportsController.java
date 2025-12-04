@@ -34,25 +34,11 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.time.chrono.ChronoLocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.element.LineSeparator;
-import com.itextpdf.kernel.pdf.canvas.draw.SolidLine;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.io.font.constants.StandardFonts;
-import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.layout.properties.TextAlignment;
-import com.itextpdf.layout.properties.UnitValue;
 
 @Controller
 public class ReportsController implements Initializable {
@@ -528,7 +514,7 @@ public class ReportsController implements Initializable {
 
     private void setupExpiringMedicinesTable() {
         medicineIdCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMedicineId()));
-        medicineNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+        medicineNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getBrandName()));
         expirationDateCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
 
@@ -2103,7 +2089,7 @@ public class ReportsController implements Initializable {
                             daysLeft <= 30 ? "Warning" : "Good";
 
             expiringTable.addCell(createTableCell(product.getMedicineId()));
-            expiringTable.addCell(createTableCell(product.getName()));
+            expiringTable.addCell(createTableCell(product.getBrandName()));
             expiringTable.addCell(createTableCell(product.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
             expiringTable.addCell(createTableCell(String.valueOf(Math.max(0, daysLeft))));
             expiringTable.addCell(createTableCell(String.valueOf(product.getStock())));

@@ -110,7 +110,7 @@ public class InventoryController implements Initializable {
                     HBox container = new HBox(8);
                     container.setAlignment(Pos.CENTER_LEFT);
 
-                    Label nameLabel = new Label(product.getName());
+                    Label nameLabel = new Label(product.getBrandName());
                     nameLabel.setStyle("-fx-font-size: 14px;");
 
                     if (product.isExpiringSoon()) {
@@ -125,8 +125,14 @@ public class InventoryController implements Initializable {
                 }
             }
         });
-        nameColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getName()));
+        nameColumn.setCellValueFactory(data -> {
+            String brandName = data.getValue().getBrandName();
+            String genericName = data.getValue().getGenericName();
+            if (genericName != null && !genericName.isEmpty()) {
+                return new SimpleStringProperty(brandName + " (" + genericName + ")");
+            }
+            return new SimpleStringProperty(brandName);
+        });
 
         // Stock Column - Number ONLY
         stockColumn.setCellFactory(column -> new TableCell<>() {
@@ -246,8 +252,33 @@ public class InventoryController implements Initializable {
         actionsColumn.setCellFactory(column -> new TableCell<>() {
             private final Button editBtn = new Button();
             private final Button deleteBtn = new Button();
+            private final Button viewBtn = new Button();
 
             {
+
+                // View button with text icon
+                viewBtn.setText("👁");
+                viewBtn.setStyle(
+                        "-fx-background-color: white; " +
+                                "-fx-text-fill: #2c3e50; " +
+                                "-fx-font-size: 16px; " +
+                                "-fx-cursor: hand; " +
+                                "-fx-padding: 8px 12px; " +
+                                "-fx-border-color: #E0E0E0; " +
+                                "-fx-border-width: 1px; " +
+                                "-fx-border-radius: 6px; " +
+                                "-fx-background-radius: 6px;"
+                );
+
+                viewBtn.setOnMouseEntered(e -> viewBtn.setStyle(
+                        viewBtn.getStyle() + "-fx-background-color: #E8F5E9; -fx-border-color: #4CAF50;"
+                ));
+                viewBtn.setOnMouseExited(e -> viewBtn.setStyle(
+                        viewBtn.getStyle().replace("-fx-background-color: #E8F5E9; -fx-border-color: #4CAF50;",
+                                "-fx-background-color: white; -fx-border-color: #E0E0E0;")
+                ));
+
+
                 // Edit button with text icon
                 editBtn.setText("🔧");
                 editBtn.setStyle(
@@ -292,6 +323,13 @@ public class InventoryController implements Initializable {
                                 "-fx-background-color: white; -fx-border-color: #E0E0E0;")
                 ));
 
+                viewBtn.setOnAction(event -> {
+                    Product product = getTableRow().getItem();
+                    if (product != null) {
+                        handleViewProduct(product);
+                    }
+                });
+
                 editBtn.setOnAction(event -> {
                     Product product = getTableRow().getItem();
                     if (product != null) {
@@ -313,12 +351,23 @@ public class InventoryController implements Initializable {
                 if (empty) {
                     setGraphic(null);
                 } else {
-                    HBox buttons = new HBox(8, editBtn, deleteBtn);
+                    HBox buttons = new HBox(8, viewBtn, editBtn, deleteBtn);
                     buttons.setAlignment(Pos.CENTER_LEFT);
                     setGraphic(buttons);
                 }
             }
         });
+
+        medicineIdColumn.setMinWidth(120);
+        nameColumn.setMinWidth(200);
+        stockColumn.setMinWidth(100);
+        statusColumn.setMinWidth(120);
+        priceColumn.setMinWidth(100);
+        expirationColumn.setMinWidth(130);
+        supplierColumn.setMinWidth(150);
+        actionsColumn.setMinWidth(220);
+
+        inventoryTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
     }
 
     private void setupFilters() {
@@ -487,7 +536,8 @@ public class InventoryController implements Initializable {
                     MedicineFormData formData = medicineDataList.get(i);
 
                     // Check if form is completely empty (skip it)
-                    if (formData.name.getText().trim().isEmpty() &&
+                    if (formData.brandName.getText().trim().isEmpty() &&
+                            formData.genericName.getText().trim().isEmpty() &&
                             formData.stock.getText().equals("0") &&
                             formData.price.getText().equals("0.00")) {
                         emptyCount++;
@@ -497,8 +547,11 @@ public class InventoryController implements Initializable {
                     // Validate required fields
                     StringBuilder missingFields = new StringBuilder();
 
-                    if (formData.name.getText().trim().isEmpty()) {
-                        missingFields.append("Name, ");
+                    if (formData.brandName.getText().trim().isEmpty()) {
+                        missingFields.append("Brand Name, ");
+                    }
+                    if (formData.genericName.getText().trim().isEmpty()) {
+                        missingFields.append("Generic Name, ");
                     }
                     if (formData.stock.getText().trim().isEmpty() || formData.stock.getText().equals("0")) {
                         missingFields.append("Stock, ");
@@ -527,12 +580,20 @@ public class InventoryController implements Initializable {
                         // All validations passed, create the product
                         Product newProduct = new Product();
                         newProduct.setMedicineId(productService.generateNextMedicineId());
-                        newProduct.setName(formData.name.getText().trim());
+                        newProduct.setBrandName(formData.brandName.getText().trim());
+                        newProduct.setGenericName(formData.genericName.getText().trim());
                         newProduct.setStock(Integer.parseInt(formData.stock.getText()));
                         newProduct.setPrice(new BigDecimal(formData.price.getText()));
                         newProduct.setExpirationDate(formData.expiryDate.getValue());
                         newProduct.setSupplier(formData.supplier.getText().trim());
                         newProduct.setCategory(formData.category.getText().trim());
+                        newProduct.setBatchNumber(formData.batchNumber.getText().trim());
+                        newProduct.setMinStockLevel(Integer.parseInt(formData.minStockLevel.getText()));
+                        newProduct.setPrescriptionRequired(formData.prescriptionRequired.isSelected());
+                        newProduct.setDosageForm(formData.dosageForm.getValue());
+                        newProduct.setDosageStrength(formData.dosageStrength.getText().trim());
+                        newProduct.setManufacturer(formData.manufacturer.getText().trim());
+                        newProduct.setUnitOfMeasure(formData.unitOfMeasure.getValue());
 
                         productService.saveProduct(newProduct);
                         successCount++;
@@ -611,9 +672,13 @@ public class InventoryController implements Initializable {
         grid.setVgap(12);
 
         // Left column - NEW INSTANCES
-        TextField nameField = new TextField();
-        nameField.setPromptText("Enter medicine name");
-        styleTextField(nameField);
+        TextField brandNameField = new TextField();
+        brandNameField.setPromptText("Enter brand name");
+        styleTextField(brandNameField);
+
+        TextField genericNameField = new TextField();
+        genericNameField.setPromptText("Enter generic/active ingredient");
+        styleTextField(genericNameField);
 
         TextField priceField = new TextField("0.00");
         priceField.setPromptText("0.00");
@@ -645,12 +710,15 @@ public class InventoryController implements Initializable {
         styleTextField(categoryField);
 
         // Column 1
-        grid.add(createFieldLabel("Medicine Name"), 0, 0);
-        grid.add(nameField, 0, 1);
-        grid.add(createFieldLabel("Price (₱)"), 0, 2);
-        grid.add(priceField, 0, 3);
-        grid.add(createFieldLabel("Supplier"), 0, 4);
-        grid.add(supplierField, 0, 5);
+        // Column 1
+        grid.add(createFieldLabel("Brand Name *"), 0, 0);
+        grid.add(brandNameField, 0, 1);
+        grid.add(createFieldLabel("Generic Name *"), 0, 2);
+        grid.add(genericNameField, 0, 3);
+        grid.add(createFieldLabel("Price (₱) *"), 0, 4);
+        grid.add(priceField, 0, 5);
+        grid.add(createFieldLabel("Supplier *"), 0, 6);
+        grid.add(supplierField, 0, 7);
 
         // Column 2
         grid.add(createFieldLabel("Stock Quantity"), 1, 0);
@@ -673,7 +741,7 @@ public class InventoryController implements Initializable {
         container.getChildren().add(0, medicineCard);
 
         // Store form data
-        MedicineFormData formData = new MedicineFormData(nameField, stockField, priceField, expiryPicker, supplierField, categoryField);
+        MedicineFormData formData = new MedicineFormData(brandNameField, genericNameField, stockField, priceField, expiryPicker, supplierField, categoryField);
         dataList.add(0, formData); // Also add to list at top
     }
 
@@ -699,9 +767,13 @@ public class InventoryController implements Initializable {
         grid.setVgap(12);
 
         // Left column - NEW INSTANCES
-        TextField nameField = new TextField();
-        nameField.setPromptText("Enter medicine name");
-        styleTextField(nameField);
+        TextField brandNameField = new TextField();
+        brandNameField.setPromptText("Enter brand name");
+        styleTextField(brandNameField);
+
+        TextField genericNameField = new TextField();
+        genericNameField.setPromptText("Enter generic/active ingredient");
+        styleTextField(genericNameField);
 
         TextField priceField = new TextField("0.00");
         priceField.setPromptText("0.00");
@@ -732,21 +804,70 @@ public class InventoryController implements Initializable {
         categoryField.setPromptText("Enter category");
         styleTextField(categoryField);
 
+        // New Priority Fields
+        TextField batchNumberField = new TextField();
+        batchNumberField.setPromptText("Batch/Lot number");
+        styleTextField(batchNumberField);
+
+        TextField minStockField = new TextField("10");
+        minStockField.setPromptText("10");
+        styleTextField(minStockField);
+
+        CheckBox prescriptionCheckBox = new CheckBox("Rx Required");
+        prescriptionCheckBox.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+
+        ComboBox<String> dosageFormCombo = new ComboBox<>();
+        dosageFormCombo.getItems().addAll("Tablet", "Capsule", "Syrup", "Injection", "Cream", "Ointment", "Drops", "Inhaler", "Other");
+        dosageFormCombo.setValue("Tablet");
+        dosageFormCombo.setPromptText("Select form");
+        styleComboBox(dosageFormCombo);
+
+        TextField dosageStrengthField = new TextField();
+        dosageStrengthField.setPromptText("e.g., 500mg");
+        styleTextField(dosageStrengthField);
+
+        TextField manufacturerField = new TextField();
+        manufacturerField.setPromptText("Manufacturer name");
+        styleTextField(manufacturerField);
+
+        ComboBox<String> unitCombo = new ComboBox<>();
+        unitCombo.getItems().addAll("Box", "Strip", "Bottle", "Piece", "Vial", "Tube", "Pack");
+        unitCombo.setValue("Piece");
+        unitCombo.setPromptText("Select unit");
+        styleComboBox(unitCombo);
+
         // Column 1
-        grid.add(createFieldLabel("Medicine Name"), 0, 0);
-        grid.add(nameField, 0, 1);
-        grid.add(createFieldLabel("Price (₱)"), 0, 2);
-        grid.add(priceField, 0, 3);
-        grid.add(createFieldLabel("Supplier"), 0, 4);
-        grid.add(supplierField, 0, 5);
+        // Column 1
+        grid.add(createFieldLabel("Brand Name *"), 0, 0);
+        grid.add(brandNameField, 0, 1);
+        grid.add(createFieldLabel("Generic Name *"), 0, 2);
+        grid.add(genericNameField, 0, 3);
+        grid.add(createFieldLabel("Dosage Form *"), 0, 4);
+        grid.add(dosageFormCombo, 0, 5);
+        grid.add(createFieldLabel("Dosage Strength"), 0, 6);
+        grid.add(dosageStrengthField, 0, 7);
+        grid.add(createFieldLabel("Manufacturer"), 0, 8);
+        grid.add(manufacturerField, 0, 9);
+        grid.add(createFieldLabel("Price (₱) *"), 0, 10);
+        grid.add(priceField, 0, 11);
+        grid.add(createFieldLabel("Supplier *"), 0, 12);
+        grid.add(supplierField, 0, 13);
 
         // Column 2
-        grid.add(createFieldLabel("Stock Quantity"), 1, 0);
+        grid.add(createFieldLabel("Stock Quantity *"), 1, 0);
         grid.add(stockField, 1, 1);
-        grid.add(createFieldLabel("Expiration Date"), 1, 2);
-        grid.add(expiryPicker, 1, 3);
-        grid.add(createFieldLabel("Category"), 1, 4);
-        grid.add(categoryField, 1, 5);
+        grid.add(createFieldLabel("Unit of Measure *"), 1, 2);
+        grid.add(unitCombo, 1, 3);
+        grid.add(createFieldLabel("Reorder Level *"), 1, 4);
+        grid.add(minStockField, 1, 5);
+        grid.add(createFieldLabel("Expiration Date *"), 1, 6);
+        grid.add(expiryPicker, 1, 7);
+        grid.add(createFieldLabel("Category"), 1, 8);
+        grid.add(categoryField, 1, 9);
+        grid.add(createFieldLabel("Batch Number"), 1, 10);
+        grid.add(batchNumberField, 1, 11);
+        grid.add(createFieldLabel(""), 1, 12);
+        grid.add(prescriptionCheckBox, 1, 13);
 
         // Set column constraints
         ColumnConstraints col1 = new ColumnConstraints();
@@ -759,7 +880,9 @@ public class InventoryController implements Initializable {
         container.getChildren().add(medicineCard);
 
         // Store form data
-        MedicineFormData formData = new MedicineFormData(nameField, stockField, priceField, expiryPicker, supplierField, categoryField);
+        MedicineFormData formData = new MedicineFormData(brandNameField, genericNameField, stockField, priceField, expiryPicker,
+                supplierField, categoryField, batchNumberField, minStockField, prescriptionCheckBox,
+                dosageFormCombo, dosageStrengthField, manufacturerField, unitCombo);
         dataList.add(formData);
     }
 
@@ -786,6 +909,18 @@ public class InventoryController implements Initializable {
         });
     }
 
+    private void styleComboBox(ComboBox<?> comboBox) {
+        comboBox.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-padding: 12px 15px; " +
+                        "-fx-font-size: 14px;"
+        );
+    }
+
     private Label createFieldLabel(String text) {
         Label label = new Label(text);
         label.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
@@ -794,30 +929,234 @@ public class InventoryController implements Initializable {
 
     // Inner class to store form field references
     private static class MedicineFormData {
-        TextField name;
+        TextField brandName;
+        TextField genericName;
         TextField stock;
         TextField price;
         DatePicker expiryDate;
         TextField supplier;
         TextField category;
+        TextField batchNumber;
+        TextField minStockLevel;
+        CheckBox prescriptionRequired;
+        ComboBox<String> dosageForm;
+        TextField dosageStrength;
+        TextField manufacturer;
+        ComboBox<String> unitOfMeasure;
 
-        public MedicineFormData(TextField name, TextField stock, TextField price,
+        public MedicineFormData(TextField brandName, TextField genericName, TextField stock, TextField price,
+                                DatePicker expiryDate, TextField supplier, TextField category,
+                                TextField batchNumber, TextField minStockLevel, CheckBox prescriptionRequired,
+                                ComboBox<String> dosageForm, TextField dosageStrength,
+                                TextField manufacturer, ComboBox<String> unitOfMeasure) {
+            this.brandName = brandName;
+            this.genericName = genericName;
+            this.stock = stock;
+            this.price = price;
+            this.expiryDate = expiryDate;
+            this.supplier = supplier;
+            this.category = category;
+            this.batchNumber = batchNumber;
+            this.minStockLevel = minStockLevel;
+            this.prescriptionRequired = prescriptionRequired;
+            this.dosageForm = dosageForm;
+            this.dosageStrength = dosageStrength;
+            this.manufacturer = manufacturer;
+            this.unitOfMeasure = unitOfMeasure;
+        }
+
+        public MedicineFormData(TextField brandName, TextField genericName, TextField stock, TextField price,
                                 DatePicker expiryDate, TextField supplier, TextField category) {
-            this.name = name;
+            this.brandName = brandName;
+            this.genericName = genericName;
             this.stock = stock;
             this.price = price;
             this.expiryDate = expiryDate;
             this.supplier = supplier;
             this.category = category;
         }
+
     }
 
     private void handleEditProduct(Product product) {
         showProductDialog(product);
     }
 
+    private void handleViewProduct(Product product) {
+        showProductDetailsDialog(product);
+    }
+
+    private void showProductDetailsDialog(Product product) {
+        // Create custom dialog
+        Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Medicine Details");
+        dialogStage.setResizable(false);
+
+        // Main container
+        VBox mainContainer = new VBox(10);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
+        mainContainer.setPrefWidth(700);
+        mainContainer.setMaxHeight(700);
+
+        // Header
+        Label titleLabel = new Label(product.getBrandName());
+        titleLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        Label subtitleLabel = new Label("Medicine ID: " + product.getMedicineId());
+        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
+        VBox header = new VBox(5, titleLabel, subtitleLabel);
+
+        // ScrollPane for content
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle(
+                "-fx-background-color: transparent; " +
+                        "-fx-background: transparent; " +
+                        "-fx-border-color: transparent;"
+        );
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPrefHeight(450);
+
+        VBox contentContainer = new VBox(20);
+
+        // Section 1: Basic Information
+        VBox basicSection = createDetailSection("Basic Information",
+                createDetailRow("Brand Name:", product.getBrandName()),
+                createDetailRow("Generic Name:", product.getGenericName() != null ? product.getGenericName() : "N/A"),
+                createDetailRow("Medicine ID:", product.getMedicineId()),
+                createDetailRow("Category:", product.getCategory() != null ? product.getCategory() : "N/A")
+        );
+
+        // Section 2: Medical Information
+        VBox medicalSection = createDetailSection("Medical Information",
+                createDetailRow("Dosage Form:", product.getDosageForm() != null ? product.getDosageForm() : "N/A"),
+                createDetailRow("Dosage Strength:", product.getDosageStrength() != null ? product.getDosageStrength() : "N/A"),
+                createDetailRow("Prescription Required:", product.getPrescriptionRequired() != null && product.getPrescriptionRequired() ? "Yes ⚕️" : "No")
+        );
+
+        // Section 3: Stock & Inventory
+        String stockStatus = product.isLowStock() ? product.getStockStatus() + " ⚠️" : product.getStockStatus();
+        VBox stockSection = createDetailSection("Stock & Inventory",
+                createDetailRow("Current Stock:", String.valueOf(product.getStock())),
+                createDetailRow("Unit of Measure:", product.getUnitOfMeasure() != null ? product.getUnitOfMeasure() : "N/A"),
+                createDetailRow("Minimum Stock Level:", product.getMinStockLevel() != null ? String.valueOf(product.getMinStockLevel()) : "N/A"),
+                createDetailRow("Stock Status:", stockStatus)
+        );
+
+        // Section 4: Pricing
+        VBox pricingSection = createDetailSection("Pricing",
+                createDetailRow("Price per Unit:", "₱" + product.getPrice().toString())
+        );
+
+        // Section 5: Supplier & Manufacturing
+        VBox supplierSection = createDetailSection("Supplier & Manufacturing",
+                createDetailRow("Supplier:", product.getSupplier()),
+                createDetailRow("Manufacturer:", product.getManufacturer() != null ? product.getManufacturer() : "N/A"),
+                createDetailRow("Batch Number:", product.getBatchNumber() != null ? product.getBatchNumber() : "N/A")
+        );
+
+        // Section 6: Important Dates
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
+        String expiryDateStr = product.getExpirationDate() != null ? product.getExpirationDate().format(formatter) : "N/A";
+        String expiryWarning = product.isExpiringSoon() ? " ⚠️ Expiring Soon!" : "";
+
+        long daysUntilExpiry = product.getExpirationDate() != null ?
+                java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate()) : 0;
+        String daysUntilExpiryStr = daysUntilExpiry > 0 ? daysUntilExpiry + " days" : "Expired";
+
+        VBox datesSection = createDetailSection("Important Dates",
+                createDetailRow("Expiration Date:", expiryDateStr + expiryWarning),
+                createDetailRow("Days Until Expiry:", daysUntilExpiryStr)
+        );
+
+        contentContainer.getChildren().addAll(
+                basicSection,
+                medicalSection,
+                stockSection,
+                pricingSection,
+                supplierSection,
+                datesSection
+        );
+
+        scrollPane.setContent(contentContainer);
+
+        // Close button
+        HBox buttonContainer = new HBox();
+        buttonContainer.setAlignment(Pos.CENTER_RIGHT);
+
+        Button closeButton = new Button("Close");
+        closeButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 40px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        closeButton.setOnMouseEntered(e -> closeButton.setStyle(
+                closeButton.getStyle() + "-fx-background-color: #45a049;"
+        ));
+        closeButton.setOnMouseExited(e -> closeButton.setStyle(
+                closeButton.getStyle().replace("-fx-background-color: #45a049;", "-fx-background-color: #4CAF50;")
+        ));
+
+        closeButton.setOnAction(e -> dialogStage.close());
+        buttonContainer.getChildren().add(closeButton);
+
+        // Add all sections to main container
+        mainContainer.getChildren().addAll(header, scrollPane, buttonContainer);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        // Create scene
+        Scene scene = new Scene(mainContainer);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+    }
+
+    private VBox createDetailSection(String sectionTitle, HBox... rows) {
+        VBox section = new VBox(12);
+        section.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 10px; " +
+                        "-fx-padding: 20; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 10px;"
+        );
+
+        Label sectionLabel = new Label(sectionTitle);
+        sectionLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        section.getChildren().add(sectionLabel);
+        section.getChildren().addAll(rows);
+
+        return section;
+    }
+
+    private HBox createDetailRow(String label, String value) {
+        HBox row = new HBox(15);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Label labelNode = new Label(label);
+        labelNode.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-min-width: 180px;");
+
+        Label valueNode = new Label(value);
+        valueNode.setStyle("-fx-font-size: 14px; -fx-text-fill: #555555;");
+        valueNode.setWrapText(true);
+
+        row.getChildren().addAll(labelNode, valueNode);
+        return row;
+    }
+
     private void handleDeleteProduct(Product product) {
-        boolean confirmed = showDeleteConfirmation(product.getName());
+        boolean confirmed = showDeleteConfirmation(product.getBrandName());
 
         if (confirmed) {
             try {
@@ -842,8 +1181,13 @@ public class InventoryController implements Initializable {
 
         // Main container
         VBox mainContainer = new VBox(10);
+        ScrollPane scrollPane = new ScrollPane();
+
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 20;");
         mainContainer.setPrefWidth(600);
+        mainContainer.setMaxHeight(700); // Add max height
+        scrollPane.setPrefHeight(500);
+
 
         // Header
         Label titleLabel = new Label(product == null ? "Add New Medicine" : "Edit Medicine");
@@ -857,7 +1201,15 @@ public class InventoryController implements Initializable {
 
         VBox header = new VBox(8, titleLabel, subtitleLabel);
 
-        // Form fields
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle(
+                "-fx-background-color: transparent; " +
+                        "-fx-background: transparent; " +
+                        "-fx-border-color: transparent;"
+        );
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
         VBox formContainer = new VBox(15);
 
         // Medicine ID (auto-generated, read-only for new, disabled for edit)
@@ -865,13 +1217,22 @@ public class InventoryController implements Initializable {
                 product == null ? productService.generateNextMedicineId() : product.getMedicineId(),
                 "Medicine ID"
         );
+
+        medicineIdField.setDisable(true);
+        medicineIdField.setStyle(medicineIdField.getStyle() + "-fx-opacity: 1;");
         medicineIdField.setDisable(true);
         medicineIdField.setStyle(medicineIdField.getStyle() + "-fx-opacity: 1;");
 
-        // Name
-        TextField nameField = createStyledTextField(
-                product == null ? "" : product.getName(),
-                "Medicine Name"
+        // Brand Name
+        TextField brandNameField = createStyledTextField(
+                product == null ? "" : product.getBrandName(),
+                "Brand Name"
+        );
+
+        // Generic Name
+        TextField genericNameField = createStyledTextField(
+                product == null ? "" : product.getGenericName(),
+                "Generic Name / Active Ingredient"
         );
 
         // Stock
@@ -913,15 +1274,84 @@ public class InventoryController implements Initializable {
                 "Category"
         );
 
+        // Batch Number
+        TextField batchNumberField = createStyledTextField(
+                product == null ? "" : (product.getBatchNumber() != null ? product.getBatchNumber() : ""),
+                "Batch/Lot Number"
+        );
+
+        // Min Stock Level (Reorder Level)
+        TextField minStockField = createStyledTextField(
+                product == null ? "10" : (product.getMinStockLevel() != null ? product.getMinStockLevel().toString() : "10"),
+                "Reorder Level (Minimum Stock)"
+        );
+
+        // Prescription Required
+        CheckBox prescriptionCheckBox = new CheckBox("Prescription Required");
+        prescriptionCheckBox.setSelected(product != null && product.getPrescriptionRequired() != null && product.getPrescriptionRequired());
+        prescriptionCheckBox.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50;");
+
+        // Dosage Form
+        ComboBox<String> dosageFormCombo = new ComboBox<>();
+        dosageFormCombo.getItems().addAll("Tablet", "Capsule", "Syrup", "Injection", "Cream", "Ointment", "Drops", "Inhaler", "Suppository", "Other");
+        dosageFormCombo.setValue(product == null ? "Tablet" : (product.getDosageForm() != null ? product.getDosageForm() : "Tablet"));
+        dosageFormCombo.setPromptText("Select dosage form");
+        dosageFormCombo.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-padding: 12px 15px; " +
+                        "-fx-font-size: 14px;"
+        );
+
+        // Dosage Strength
+        TextField dosageStrengthField = createStyledTextField(
+                product == null ? "" : (product.getDosageStrength() != null ? product.getDosageStrength() : ""),
+                "Dosage Strength (e.g., 500mg, 10ml)"
+        );
+
+        // Manufacturer
+        TextField manufacturerField = createStyledTextField(
+                product == null ? "" : (product.getManufacturer() != null ? product.getManufacturer() : ""),
+                "Manufacturer"
+        );
+
+        // Unit of Measure
+        ComboBox<String> unitCombo = new ComboBox<>();
+        unitCombo.getItems().addAll("Box", "Strip", "Bottle", "Piece", "Vial", "Tube", "Pack", "Other");
+        unitCombo.setValue(product == null ? "Piece" : (product.getUnitOfMeasure() != null ? product.getUnitOfMeasure() : "Piece"));
+        unitCombo.setPromptText("Select unit");
+        unitCombo.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-padding: 12px 15px; " +
+                        "-fx-font-size: 14px;"
+        );
+
         // Add labels and fields
         formContainer.getChildren().addAll(
-                createFieldGroup("Name", nameField),
-                createFieldGroup("Stock", stockField),
+                createFieldGroup("Brand Name", brandNameField),
+                createFieldGroup("Generic Name", genericNameField),
+                createFieldGroup("Dosage Form", dosageFormCombo),
+                createFieldGroup("Dosage Strength", dosageStrengthField),
+                createFieldGroup("Manufacturer", manufacturerField),
+                createFieldGroup("Stock Quantity", stockField),
+                createFieldGroup("Unit of Measure", unitCombo),
+                createFieldGroup("Reorder Level (Min Stock)", minStockField),
                 createFieldGroup("Price (₱)", priceField),
-                createFieldGroup("Expiry Date", expirationPicker),
+                createFieldGroup("Expiration Date", expirationPicker),
                 createFieldGroup("Supplier", supplierField),
-                createFieldGroup("Category", categoryField)
+                createFieldGroup("Category", categoryField),
+                createFieldGroup("Batch Number", batchNumberField),
+                createFieldGroup("", prescriptionCheckBox)
         );
+
+        scrollPane.setContent(formContainer);
 
         // Buttons
         HBox buttonContainer = new HBox(15);
@@ -965,10 +1395,12 @@ public class InventoryController implements Initializable {
                 // Validate all required fields
                 StringBuilder missingFields = new StringBuilder();
 
-                if (nameField.getText().trim().isEmpty()) {
-                    missingFields.append("• Medicine name\n");
+                if (brandNameField.getText().trim().isEmpty()) {
+                    missingFields.append("• Brand name\n");
                 }
-                if (stockField.getText().trim().isEmpty() || stockField.getText().equals("0")) {
+                if (genericNameField.getText().trim().isEmpty()) {
+                    missingFields.append("• Generic name\n");
+                }                if (stockField.getText().trim().isEmpty() || stockField.getText().equals("0")) {
                     missingFields.append("• Stock quantity (must be greater than 0)\n");
                 }
                 if (priceField.getText().trim().isEmpty() || priceField.getText().equals("0.00")) {
@@ -1020,12 +1452,20 @@ public class InventoryController implements Initializable {
                 if (product == null) {
                     newProduct.setMedicineId(medicineIdField.getText());
                 }
-                newProduct.setName(nameField.getText().trim());
+                newProduct.setBrandName(brandNameField.getText().trim());
+                newProduct.setGenericName(genericNameField.getText().trim());
                 newProduct.setStock(Integer.parseInt(stockField.getText()));
                 newProduct.setPrice(new BigDecimal(priceField.getText()));
                 newProduct.setExpirationDate(expirationPicker.getValue());
                 newProduct.setSupplier(supplierField.getText().trim());
                 newProduct.setCategory(categoryField.getText().trim());
+                newProduct.setBatchNumber(batchNumberField.getText().trim());
+                newProduct.setMinStockLevel(Integer.parseInt(minStockField.getText()));
+                newProduct.setPrescriptionRequired(prescriptionCheckBox.isSelected());
+                newProduct.setDosageForm(dosageFormCombo.getValue());
+                newProduct.setDosageStrength(dosageStrengthField.getText().trim());
+                newProduct.setManufacturer(manufacturerField.getText().trim());
+                newProduct.setUnitOfMeasure(unitCombo.getValue());
 
                 productService.saveProduct(newProduct);
                 loadProducts();
@@ -1042,7 +1482,8 @@ public class InventoryController implements Initializable {
         buttonContainer.getChildren().addAll(cancelButton, saveButton);
 
         // Add all sections to main container
-        mainContainer.getChildren().addAll(header, formContainer, buttonContainer);
+        mainContainer.getChildren().addAll(header, scrollPane, buttonContainer);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
         // Create scene
         Scene scene = new Scene(mainContainer);
@@ -1091,13 +1532,6 @@ public class InventoryController implements Initializable {
         return group;
     }
 
-//    private void showAlert(Alert.AlertType type, String title, String content) {
-//        Alert alert = new Alert(type);
-//        alert.setTitle(title);
-//        alert.setHeaderText(null);
-//        alert.setContentText(content);
-//        alert.showAndWait();
-//    }
 
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog

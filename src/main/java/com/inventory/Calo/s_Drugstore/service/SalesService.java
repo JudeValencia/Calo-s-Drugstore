@@ -50,7 +50,7 @@ public class SalesService {
             Product product = productOpt.get();
 
             if (product.getStock() < item.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for " + product.getName() +
+                throw new RuntimeException("Insufficient stock for " + product.getBrandName() +
                         ". Available: " + product.getStock() + ", Requested: " + item.getQuantity());
             }
 
@@ -61,7 +61,7 @@ public class SalesService {
             // Create new sale item (don't reuse cart item)
             SaleItem saleItem = new SaleItem();
             saleItem.setMedicineId(product.getMedicineId());
-            saleItem.setMedicineName(product.getName());
+            saleItem.setMedicineName(product.getBrandName());
             saleItem.setQuantity(item.getQuantity());
             saleItem.setUnitPrice(item.getUnitPrice());
             saleItem.setSubtotal(item.getSubtotal());
@@ -180,7 +180,7 @@ public class SalesService {
                 productService.updateProduct(product.getId(), product);
 
                 System.out.println("✅ Restored " + item.getQuantity() + " units of " +
-                        product.getName() + " (New stock: " + product.getStock() + ")");
+                        product.getBrandName() + " (New stock: " + product.getStock() + ")");
             }
         }
 
@@ -222,7 +222,7 @@ public class SalesService {
 
                 // Check if we have enough stock
                 if (product.getStock() < item.getQuantity()) {
-                    throw new RuntimeException("Insufficient stock for " + product.getName() +
+                    throw new RuntimeException("Insufficient stock for " + product.getBrandName() +
                             ". Available: " + product.getStock() + ", Required: " + item.getQuantity());
                 }
 

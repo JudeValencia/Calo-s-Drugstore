@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
@@ -104,7 +103,7 @@ public class StaffInventoryController implements Initializable {
 
         // Name Column
         nameCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(cellData.getValue().getName()));
+                new SimpleStringProperty(cellData.getValue().getBrandName()));
 
         // Category Column
         categoryCol.setCellValueFactory(cellData ->
@@ -241,7 +240,7 @@ public class StaffInventoryController implements Initializable {
                 allProducts.stream()
                         .filter(product -> {
                             boolean matchesSearch = searchText.isEmpty() ||
-                                    product.getName().toLowerCase().contains(searchText) ||
+                                    product.getBrandName().toLowerCase().contains(searchText) ||
                                     product.getMedicineId().toLowerCase().contains(searchText) ||
                                     product.getSupplier().toLowerCase().contains(searchText);
 

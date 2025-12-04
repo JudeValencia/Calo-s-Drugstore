@@ -225,7 +225,7 @@ public class DashboardService {
                 Map<String, Object> activity = new HashMap<>();
                 activity.put("type", "alert");
                 activity.put("description", "Low stock alert");
-                activity.put("details", product.getName());
+                activity.put("details", product.getBrandName());
                 activity.put("amount", product.getStock() + " unit/s left");
                 activity.put("timestamp", "Now");
                 activity.put("status", "warning");
@@ -347,7 +347,7 @@ public class DashboardService {
                 Map<String, Object> activity = new HashMap<>();
                 activity.put("type", "alert");
                 activity.put("description", "Low stock alert");
-                activity.put("details", product.getName());
+                activity.put("details", product.getBrandName());
                 activity.put("amount", product.getStock() + " units left");
                 activity.put("timestamp", "Now");
                 activity.put("status", "warning");

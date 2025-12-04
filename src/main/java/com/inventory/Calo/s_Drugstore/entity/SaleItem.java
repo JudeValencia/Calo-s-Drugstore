@@ -42,7 +42,7 @@ public class SaleItem {
     public SaleItem(Product product, int quantity) {
         this.product = product;
         this.medicineId = product.getMedicineId();
-        this.medicineName = product.getName();
+        this.medicineName = product.getBrandName();
         this.quantity = quantity;
         this.unitPrice = product.getPrice();
         this.subtotal = product.getPrice().multiply(BigDecimal.valueOf(quantity));

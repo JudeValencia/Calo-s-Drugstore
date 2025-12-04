@@ -128,7 +128,7 @@ public class SalesController implements Initializable {
             @Override
             protected void updateItem(Product item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName() + " - ₱" + item.getPrice());
+                setText(empty || item == null ? null : item.getBrandName() + " - ₱" + item.getPrice());
             }
         });
 
@@ -136,7 +136,7 @@ public class SalesController implements Initializable {
             @Override
             protected void updateItem(Product item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName());
+                setText(empty || item == null ? null : item.getBrandName());
             }
         });
     }
@@ -150,7 +150,7 @@ public class SalesController implements Initializable {
             } else {
                 String searchText = newVal.toLowerCase();
                 ObservableList<Product> filtered = allProducts.filtered(product ->
-                        product.getName().toLowerCase().contains(searchText) ||
+                        product.getBrandName().toLowerCase().contains(searchText) ||
                                 product.getMedicineId().toLowerCase().contains(searchText) ||
                                 product.getCategory().toLowerCase().contains(searchText) ||
                                 product.getSupplier().toLowerCase().contains(searchText)
@@ -338,7 +338,7 @@ public class SalesController implements Initializable {
             if (selectedProduct.getExpirationDate() != null &&
                     selectedProduct.getExpirationDate().isBefore(java.time.LocalDate.now())) {
                 showStyledAlert(Alert.AlertType.ERROR, "Expired Medicine",
-                        selectedProduct.getName() + " has expired on " +
+                        selectedProduct.getBrandName() + " has expired on " +
                                 selectedProduct.getExpirationDate().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy")) +
                                 " and cannot be sold.");
                 return;
@@ -445,7 +445,7 @@ public class SalesController implements Initializable {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(item.getName() + " - ₱" + String.format("%.2f", item.getPrice()) +
+                    setText(item.getBrandName() + " - ₱" + String.format("%.2f", item.getPrice()) +
                             " (Stock: " + item.getStock() + ")");
                 }
             }
@@ -455,7 +455,7 @@ public class SalesController implements Initializable {
             @Override
             protected void updateItem(Product item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName());
+                setText(empty || item == null ? null : item.getBrandName());
             }
         });
 
@@ -509,7 +509,7 @@ public class SalesController implements Initializable {
         medicineCol.setMaxWidth(220);
         medicineCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getProduct() != null ?
-                        data.getValue().getProduct().getName() : ""));
+                        data.getValue().getProduct().getBrandName() : ""));
 
         TableColumn<BulkAddItem, Integer> quantityCol = new TableColumn<>("Quantity");
         quantityCol.setMinWidth(150);
@@ -689,7 +689,7 @@ public class SalesController implements Initializable {
             } else {
                 String searchText = newVal.toLowerCase();
                 ObservableList<Product> filtered = allProducts.filtered(product ->
-                        product.getName().toLowerCase().contains(searchText) ||
+                        product.getBrandName().toLowerCase().contains(searchText) ||
                                 product.getMedicineId().toLowerCase().contains(searchText) ||
                                 product.getCategory().toLowerCase().contains(searchText) ||
                                 product.getSupplier().toLowerCase().contains(searchText)
@@ -769,7 +769,7 @@ public class SalesController implements Initializable {
                 if (selected.getExpirationDate() != null &&
                         selected.getExpirationDate().isBefore(java.time.LocalDate.now())) {
                     showStyledAlert(Alert.AlertType.ERROR, "Expired Medicine",
-                            selected.getName() + " has expired and cannot be sold.");
+                            selected.getBrandName() + " has expired and cannot be sold.");
                     return;
                 }
                 // Check if already in list
@@ -778,7 +778,7 @@ public class SalesController implements Initializable {
 
                 if (alreadyAdded) {
                     showStyledAlert(Alert.AlertType.WARNING, "Already Added",
-                            selected.getName() + " is already in your list.");
+                            selected.getBrandName() + " is already in your list.");
                     return;
                 }
 
