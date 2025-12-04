@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.chrono.ChronoLocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -89,6 +90,7 @@ public class ReportsController implements Initializable {
     @FXML private Label lowStockItemsLabel;
 
     private LocalDate selectedMonth = LocalDate.now();
+    private LocalDate exportMonth = LocalDate.now();
     @FXML private ComboBox<String> monthSelectorCombo;
 
     // Expiring medicines table
@@ -599,6 +601,18 @@ public class ReportsController implements Initializable {
                     handleMonthSelection(newVal);
                 }
             });
+        }
+    }
+
+        private void handleExportMonthSelection(String monthYear) {
+        try {
+            // Parse as "MMMM yyyy" and set to first day of month
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+            YearMonth yearMonth = YearMonth.parse(monthYear, formatter);
+            exportMonth = yearMonth.atDay(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error parsing export month: " + monthYear);
         }
     }
 
@@ -1751,11 +1765,22 @@ public class ReportsController implements Initializable {
 
     @FXML
     private void handleExportReport() {
+        // Show month selection dialog
+        LocalDate selectedExportMonth = showMonthSelectionDialog();
+
+        if (selectedExportMonth == null) {
+            return; // User cancelled
+        }
+
+        // Set the export month
+        exportMonth = selectedExportMonth;
+
         try {
             // Create file chooser
             javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            DateTimeFormatter fileFormatter = DateTimeFormatter.ofPattern("MMMM_yyyy");
             fileChooser.setTitle("Save Report as PDF");
-            fileChooser.setInitialFileName("Sales_Report_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + ".pdf");
+            fileChooser.setInitialFileName("Sales_Report_" + exportMonth.format(fileFormatter) + ".pdf");
             fileChooser.getExtensionFilters().add(
                     new javafx.stage.FileChooser.ExtensionFilter("PDF Files", "*.pdf")
             );
@@ -1773,6 +1798,122 @@ public class ReportsController implements Initializable {
             showStyledAlert(Alert.AlertType.ERROR, "Error",
                     "Failed to export report: " + e.getMessage());
         }
+    }
+
+    private LocalDate showMonthSelectionDialog() {
+        Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Select Report Month");
+        dialogStage.setResizable(false);
+
+        VBox mainContainer = new VBox(25);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(450);
+
+        // Title
+        Label titleLabel = new Label("Select Month for Report");
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        // Subtitle
+        Label subtitleLabel = new Label("Choose which month's data to export");
+        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
+        // Month selector
+        VBox selectorBox = new VBox(10);
+        Label selectorLabel = new Label("Report Month:");
+        selectorLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        ComboBox<String> monthCombo = new ComboBox<>();
+        monthCombo.setPrefWidth(350);
+        monthCombo.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-border-width: 1.5px; " +
+                        "-fx-padding: 12px 15px; " +
+                        "-fx-font-size: 15px;"
+        );
+
+        // Generate last 12 months
+        List<String> months = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        for (int i = 0; i < 12; i++) {
+            LocalDate month = LocalDate.now().minusMonths(i);
+            months.add(month.format(formatter));
+        }
+
+        monthCombo.setItems(FXCollections.observableArrayList(months));
+        monthCombo.setValue(months.get(0)); // Current month default
+
+        selectorBox.getChildren().addAll(selectorLabel, monthCombo);
+
+        // Buttons
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-text-fill: #2c3e50; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1.5px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+        cancelButton.setOnAction(e -> {
+            dialogStage.setUserData(null);
+            dialogStage.close();
+        });
+
+        Button exportButton = new Button("Export Report");
+        exportButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        exportButton.setOnAction(e -> {
+            try {
+                String selectedMonth = monthCombo.getValue();
+                if (selectedMonth != null) {
+                    DateTimeFormatter parseFormatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+                    YearMonth yearMonth = YearMonth.parse(selectedMonth, parseFormatter);
+                    dialogStage.setUserData(yearMonth.atDay(1));
+                    dialogStage.close();
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                showStyledAlert(Alert.AlertType.ERROR, "Error", "Invalid month selection");
+            }
+        });
+
+        exportButton.setOnMouseEntered(e -> exportButton.setStyle(
+                exportButton.getStyle().replace("#4CAF50", "#45a049")
+        ));
+        exportButton.setOnMouseExited(e -> exportButton.setStyle(
+                exportButton.getStyle().replace("#45a049", "#4CAF50")
+        ));
+
+        buttonBox.getChildren().addAll(cancelButton, exportButton);
+
+        mainContainer.getChildren().addAll(titleLabel, subtitleLabel, selectorBox, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+
+        return (LocalDate) dialogStage.getUserData();
     }
 
     private void generatePDFReport(java.io.File file) throws Exception {
@@ -1806,7 +1947,7 @@ public class ReportsController implements Initializable {
 
         // Date range
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
-        com.itextpdf.layout.element.Paragraph dateRange = new com.itextpdf.layout.element.Paragraph(selectedMonth.format(formatter))
+        com.itextpdf.layout.element.Paragraph dateRange = new com.itextpdf.layout.element.Paragraph(exportMonth.format(formatter))
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
                 .setFontSize(12)
                 .setFontColor(grayColor)
@@ -1834,6 +1975,26 @@ public class ReportsController implements Initializable {
                 .setMarginBottom(15);
         document.add(kpiTitle);
 
+        // Calculate KPIs for export month
+        LocalDate exportMonthStart = exportMonth.with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate exportMonthEnd = exportMonth.with(TemporalAdjusters.lastDayOfMonth());
+        LocalDateTime startOfExportMonth = exportMonthStart.atStartOfDay();
+        LocalDateTime endOfExportMonth = exportMonthEnd.atTime(23, 59, 59);
+
+        List<Sale> exportMonthSales = salesService.getSalesBetweenDates(startOfExportMonth, endOfExportMonth);
+
+        BigDecimal exportRevenue = exportMonthSales.stream()
+                .map(Sale::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int exportTransactions = exportMonthSales.size();
+
+        BigDecimal exportAvgOrder = exportTransactions > 0
+                ? exportRevenue.divide(BigDecimal.valueOf(exportTransactions), 2, BigDecimal.ROUND_HALF_UP)
+                : BigDecimal.ZERO;
+
+        long exportLowStock = productService.getLowStockCount();
+
         // KPI Table
         com.itextpdf.layout.element.Table kpiTable = new com.itextpdf.layout.element.Table(new float[]{1, 1, 1, 1});
         kpiTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
@@ -1844,13 +2005,46 @@ public class ReportsController implements Initializable {
         kpiTable.addHeaderCell(createHeaderCell("Avg. Order Value"));
         kpiTable.addHeaderCell(createHeaderCell("Low Stock Items"));
 
-        // Values
-        kpiTable.addCell(createValueCell(totalRevenueLabel.getText()));
-        kpiTable.addCell(createValueCell(totalTransactionsLabel.getText()));
-        kpiTable.addCell(createValueCell(avgOrderValueLabel.getText()));
-        kpiTable.addCell(createValueCell(lowStockItemsLabel.getText()));
-
+        // Values - use calculated values for export month
+        kpiTable.addCell(createValueCell("₱" + String.format("%,.2f", exportRevenue)));
+        kpiTable.addCell(createValueCell(String.format("%,d", exportTransactions)));
+        kpiTable.addCell(createValueCell("₱" + String.format("%,.2f", exportAvgOrder)));
+        kpiTable.addCell(createValueCell(String.valueOf(exportLowStock)));
         document.add(kpiTable.setMarginBottom(30));
+
+        // === TOP SELLING MEDICINES ===
+// Calculate for export month
+        Map<String, Map<String, Object>> exportMedicineStats = new HashMap<>();
+
+        for (Sale sale : exportMonthSales) {
+            List<SaleItem> items = sale.getItems();
+            for (SaleItem item : items) {
+                String medicineName = item.getMedicineName();
+
+                if (!exportMedicineStats.containsKey(medicineName)) {
+                    Optional<Product> productOpt = productService.getProductByMedicineId(item.getMedicineId());
+                    String category = productOpt.map(Product::getCategory).orElse("Unknown");
+
+                    Map<String, Object> stats = new HashMap<>();
+                    stats.put("medicineName", medicineName);
+                    stats.put("category", category);
+                    stats.put("quantitySold", 0);
+                    exportMedicineStats.put(medicineName, stats);
+                }
+
+                Map<String, Object> stats = exportMedicineStats.get(medicineName);
+                Integer currentQty = (Integer) stats.get("quantitySold");
+                stats.put("quantitySold", currentQty + item.getQuantity());
+            }
+        }
+
+        List<Map<String, Object>> exportTopMedicines = exportMedicineStats.values().stream()
+                .sorted((a, b) -> Integer.compare(
+                        (Integer) b.get("quantitySold"),
+                        (Integer) a.get("quantitySold")
+                ))
+                .limit(5)
+                .collect(Collectors.toList());
 
         com.itextpdf.layout.element.Paragraph topSellingTitle = new com.itextpdf.layout.element.Paragraph("Top Selling Medicines")
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
@@ -1867,11 +2061,19 @@ public class ReportsController implements Initializable {
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Category"));
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Quantity Sold"));
 
-        for (Map<String, Object> item : topSellingTable.getItems()) {
-            pdfTopSellingTable.addCell(createTableCell("#" + item.get("rank").toString()));
-            pdfTopSellingTable.addCell(createTableCell(item.get("medicineName").toString()));
-            pdfTopSellingTable.addCell(createTableCell(item.get("category").toString()));
-            pdfTopSellingTable.addCell(createTableCell(item.get("quantitySold").toString()));
+        if (exportTopMedicines.isEmpty()) {
+            pdfTopSellingTable.addCell(createTableCell("-"));
+            pdfTopSellingTable.addCell(createTableCell("No sales data"));
+            pdfTopSellingTable.addCell(createTableCell("-"));
+            pdfTopSellingTable.addCell(createTableCell("0"));
+        } else {
+            for (int i = 0; i < exportTopMedicines.size(); i++) {
+                Map<String, Object> item = exportTopMedicines.get(i);
+                pdfTopSellingTable.addCell(createTableCell("#" + (i + 1)));
+                pdfTopSellingTable.addCell(createTableCell(item.get("medicineName").toString()));
+                pdfTopSellingTable.addCell(createTableCell(item.get("category").toString()));
+                pdfTopSellingTable.addCell(createTableCell(item.get("quantitySold").toString()));
+            }
         }
 
         document.add(pdfTopSellingTable.setMarginBottom(30));
@@ -1919,8 +2121,8 @@ public class ReportsController implements Initializable {
         document.add(categoryTitle);
 
         // Get category data
-        LocalDate monthStart = selectedMonth.with(TemporalAdjusters.firstDayOfMonth());
-        LocalDate monthEnd = selectedMonth.with(TemporalAdjusters.lastDayOfMonth());
+        LocalDate monthStart = exportMonth.with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate monthEnd = exportMonth.with(TemporalAdjusters.lastDayOfMonth());
         LocalDateTime startOfMonth = monthStart.atStartOfDay();
         LocalDateTime endOfMonth = monthEnd.atTime(23, 59, 59);
         List<Sale> monthSales = salesService.getSalesBetweenDates(startOfMonth, endOfMonth);
