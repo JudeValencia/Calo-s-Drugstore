@@ -226,6 +226,7 @@ public class DashboardService {
                 activity.put("type", "alert");
                 activity.put("description", "Low stock alert");
                 activity.put("details", product.getBrandName());
+                activity.put("medicineId", product.getMedicineId());
                 activity.put("amount", product.getStock() + " unit/s left");
                 activity.put("timestamp", "Now");
                 activity.put("status", "warning");
