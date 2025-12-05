@@ -107,18 +107,18 @@
                         <Label text="Add to Cart" styleClass="card-title"/>
                     </HBox>
 
-                    <Label text="Select medicines to add to current transaction" styleClass="card-subtitle"/>
+                    <Label text="Select products to add to current transaction" styleClass="card-subtitle"/>
 
                     <!-- Medicine Selection -->
                     <VBox spacing="10">
-                        <Label text="Select Medicine" styleClass="section-label"/>
+                        <Label text="Select Product" styleClass="section-label"/>
 
                         <TextField fx:id="medicineSearchField"
-                                   promptText="Search medicines..."
+                                   promptText="Search product..."
                                    styleClass="sales-field"/>
 
                         <ComboBox fx:id="medicineCombo"
-                                  promptText="Choose a medicine"
+                                  promptText="Choose a product"
                                   styleClass="sales-combo"
                                   maxWidth="Infinity"/>
                     </VBox>

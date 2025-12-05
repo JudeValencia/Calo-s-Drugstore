@@ -90,11 +90,11 @@
                 <HBox alignment="CENTER_LEFT" spacing="20">
                     <VBox spacing="5" HBox.hgrow="ALWAYS">
                         <Label text="Inventory Management" styleClass="page-header"/>
-                        <Label text="Manage your pharmacy's medicine inventory" styleClass="page-subheader"/>
+                        <Label text="Manage your pharmacy's product inventory" styleClass="page-subheader"/>
                     </VBox>
 
                     <HBox spacing="15">
-                        <Button text="+ Add Medicine" styleClass="add-btn" onAction="#handleAddMedicine"/>
+                        <Button text="+ Add Product" styleClass="add-btn" onAction="#handleAddMedicine"/>
                         <Button text="📦 Bulk Add" styleClass="bulk-btn" onAction="#handleBulkAdd"/>
                         <Button text="📥 Import CSV" styleClass="bulk-btn" onAction="#handleImportCSV"/>
                         <Button text="📥 Export " styleClass="bulk-btn" onAction="#handleExportCSV"/>
@@ -109,7 +109,7 @@
                             <VBox HBox.hgrow="ALWAYS" spacing="8">
                                 <Label text="Total Items" styleClass="kpi-title"/>
                                 <Label fx:id="totalItemsLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="Medicines in inventory" styleClass="kpi-subtitle"/>
+                                <Label text="Products in inventory" styleClass="kpi-subtitle"/>
                             </VBox>
                             <Label text="📦" style="-fx-font-size: 36px;"/>
                         </HBox>
@@ -147,12 +147,12 @@
 
                     <VBox spacing="8">
                         <Label text="🔎 Search &amp; Filters" styleClass="filter-title"/>
-                        <Label text="Find medicines quickly using search and filters" styleClass="filter-subtitle"/>
+                        <Label text="Find products quickly using search and filters" styleClass="filter-subtitle"/>
                     </VBox>
 
                     <HBox spacing="15" alignment="CENTER_LEFT">
                         <TextField fx:id="searchField"
-                                   promptText="Search by medicine name or ID..."
+                                   promptText="Search by product name or ID..."
                                    styleClass="search-field"
                                    HBox.hgrow="ALWAYS">
                             <padding>

@@ -156,7 +156,7 @@
                             <StackPane styleClass="kpi-icon,kpi-icon-red">
                                 <Label text="📦" styleClass="kpi-icon-text"/>
                             </StackPane>
-                            <Label text="Expiring Medicines" styleClass="kpi-title"/>
+                            <Label text="Expiring Products" styleClass="kpi-title"/>
                         </HBox>
 
                         <Label fx:id="expiringMedicinesLabel" text="0" styleClass="kpi-value"/>

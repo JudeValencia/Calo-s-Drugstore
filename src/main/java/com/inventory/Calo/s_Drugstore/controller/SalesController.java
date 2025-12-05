@@ -318,7 +318,7 @@ public class SalesController implements Initializable {
     private void handleAddToCart() {
         Product selectedProduct = medicineCombo.getValue();
         if (selectedProduct == null) {
-            showStyledAlert(Alert.AlertType.WARNING, "No Medicine Selected", "Please select a medicine to add to cart.");
+            showStyledAlert(Alert.AlertType.WARNING, "No Product Selected", "Please select a medicine to add to cart.");
             return;
         }
 
@@ -337,7 +337,7 @@ public class SalesController implements Initializable {
 
             if (selectedProduct.getExpirationDate() != null &&
                     selectedProduct.getExpirationDate().isBefore(java.time.LocalDate.now())) {
-                showStyledAlert(Alert.AlertType.ERROR, "Expired Medicine",
+                showStyledAlert(Alert.AlertType.ERROR, "Expired Product",
                         selectedProduct.getBrandName() + " has expired on " +
                                 selectedProduct.getExpirationDate().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy")) +
                                 " and cannot be sold.");
@@ -384,7 +384,7 @@ public class SalesController implements Initializable {
         Stage dialogStage = new Stage();
         IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setTitle("Bulk Add Medicines");
+        dialogStage.setTitle("Bulk Add Products");
         dialogStage.setResizable(true);
         dialogStage.setWidth(900);
         dialogStage.setHeight(700);
@@ -392,17 +392,17 @@ public class SalesController implements Initializable {
         VBox mainContainer = new VBox(20);
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
 
-        Label titleLabel = new Label("Add Multiple Medicines");
+        Label titleLabel = new Label("Add Multiple Products");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-        Label subtitle = new Label("Search and select medicines to add to cart");
+        Label subtitle = new Label("Search and select products to add to cart");
         subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
 
         // ==================== SEARCH SECTION ====================
         VBox searchSection = new VBox(12);
         searchSection.setStyle("-fx-background-color: #F8F9FA; -fx-padding: 20; -fx-background-radius: 10px;");
 
-        Label searchLabel = new Label("🔍 Search and Add Medicine");
+        Label searchLabel = new Label("🔍 Search and Add Product");
         searchLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
         HBox searchRow = new HBox(15);
@@ -410,7 +410,7 @@ public class SalesController implements Initializable {
 
         // Search TextField
         TextField searchField = new TextField();
-        searchField.setPromptText("Type medicine name, ID, category, or supplier...");
+        searchField.setPromptText("Type product name, ID, category, or supplier...");
         searchField.setPrefWidth(400);
         searchField.setStyle(
                 "-fx-background-color: white; " +
@@ -424,7 +424,7 @@ public class SalesController implements Initializable {
 
         // ComboBox for filtered results
         ComboBox<Product> productCombo = new ComboBox<>();
-        productCombo.setPromptText("Select medicine");
+        productCombo.setPromptText("Select product");
         productCombo.setPrefWidth(350);
         productCombo.setItems(allProducts);
         productCombo.setStyle(
@@ -494,17 +494,17 @@ public class SalesController implements Initializable {
         searchSection.getChildren().addAll(searchLabel, searchRow, addControlsRow);
 
         // ==================== SELECTED ITEMS TABLE ====================
-        Label selectedLabel = new Label("Selected Medicines (0)");
+        Label selectedLabel = new Label("Selected Products (0)");
         selectedLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
         TableView<BulkAddItem> bulkTable = new TableView<>();
         bulkTable.getStyleClass().add("bulk-add-table");
-        bulkTable.setPlaceholder(new Label("No medicines added yet. Search and add items above."));
+        bulkTable.setPlaceholder(new Label("No products added yet. Search and add items above."));
 
         bulkTable.setFixedCellSize(50);
         bulkTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
 
-        TableColumn<BulkAddItem, String> medicineCol = new TableColumn<>("Medicine");
+        TableColumn<BulkAddItem, String> medicineCol = new TableColumn<>("Product");
         medicineCol.setMinWidth(220);
         medicineCol.setMaxWidth(220);
         medicineCol.setCellValueFactory(data ->
@@ -665,7 +665,7 @@ public class SalesController implements Initializable {
                     BulkAddItem item = getTableRow().getItem();
                     if (item != null) {
                         bulkTable.getItems().remove(item);
-                        selectedLabel.setText("Selected Medicines (" + bulkTable.getItems().size() + ")");
+                        selectedLabel.setText("Selected Products (" + bulkTable.getItems().size() + ")");
                     }
                 });
             }
@@ -746,8 +746,8 @@ public class SalesController implements Initializable {
         addToListBtn.setOnAction(e -> {
             Product selected = productCombo.getValue();
             if (selected == null) {
-                showStyledAlert(Alert.AlertType.WARNING, "No Medicine Selected",
-                        "Please select a medicine from the dropdown.");
+                showStyledAlert(Alert.AlertType.WARNING, "No Products Selected",
+                        "Please select a product from the dropdown.");
                 return;
             }
 
@@ -768,7 +768,7 @@ public class SalesController implements Initializable {
                 // Check if medicine is expired
                 if (selected.getExpirationDate() != null &&
                         selected.getExpirationDate().isBefore(java.time.LocalDate.now())) {
-                    showStyledAlert(Alert.AlertType.ERROR, "Expired Medicine",
+                    showStyledAlert(Alert.AlertType.ERROR, "Expired Products",
                             selected.getBrandName() + " has expired and cannot be sold.");
                     return;
                 }
@@ -784,7 +784,7 @@ public class SalesController implements Initializable {
 
                 // Add to list
                 bulkItems.add(new BulkAddItem(selected, qty));
-                selectedLabel.setText("Selected Medicines (" + bulkItems.size() + ")");
+                selectedLabel.setText("Selected Products (" + bulkItems.size() + ")");
 
                 // Reset fields
                 productCombo.setValue(null);
@@ -829,7 +829,7 @@ public class SalesController implements Initializable {
 
         addAllBtn.setOnAction(e -> {
             if (bulkItems.isEmpty()) {
-                showStyledAlert(Alert.AlertType.WARNING, "No Items", "Please add at least one medicine.");
+                showStyledAlert(Alert.AlertType.WARNING, "No Items", "Please add at least one product.");
                 return;
             }
 

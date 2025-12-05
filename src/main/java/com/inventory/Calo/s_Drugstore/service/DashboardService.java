@@ -59,8 +59,8 @@ public class DashboardService {
             List<Product> expiringProducts = productService.getExpiringProducts();
             long expiringCount = expiringProducts.size();
             String expiringMessage = expiringCount > 0
-                    ? expiringCount + " medicines expiring soon"
-                    : "No medicines expiring soon";
+                    ? expiringCount + " products expiring soon"
+                    : "No products expiring soon";
 
             // Total inventory count
             List<Product> allProducts = productService.getAllProducts();
