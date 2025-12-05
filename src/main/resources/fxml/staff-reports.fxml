@@ -183,7 +183,7 @@
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="🛒" style="-fx-font-size: 24px;"/>
                         <VBox spacing="4">
-                            <Label text="Top Selling Medicines" styleClass="section-title"/>
+                            <Label text="Top Selling Products" styleClass="section-title"/>
                             <Label text="Most popular items this week" styleClass="section-subtitle"/>
                         </VBox>
                     </HBox>
@@ -191,7 +191,7 @@
                     <TableView fx:id="topSellingTable" styleClass="staff-table">
                         <columns>
                             <TableColumn fx:id="rankCol" text="Rank" prefWidth="100" styleClass="rank-column"/>
-                            <TableColumn fx:id="medicineCol" text="Medicine" prefWidth="350" styleClass="medicine-column"/>
+                            <TableColumn fx:id="medicineCol" text="Product" prefWidth="350" styleClass="medicine-column"/>
                             <TableColumn fx:id="categoryCol" text="Category" prefWidth="200" styleClass="category-column"/>
                             <TableColumn fx:id="quantityCol" text="Quantity" prefWidth="150" styleClass="quantity-column"/>
                         </columns>

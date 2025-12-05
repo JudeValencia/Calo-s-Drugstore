@@ -117,12 +117,12 @@
                         <StackPane fx:id="salesChartContainer" prefHeight="350" style="-fx-padding: 20 0 0 0;"/>
                     </VBox>
 
-                    <!-- Top Selling Medicines -->
+                    <!-- Top Selling Products -->
                     <VBox styleClass="filter-card">
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label text="🛒" style="-fx-font-size: 24px;"/>
                             <VBox>
-                                <Label text="Top Selling Medicines" styleClass="filter-title"/>
+                                <Label text="Top Selling Products" styleClass="filter-title"/>
                                 <Label text="Most popular items this week" styleClass="filter-subtitle"/>
                             </VBox>
                         </HBox>
@@ -130,7 +130,7 @@
                         <TableView fx:id="topSellingTable" prefHeight="350" style="-fx-padding: 20 0 0 0;">
                             <columns>
                                 <TableColumn fx:id="rankCol" text="Rank" prefWidth="100"/>
-                                <TableColumn fx:id="topMedicineNameCol" text="Medicine" prefWidth="300"/>
+                                <TableColumn fx:id="topMedicineNameCol" text="Product" prefWidth="300"/>
                                 <TableColumn fx:id="categoryCol" text="Category" prefWidth="200"/>
                                 <TableColumn fx:id="quantitySoldCol" text="Quantity" prefWidth="150"/>
                             </columns>
@@ -227,15 +227,15 @@
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label text="⚠" style="-fx-font-size: 24px;"/>
                             <VBox>
-                                <Label text="Expiring Medicines Alert" styleClass="filter-title"/>
-                                <Label text="Medicines expiring within 30 days or already expired" styleClass="filter-subtitle"/>
+                                <Label text="Expiring Products Alert" styleClass="filter-title"/>
+                                <Label text="Products expiring within 30 days or already expired" styleClass="filter-subtitle"/>
                             </VBox>
                         </HBox>
 
                         <TableView fx:id="expiringMedicinesTable" styleClass="">
                             <columns>
-                                <TableColumn fx:id="medicineIdCol" text="Medicine ID" prefWidth="120"/>
-                                <TableColumn fx:id="medicineNameCol" text="Medicine Name" prefWidth="250"/>
+                                <TableColumn fx:id="medicineIdCol" text="Product ID" prefWidth="120"/>
+                                <TableColumn fx:id="medicineNameCol" text="Product Name" prefWidth="250"/>
                                 <TableColumn fx:id="expirationDateCol" text="Expiration Date" prefWidth="150"/>
                                 <TableColumn fx:id="daysLeftCol" text="Days Left" prefWidth="150"/>
                                 <TableColumn fx:id="stockCol" text="Stock" prefWidth="100"/>

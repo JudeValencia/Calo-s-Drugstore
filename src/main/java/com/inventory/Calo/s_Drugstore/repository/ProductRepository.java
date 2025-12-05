@@ -18,7 +18,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // Search by name or medicine ID
     @Query("SELECT p FROM Product p WHERE " +
-            "LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "LOWER(p.brandName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(p.medicineId) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
     List<Product> searchByNameOrId(@Param("searchTerm") String searchTerm);
 
@@ -60,7 +60,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // Advanced search with multiple filters
     @Query("SELECT p FROM Product p WHERE " +
-            "(:searchTerm IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(p.medicineId) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) AND " +
+            "(:searchTerm IS NULL OR LOWER(p.brandName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(p.medicineId) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) AND " +
             "(:supplier IS NULL OR p.supplier = :supplier) AND " +
             "(:category IS NULL OR p.category = :category)")
     List<Product> findByFilters(

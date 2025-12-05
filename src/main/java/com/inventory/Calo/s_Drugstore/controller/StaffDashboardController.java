@@ -221,8 +221,9 @@ public class StaffDashboardController implements Initializable {
         Label productName = new Label((String) activity.get("details"));
         productName.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-        Label medicineId = new Label("MED" + String.format("%03d", new Random().nextInt(100)));
-        medicineId.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d;");
+        String medicineIdText = activity.get("medicineId") != null ?
+                (String) activity.get("medicineId") : "N/A";
+        Label medicineId = new Label(medicineIdText);        medicineId.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d;");
 
         details.getChildren().addAll(productName, medicineId);
 

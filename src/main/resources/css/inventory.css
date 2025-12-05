@@ -342,17 +342,6 @@
 .inventory-table .scroll-bar:vertical .thumb:hover {
     -fx-background-color: #999999;
 }
-
-/* ===================================
-   TABLE BADGES & INDICATORS
-   =================================== */
-
-/* Stock Badge Styles are inline in controller */
-
-/* Warning Icon (handled in controller) */
-
-/* Expiration Date Color (handled in controller) */
-
 /* ===================================
    RESPONSIVE SCROLLBAR
    =================================== */
@@ -451,4 +440,55 @@
 .scroll-bar .decrement-button {
     -fx-background-color: transparent;
     -fx-padding: 0;
+}
+
+/* KPI Cards */
+.kpi-row {
+    -fx-padding: 0;
+}
+
+.kpi-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-padding: 25px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 15, 0, 0, 2);
+    -fx-border-color: #E8E8E8;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+}
+
+.kpi-card-alert {
+    -fx-background-color: #FFF5F5;
+    -fx-border-color: #FED7D7;
+}
+
+.kpi-card-sales {
+    -fx-background-color: #F0FFF4;
+    -fx-border-color: #C6F6D5;
+}
+
+.kpi-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #718096;
+    -fx-letter-spacing: 0.3px;
+}
+
+.kpi-value {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2D3748;
+}
+
+.kpi-value-alert {
+    -fx-text-fill: #C53030;
+}
+
+.kpi-value-sales {
+    -fx-text-fill: #22543D;
+}
+
+.kpi-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #A0AEC0;
 }

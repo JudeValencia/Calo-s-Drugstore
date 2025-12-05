@@ -59,8 +59,8 @@ public class DashboardService {
             List<Product> expiringProducts = productService.getExpiringProducts();
             long expiringCount = expiringProducts.size();
             String expiringMessage = expiringCount > 0
-                    ? expiringCount + " medicines expiring soon"
-                    : "No medicines expiring soon";
+                    ? expiringCount + " products expiring soon"
+                    : "No products expiring soon";
 
             // Total inventory count
             List<Product> allProducts = productService.getAllProducts();
@@ -225,7 +225,8 @@ public class DashboardService {
                 Map<String, Object> activity = new HashMap<>();
                 activity.put("type", "alert");
                 activity.put("description", "Low stock alert");
-                activity.put("details", product.getName());
+                activity.put("details", product.getBrandName());
+                activity.put("medicineId", product.getMedicineId());
                 activity.put("amount", product.getStock() + " unit/s left");
                 activity.put("timestamp", "Now");
                 activity.put("status", "warning");
@@ -347,7 +348,7 @@ public class DashboardService {
                 Map<String, Object> activity = new HashMap<>();
                 activity.put("type", "alert");
                 activity.put("description", "Low stock alert");
-                activity.put("details", product.getName());
+                activity.put("details", product.getBrandName());
                 activity.put("amount", product.getStock() + " units left");
                 activity.put("timestamp", "Now");
                 activity.put("status", "warning");

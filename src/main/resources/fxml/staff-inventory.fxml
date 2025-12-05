@@ -100,7 +100,7 @@
                             <VBox HBox.hgrow="ALWAYS" spacing="8">
                                 <Label text="Total Items" styleClass="kpi-title"/>
                                 <Label fx:id="totalItemsLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="Medicines in inventory" styleClass="kpi-subtitle"/>
+                                <Label text="Products in inventory" styleClass="kpi-subtitle"/>
                             </VBox>
                             <Label text="📦" style="-fx-font-size: 36px;"/>
                         </HBox>
@@ -141,7 +141,7 @@
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="📦" style="-fx-font-size: 24px;"/>
                         <VBox spacing="4">
-                            <Label text="Medicine Inventory" styleClass="section-title"/>
+                            <Label text="Product Inventory" styleClass="section-title"/>
                             <Label text="View-only access to inventory. Contact manager for stock updates." styleClass="section-subtitle"/>
                         </VBox>
                     </HBox>
@@ -172,7 +172,7 @@
                     <!-- Inventory Table -->
                     <TableView fx:id="inventoryTable" styleClass="inventory-table">
                         <columns>
-                            <TableColumn fx:id="medicineIdCol" text="Medicine ID" prefWidth="100"/>
+                            <TableColumn fx:id="medicineIdCol" text="Product ID" prefWidth="100"/>
                             <TableColumn fx:id="nameCol" text="Name" prefWidth="180"/>
                             <TableColumn fx:id="categoryCol" text="Category" prefWidth="130"/>
                             <TableColumn fx:id="priceCol" text="Price" prefWidth="100"/>
