@@ -1,20 +1,29 @@
 package com.inventory.Calo.s_Drugstore.service;
 
+import com.inventory.Calo.s_Drugstore.entity.Batch;
+import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
 import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private BatchRepository batchRepository;
 
     // Get all products
     public List<Product> getAllProducts() {
@@ -206,5 +215,144 @@ public class ProductService {
 
         return String.format("MED%03d", maxNumber + 1);
 
+    }
+
+    //New added methods below for batch support
+    // Generate batch number
+    public String generateBatchNumber(String medicineId) {
+        String prefix = "BATCH-" + medicineId + "-";
+        String timestamp = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        long count = batchRepository.count() + 1;
+        return prefix + timestamp + "-" + String.format("%03d", count);
+    }
+
+    // Save product with batch
+    @Transactional
+    public Product saveProductWithBatch(Product product, Integer batchStock,
+                                        LocalDate batchExpiry, BigDecimal batchPrice,
+                                        String batchSupplier) {
+        // Check if product with same name already exists
+        List<Product> existingProducts = productRepository.searchByNameOrId(product.getName());
+        Product existingProduct = existingProducts.stream()
+                .filter(p -> p.getName().equalsIgnoreCase(product.getName()))
+                .findFirst()
+                .orElse(null);
+
+        if (existingProduct != null) {
+            // Product exists, just add a new batch
+            Batch newBatch = new Batch();
+            newBatch.setBatchNumber(generateBatchNumber(existingProduct.getMedicineId()));
+            newBatch.setProduct(existingProduct);
+            newBatch.setStock(batchStock);
+            newBatch.setExpirationDate(batchExpiry);
+            newBatch.setPrice(batchPrice);
+            newBatch.setSupplier(batchSupplier);
+            newBatch.setDateReceived(LocalDate.now());
+
+            batchRepository.save(newBatch);
+
+            // Update product's total stock by summing all batches using product ID
+            int totalStock = batchRepository.findByProductId(existingProduct.getId()).stream()
+                    .mapToInt(Batch::getStock)
+                    .sum();
+            existingProduct.setStock(totalStock);
+            existingProduct.setUpdatedAt(LocalDate.now());
+
+            return productRepository.save(existingProduct);
+        } else {
+            // New product, create product first
+            Product savedProduct = productRepository.save(product);
+
+            // Then create first batch
+            Batch newBatch = new Batch();
+            newBatch.setBatchNumber(generateBatchNumber(savedProduct.getMedicineId()));
+            newBatch.setProduct(savedProduct);
+            newBatch.setStock(batchStock);
+            newBatch.setExpirationDate(batchExpiry);
+            newBatch.setPrice(batchPrice);
+            newBatch.setSupplier(batchSupplier);
+            newBatch.setDateReceived(LocalDate.now());
+
+            batchRepository.save(newBatch);
+
+            // Update product's stock
+            savedProduct.setStock(batchStock);
+            return productRepository.save(savedProduct);
+        }
+    }
+
+    // Get all batches for a product
+    @Transactional(readOnly = true)
+    public List<Batch> getBatchesForProduct(Product product) {
+        // Use cache during table rendering to improve performance
+        return batchCache.computeIfAbsent(product.getId(),
+                id -> batchRepository.findByProductOrderByExpirationDate(id));
+    }
+
+    //Get batch by ID
+    public Optional<Batch> getBatchById(Long id) {
+        return batchRepository.findById(id);
+    }
+
+    //Get batch by number
+    public Optional<Batch> getBatchByNumber(String batchNumber) {
+        return batchRepository.findByBatchNumber(batchNumber);
+    }
+
+    //Update batch stock
+    @Transactional
+    public void updateBatchStock(Long batchId, Integer newStock) {
+        Optional<Batch> batchOpt = batchRepository.findById(batchId);
+        if (batchOpt.isPresent()) {
+            Batch batch = batchOpt.get();
+            batch.setStock(newStock);
+            batchRepository.save(batch);
+
+            // Update product's total stock using product ID
+            Product product = batch.getProduct();
+            int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                    .mapToInt(Batch::getStock)
+                    .sum();
+            product.setStock(totalStock);
+            productRepository.save(product);
+        }
+    }
+
+    //Delete a batch
+    @Transactional
+    public void deleteBatch(Long batchId) {
+        Optional<Batch> batchOpt = batchRepository.findById(batchId);
+        if (batchOpt.isPresent()) {
+            Batch batch = batchOpt.get();
+            Product product = batch.getProduct();
+
+            batchRepository.delete(batch);
+
+            // Update product's total stock using product ID
+            int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                    .mapToInt(Batch::getStock)
+                    .sum();
+            product.setStock(totalStock);
+            productRepository.save(product);
+        }
+    }
+
+    //Get expiring batches within specified days
+    public List<Batch> getExpiringBatches(int days) {
+        LocalDate targetDate = LocalDate.now().plusDays(days);
+        return batchRepository.findExpiringBatches(targetDate);
+    }
+
+    //Count total number of batches for a product
+    public long countBatchesForProduct(Product product) {
+        return batchRepository.countByProductId(product.getId());
+    }
+
+    // Cache for batch lookups during table rendering
+    private Map<Long, List<Batch>> batchCache = new ConcurrentHashMap<>();
+
+    // Call this after any batch modification to clear cache
+    public void clearBatchCache() {
+        batchCache.clear();
     }
 }
