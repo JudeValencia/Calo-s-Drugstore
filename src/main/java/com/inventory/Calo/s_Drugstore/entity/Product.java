@@ -3,6 +3,8 @@ package com.inventory.Calo.s_Drugstore.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -44,6 +46,9 @@ public class Product {
 
     @Column(name = "updated_at")
     private LocalDate updatedAt;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Batch> batches = new ArrayList<>();
 
     // Constructors
     public Product() {
@@ -190,5 +195,46 @@ public class Product {
                 ", price=" + price +
                 ", supplier='" + supplier + '\'' +
                 '}';
+    }
+
+    //BATCH SUPPORT
+    public List<Batch> getBatches() {
+        return batches;
+    }
+
+    public void setBatches(List<Batch> batches) {
+        this.batches = batches;
+    }
+
+    public void addBatch(Batch batch) {
+        batches.add(batch);
+        batch.setProduct(this);
+    }
+
+    public void removeBatch(Batch batch) {
+        batches.remove(batch);
+        batch.setProduct(null);
+    }
+
+    // Update the getStock() method to calculate total from all batches:
+    public Integer getTotalStock() {
+        if (batches == null || batches.isEmpty()) {
+            return stock != null ? stock : 0;
+        }
+        return batches.stream()
+                .mapToInt(Batch::getStock)
+                .sum();
+    }
+
+    // Get the earliest expiration date from all batches
+    public LocalDate getEarliestExpirationDate() {
+        if (batches == null || batches.isEmpty()) {
+            return expirationDate;
+        }
+        return batches.stream()
+                .map(Batch::getExpirationDate)
+                .filter(date -> date != null)
+                .min(LocalDate::compareTo)
+                .orElse(expirationDate);
     }
 }

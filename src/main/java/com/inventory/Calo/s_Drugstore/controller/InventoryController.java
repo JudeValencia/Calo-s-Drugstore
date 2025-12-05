@@ -1,5 +1,6 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.entity.Batch;
 import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
@@ -113,7 +114,12 @@ public class InventoryController implements Initializable {
                     Label nameLabel = new Label(product.getName());
                     nameLabel.setStyle("-fx-font-size: 14px;");
 
-                    if (product.isExpiringSoon()) {
+                    // Check if any batch is expiring soon
+                    List<Batch> batches = productService.getBatchesForProduct(product);
+                    boolean hasExpiringBatch = batches.stream()
+                            .anyMatch(Batch::isExpiringSoon);
+
+                    if (hasExpiringBatch) {
                         Label warningIcon = new Label("⚠");
                         warningIcon.setStyle("-fx-text-fill: #FF9800; -fx-font-size: 16px;");
                         container.getChildren().addAll(nameLabel, warningIcon);
@@ -205,7 +211,8 @@ public class InventoryController implements Initializable {
         });
         priceColumn.setCellValueFactory(data ->
                 new SimpleStringProperty("₱" + data.getValue().getPrice().toString()));
-        // Expiration Date Column
+
+        // ===== FIXED: Expiration Date Column - Now reads from batches =====
         expirationColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -215,13 +222,30 @@ public class InventoryController implements Initializable {
                     setStyle("");
                 } else {
                     Product product = getTableRow().getItem();
-                    if (product.getExpirationDate() != null) {
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
-                        setText(product.getExpirationDate().format(formatter));
-                        if (product.isExpiringSoon()) {
-                            setStyle("-fx-text-fill: #FF6B35; -fx-font-weight: normal;");
+                    List<Batch> batches = productService.getBatchesForProduct(product);
+
+                    if (!batches.isEmpty()) {
+                        // Get earliest expiration date from batches
+                        LocalDate earliestExpiry = batches.stream()
+                                .map(Batch::getExpirationDate)
+                                .filter(date -> date != null)
+                                .min(LocalDate::compareTo)
+                                .orElse(null);
+
+                        if (earliestExpiry != null) {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
+                            setText(earliestExpiry.format(formatter));
+
+                            // Check if expiring soon (within 30 days)
+                            LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
+                            if (earliestExpiry.isBefore(thirtyDaysFromNow)) {
+                                setStyle("-fx-text-fill: #FF6B35; -fx-font-weight: bold;");
+                            } else {
+                                setStyle("-fx-text-fill: #FF6B35;");
+                            }
                         } else {
-                            setStyle("-fx-text-fill: #FF6B35;");
+                            setText("N/A");
+                            setStyle("");
                         }
                     } else {
                         setText("N/A");
@@ -231,16 +255,45 @@ public class InventoryController implements Initializable {
             }
         });
         expirationColumn.setCellValueFactory(data -> {
-            if (data.getValue().getExpirationDate() != null) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
-                return new SimpleStringProperty(data.getValue().getExpirationDate().format(formatter));
+            List<Batch> batches = productService.getBatchesForProduct(data.getValue());
+            if (!batches.isEmpty()) {
+                LocalDate earliestExpiry = batches.stream()
+                        .map(Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+
+                if (earliestExpiry != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                    return new SimpleStringProperty(earliestExpiry.format(formatter));
+                }
             }
             return new SimpleStringProperty("N/A");
         });
 
-        // Supplier Column
-        supplierColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getSupplier()));
+        // ===== FIXED: Supplier Column - Now reads from batches =====
+        supplierColumn.setCellValueFactory(data -> {
+            List<Batch> batches = productService.getBatchesForProduct(data.getValue());
+            if (!batches.isEmpty()) {
+                // Get unique suppliers from all batches
+                List<String> suppliers = batches.stream()
+                        .map(Batch::getSupplier)
+                        .filter(s -> s != null && !s.isEmpty())
+                        .distinct()
+                        .toList();
+
+                if (!suppliers.isEmpty()) {
+                    // If multiple suppliers, show "Multiple" or list them
+                    if (suppliers.size() == 1) {
+                        return new SimpleStringProperty(suppliers.get(0));
+                    } else {
+                        // Show first supplier + count
+                        return new SimpleStringProperty(suppliers.get(0) + " (+" + (suppliers.size() - 1) + ")");
+                    }
+                }
+            }
+            return new SimpleStringProperty("N/A");
+        });
 
         // Actions Column
         actionsColumn.setCellFactory(column -> new TableCell<>() {
@@ -345,6 +398,7 @@ public class InventoryController implements Initializable {
     }
 
     private void loadProducts() {
+        productService.clearBatchCache(); // Clear cache before reload
         List<Product> products = productService.getAllProducts();
         productList.setAll(products);
         inventoryTable.setItems(productList);
@@ -763,7 +817,6 @@ public class InventoryController implements Initializable {
         dataList.add(formData);
     }
 
-    // Helper method to style text fields
     private void styleTextField(TextField field) {
         field.setStyle(
                 "-fx-background-color: #F8F9FA; " +
@@ -832,15 +885,255 @@ public class InventoryController implements Initializable {
         }
     }
 
+    private void handleDeleteBatch(Batch batch, Product product, TableView<Batch> batchTable) {
+        // Create confirmation dialog
+        Stage confirmStage = new Stage();
+        IconUtil.setApplicationIcon(confirmStage);
+        confirmStage.initModality(Modality.APPLICATION_MODAL);
+        confirmStage.setTitle("Delete Batch");
+        confirmStage.setResizable(false);
+        confirmStage.setUserData(false);
+
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(500);
+
+        // Title
+        Label titleLabel = new Label("Delete Batch?");
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        // Batch details
+        VBox detailsBox = new VBox(8);
+        detailsBox.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-padding: 15; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px;"
+        );
+
+        Label batchNumLabel = new Label("Batch Number: " + batch.getBatchNumber());
+        batchNumLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+
+        Label stockLabel = new Label("Stock: " + batch.getStock() + " units");
+        stockLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+
+        Label expiryLabel = new Label("Expiry: " +
+                (batch.getExpirationDate() != null ?
+                        batch.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) :
+                        "N/A"));
+        expiryLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+
+        Label supplierLabel = new Label("Supplier: " + batch.getSupplier());
+        supplierLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+
+        detailsBox.getChildren().addAll(batchNumLabel, stockLabel, expiryLabel, supplierLabel);
+
+        // Warning message
+        Label messageLabel = new Label(
+                "⚠ This action cannot be undone. The batch will be permanently removed from inventory, " +
+                        "and the total stock count will be updated."
+        );
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle(
+                "-fx-font-size: 14px; " +
+                        "-fx-text-fill: #7f8c8d; " +
+                        "-fx-line-spacing: 3px; " +
+                        "-fx-padding: 10; " +
+                        "-fx-background-color: #FFF3CD; " +
+                        "-fx-background-radius: 6px;"
+        );
+
+        // Buttons
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-text-fill: #2c3e50; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1.5px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+        cancelButton.setOnAction(e -> {
+            confirmStage.setUserData(false);
+            confirmStage.close();
+        });
+
+        Button deleteButton = new Button("Delete Batch");
+        deleteButton.setStyle(
+                "-fx-background-color: #dc3545; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(
+                deleteButton.getStyle().replace("#dc3545", "#c82333")
+        ));
+        deleteButton.setOnMouseExited(e -> deleteButton.setStyle(
+                deleteButton.getStyle().replace("#c82333", "#dc3545")
+        ));
+
+        deleteButton.setOnAction(e -> {
+            confirmStage.setUserData(true);
+            confirmStage.close();
+        });
+
+        buttonBox.getChildren().addAll(cancelButton, deleteButton);
+        mainContainer.getChildren().addAll(titleLabel, detailsBox, messageLabel, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        confirmStage.setScene(scene);
+        confirmStage.centerOnScreen();
+        confirmStage.showAndWait();
+
+        // If confirmed, proceed with deletion
+        if ((Boolean) confirmStage.getUserData()) {
+            try {
+                // Check if this is the last batch
+                long batchCount = productService.countBatchesForProduct(product);
+
+                if (batchCount <= 1) {
+                    // This is the last batch - warn user that product will be deleted too
+                    boolean deleteProduct = showLastBatchWarning(product.getName());
+
+                    if (deleteProduct) {
+                        // Delete the entire product (cascade will delete the batch)
+                        productService.deleteProduct(product.getId());
+
+                        // Refresh main inventory table
+                        loadProducts();
+
+                        // Close the batch dialog
+                        Stage batchDialogStage = (Stage) batchTable.getScene().getWindow();
+                        batchDialogStage.close();
+
+                        showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                                "Last batch deleted. Product removed from inventory.");
+                    } else {
+                        return; // User cancelled
+                    }
+                } else {
+                    // Delete the batch
+                    productService.deleteBatch(batch.getId());
+
+                    // Refresh the batch table
+                    List<Batch> updatedBatches = productService.getBatchesForProduct(product);
+                    batchTable.getItems().setAll(updatedBatches);
+
+                    // Refresh main inventory table to show updated total stock
+                    loadProducts();
+
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "Batch deleted successfully. Total stock updated.");
+                }
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                showStyledAlert(Alert.AlertType.ERROR, "Error",
+                        "Failed to delete batch: " + ex.getMessage());
+            }
+        }
+    }
+
+    private boolean showLastBatchWarning(String productName) {
+        Stage warningStage = new Stage();
+        IconUtil.setApplicationIcon(warningStage);
+        warningStage.initModality(Modality.APPLICATION_MODAL);
+        warningStage.setTitle("Last Batch Warning");
+        warningStage.setResizable(false);
+        warningStage.setUserData(false);
+
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(500);
+
+        Label titleLabel = new Label("⚠️ Last Batch - Product Will Be Deleted");
+        titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FF9800;");
+        titleLabel.setWrapText(true);
+
+        Label messageLabel = new Label(
+                "This is the last batch for \"" + productName + "\". " +
+                        "Deleting this batch will also remove the entire product from inventory.\n\n" +
+                        "Are you sure you want to proceed?"
+        );
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-line-spacing: 3px;");
+
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-text-fill: #2c3e50; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1.5px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+        cancelButton.setOnAction(e -> {
+            warningStage.setUserData(false);
+            warningStage.close();
+        });
+
+        Button confirmButton = new Button("Delete Product & Batch");
+        confirmButton.setStyle(
+                "-fx-background-color: #FF9800; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        confirmButton.setOnMouseEntered(e -> confirmButton.setStyle(
+                confirmButton.getStyle().replace("#FF9800", "#f57c00")
+        ));
+        confirmButton.setOnMouseExited(e -> confirmButton.setStyle(
+                confirmButton.getStyle().replace("#f57c00", "#FF9800")
+        ));
+
+        confirmButton.setOnAction(e -> {
+            warningStage.setUserData(true);
+            warningStage.close();
+        });
+
+        buttonBox.getChildren().addAll(cancelButton, confirmButton);
+        mainContainer.getChildren().addAll(titleLabel, messageLabel, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        warningStage.setScene(scene);
+        warningStage.centerOnScreen();
+        warningStage.showAndWait();
+
+        return (Boolean) warningStage.getUserData();
+    }
+
+    //UPDATED FOR BATCH SUPPORT
     private void showProductDialog(Product product) {
-        // Create custom dialog
         Stage dialogStage = new Stage();
         IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle(product == null ? "Add New Medicine" : "Edit Medicine");
         dialogStage.setResizable(false);
 
-        // Main container
         VBox mainContainer = new VBox(10);
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 20;");
         mainContainer.setPrefWidth(600);
@@ -850,8 +1143,8 @@ public class InventoryController implements Initializable {
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
         Label subtitleLabel = new Label(product == null ?
-                "Enter the details of the new medicine to add to inventory." :
-                "Update the medicine details.");
+                "Enter the details of the new medicine batch to add to inventory." :
+                "Update the medicine details or view batches.");
         subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
         subtitleLabel.setWrapText(true);
 
@@ -876,8 +1169,8 @@ public class InventoryController implements Initializable {
 
         // Stock
         TextField stockField = createStyledTextField(
-                product == null ? "0" : product.getStock().toString(),
-                "Stock Quantity"
+                product == null ? "0" : String.valueOf(product.getStock()),
+                "Stock Quantity (for this batch)"
         );
 
         // Price
@@ -916,12 +1209,30 @@ public class InventoryController implements Initializable {
         // Add labels and fields
         formContainer.getChildren().addAll(
                 createFieldGroup("Name", nameField),
-                createFieldGroup("Stock", stockField),
+                createFieldGroup("Stock (This Batch)", stockField),
                 createFieldGroup("Price (₱)", priceField),
                 createFieldGroup("Expiry Date", expirationPicker),
                 createFieldGroup("Supplier", supplierField),
                 createFieldGroup("Category", categoryField)
         );
+
+        // Add "View Batches" button if editing existing product
+        if (product != null) {
+            Button viewBatchesBtn = new Button("📦 View All Batches");
+            viewBatchesBtn.setStyle(
+                    "-fx-background-color: #4CAF50; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-padding: 10px 20px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+            viewBatchesBtn.setOnAction(e -> showBatchesDialog(product));
+
+            HBox batchButtonContainer = new HBox(viewBatchesBtn);
+            batchButtonContainer.setAlignment(Pos.CENTER_LEFT);
+            formContainer.getChildren().add(batchButtonContainer);
+        }
 
         // Buttons
         HBox buttonContainer = new HBox(15);
@@ -941,7 +1252,7 @@ public class InventoryController implements Initializable {
         );
         cancelButton.setOnAction(e -> dialogStage.close());
 
-        Button saveButton = new Button(product == null ? "Add Medicine" : "Update Medicine");
+        Button saveButton = new Button(product == null ? "Add Medicine" : "Add New Batch");
         saveButton.setStyle(
                 "-fx-background-color: #4CAF50; " +
                         "-fx-text-fill: white; " +
@@ -952,7 +1263,6 @@ public class InventoryController implements Initializable {
                         "-fx-cursor: hand;"
         );
 
-        // Hover effects
         saveButton.setOnMouseEntered(e -> saveButton.setStyle(
                 saveButton.getStyle() + "-fx-background-color: #45a049;"
         ));
@@ -988,8 +1298,9 @@ public class InventoryController implements Initializable {
                 }
 
                 // Validate numeric fields
+                int stock;
                 try {
-                    int stock = Integer.parseInt(stockField.getText());
+                    stock = Integer.parseInt(stockField.getText());
                     if (stock <= 0) {
                         showStyledAlert(Alert.AlertType.ERROR, "Invalid Stock",
                                 "Stock quantity must be greater than 0.");
@@ -1001,8 +1312,9 @@ public class InventoryController implements Initializable {
                     return;
                 }
 
+                BigDecimal price;
                 try {
-                    BigDecimal price = new BigDecimal(priceField.getText());
+                    price = new BigDecimal(priceField.getText());
                     if (price.compareTo(BigDecimal.ZERO) <= 0) {
                         showStyledAlert(Alert.AlertType.ERROR, "Invalid Price",
                                 "Price must be greater than 0.");
@@ -1014,45 +1326,329 @@ public class InventoryController implements Initializable {
                     return;
                 }
 
-                // All validations passed, save the product
-                Product newProduct = product == null ? new Product() : product;
-
+                // Save using the new batch-aware method
                 if (product == null) {
+                    // New product with first batch
+                    Product newProduct = new Product();
                     newProduct.setMedicineId(medicineIdField.getText());
-                }
-                newProduct.setName(nameField.getText().trim());
-                newProduct.setStock(Integer.parseInt(stockField.getText()));
-                newProduct.setPrice(new BigDecimal(priceField.getText()));
-                newProduct.setExpirationDate(expirationPicker.getValue());
-                newProduct.setSupplier(supplierField.getText().trim());
-                newProduct.setCategory(categoryField.getText().trim());
+                    newProduct.setName(nameField.getText().trim());
+                    newProduct.setPrice(price);
+                    newProduct.setCategory(categoryField.getText().trim());
 
-                productService.saveProduct(newProduct);
+                    productService.saveProductWithBatch(
+                            newProduct,
+                            stock,
+                            expirationPicker.getValue(),
+                            price,
+                            supplierField.getText().trim()
+                    );
+
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "Medicine and first batch added successfully!");
+                } else {
+                    // Add new batch to existing product
+                    productService.saveProductWithBatch(
+                            product,
+                            stock,
+                            expirationPicker.getValue(),
+                            price,
+                            supplierField.getText().trim()
+                    );
+
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "New batch added successfully to " + product.getName() + "!");
+                }
+
                 loadProducts();
                 dialogStage.close();
-                showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                        product == null ? "Medicine added successfully!" : "Medicine updated successfully!");
 
             } catch (Exception ex) {
                 showStyledAlert(Alert.AlertType.ERROR, "Error",
-                        "Failed to save product: " + ex.getMessage());
+                        "Failed to save: " + ex.getMessage());
             }
         });
 
         buttonContainer.getChildren().addAll(cancelButton, saveButton);
 
-        // Add all sections to main container
         mainContainer.getChildren().addAll(header, formContainer, buttonContainer);
 
-        // Create scene
         Scene scene = new Scene(mainContainer);
         dialogStage.setScene(scene);
-
-        // Center on parent window
         dialogStage.centerOnScreen();
-
-        // Show dialog
         dialogStage.showAndWait();
+    }
+
+    //BATCH VIEW DIALOG (FOR DUPLICATION)
+    private void showBatchesDialog(Product product) {
+        Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Batches for " + product.getName());
+        dialogStage.setResizable(true);
+
+        VBox mainContainer = new VBox(20);
+        mainContainer.getStyleClass().add("table-card");
+        mainContainer.setStyle("-fx-padding: 25;");
+        mainContainer.setPrefWidth(1000);
+        mainContainer.setPrefHeight(650);
+
+        // Header
+        Label titleLabel = new Label(product.getName() + " - Batch History");
+        titleLabel.getStyleClass().add("table-title");
+
+        // Summary info
+        long batchCount = productService.countBatchesForProduct(product);
+        Label summaryLabel = new Label(String.format(
+                "Total Stock: %d units | Medicine ID: %s | Total Batches: %d",
+                product.getStock(),
+                product.getMedicineId(),
+                batchCount
+        ));
+        summaryLabel.getStyleClass().add("table-subtitle");
+
+        VBox header = new VBox(8, titleLabel, summaryLabel);
+
+        // Batches Table with CSS styling
+        TableView<Batch> batchTable = new TableView<>();
+        batchTable.getStyleClass().add("inventory-table");
+
+        // Batch Number Column
+        TableColumn<Batch, String> batchNumCol = new TableColumn<>("Batch Number");
+        batchNumCol.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getBatchNumber()));
+        batchNumCol.setPrefWidth(220);
+
+        // Stock Column
+        TableColumn<Batch, String> stockCol = new TableColumn<>("Stock");
+        stockCol.setCellValueFactory(data ->
+                new SimpleStringProperty(String.valueOf(data.getValue().getStock())));
+        stockCol.setPrefWidth(80);
+        stockCol.setStyle("-fx-alignment: CENTER;");
+
+        // Price Column
+        TableColumn<Batch, String> priceCol = new TableColumn<>("Price");
+        priceCol.setCellValueFactory(data ->
+                new SimpleStringProperty("₱" + data.getValue().getPrice().toString()));
+        priceCol.setPrefWidth(100);
+
+        // Expiration Date Column
+        TableColumn<Batch, String> expiryCol = new TableColumn<>("Expiry Date");
+        expiryCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    Batch batch = getTableRow().getItem();
+                    if (batch.getExpirationDate() != null) {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
+                        setText(batch.getExpirationDate().format(formatter));
+                        if (batch.isExpiringSoon()) {
+                            setStyle("-fx-text-fill: #FF6B35; -fx-font-weight: bold;");
+                        } else {
+                            setStyle("-fx-text-fill: #FF6B35;");
+                        }
+                    } else {
+                        setText("N/A");
+                        setStyle("");
+                    }
+                }
+            }
+        });
+        expiryCol.setCellValueFactory(data -> {
+            if (data.getValue().getExpirationDate() != null) {
+                return new SimpleStringProperty(
+                        data.getValue().getExpirationDate().format(DateTimeFormatter.ofPattern("M/d/yyyy"))
+                );
+            }
+            return new SimpleStringProperty("N/A");
+        });
+        expiryCol.setPrefWidth(130);
+
+        // Supplier Column
+        TableColumn<Batch, String> supplierCol = new TableColumn<>("Supplier");
+        supplierCol.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getSupplier()));
+        supplierCol.setPrefWidth(120);
+
+        // Date Received Column
+        TableColumn<Batch, String> receivedCol = new TableColumn<>("Date Received");
+        receivedCol.setCellValueFactory(data -> {
+            if (data.getValue().getDateReceived() != null) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
+                return new SimpleStringProperty(
+                        data.getValue().getDateReceived().format(formatter)
+                );
+            }
+            return new SimpleStringProperty("N/A");
+        });
+        receivedCol.setPrefWidth(130);
+
+        // Status Column with badges matching inventory table
+        TableColumn<Batch, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Batch batch = getTableRow().getItem();
+
+                    String status = "Active";
+                    String bgColor = "#1a1a1a"; // Changed to match inventory table "Good" status
+
+                    if (batch.getStock() <= 0) {
+                        status = "Depleted";
+                        bgColor = "#9E9E9E";
+                    } else if (batch.getExpirationDate() != null &&
+                            batch.getExpirationDate().isBefore(LocalDate.now())) {
+                        status = "Expired";
+                        bgColor = "#dc3545"; // Changed to match inventory table "Low" status
+                    } else if (batch.isExpiringSoon()) {
+                        status = "Expiring";
+                        bgColor = "#FF9800";
+                    }
+
+                    Label badge = new Label(status);
+                    badge.setStyle(
+                            "-fx-background-color: " + bgColor + "; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-padding: 4px 12px; " +
+                                    "-fx-background-radius: 12px; " +
+                                    "-fx-font-size: 12px; " +
+                                    "-fx-font-weight: bold;"
+                    );
+
+                    HBox container = new HBox(badge);
+                    container.setAlignment(Pos.CENTER_LEFT);
+                    setGraphic(container);
+                    setText(null);
+                }
+            }
+        });
+        statusCol.setPrefWidth(110);
+
+        // Actions Column with Delete Button
+        TableColumn<Batch, Void> actionsCol = new TableColumn<>("Actions");
+        actionsCol.setCellFactory(column -> new TableCell<>() {
+            private final Button deleteBtn = new Button("🗑");
+
+            {
+                deleteBtn.setStyle(
+                        "-fx-background-color: white; " +
+                                "-fx-text-fill: #F44336; " +
+                                "-fx-font-size: 16px; " +
+                                "-fx-cursor: hand; " +
+                                "-fx-padding: 8px 12px; " +
+                                "-fx-border-color: #E0E0E0; " +
+                                "-fx-border-width: 1px; " +
+                                "-fx-border-radius: 6px; " +
+                                "-fx-background-radius: 6px;"
+                );
+
+                deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle(
+                        deleteBtn.getStyle() + "-fx-background-color: #FFEBEE; -fx-border-color: #F44336;"
+                ));
+                deleteBtn.setOnMouseExited(e -> deleteBtn.setStyle(
+                        deleteBtn.getStyle().replace("-fx-background-color: #FFEBEE; -fx-border-color: #F44336;",
+                                "-fx-background-color: white; -fx-border-color: #E0E0E0;")
+                ));
+
+                deleteBtn.setOnAction(event -> {
+                    Batch batch = getTableRow().getItem();
+                    if (batch != null) {
+                        handleDeleteBatch(batch, product, batchTable);
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    HBox container = new HBox(deleteBtn);
+                    container.setAlignment(Pos.CENTER);
+                    setGraphic(container);
+                }
+            }
+        });
+        actionsCol.setPrefWidth(100);
+
+        batchTable.getColumns().addAll(
+                batchNumCol, stockCol, priceCol, expiryCol,
+                supplierCol, receivedCol, statusCol, actionsCol
+        );
+
+        // Load batches
+        List<Batch> batches = productService.getBatchesForProduct(product);
+        ObservableList<Batch> batchData = FXCollections.observableArrayList(batches);
+        batchTable.setItems(batchData);
+
+        // Make table grow to fill space
+        VBox.setVgrow(batchTable, Priority.ALWAYS);
+
+        // Info message with CSS styling
+        Label infoLabel = new Label(
+                "ℹBatches are displayed in order of expiration date (earliest first) for FEFO tracking."
+        );
+        infoLabel.setStyle(
+                "-fx-background-color: #E3F2FD; " +
+                        "-fx-padding: 12px 15px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-text-fill: #1976D2; " +
+                        "-fx-font-size: 13px;"
+        );
+        infoLabel.setWrapText(true);
+
+        // Close button
+        HBox buttonContainer = new HBox();
+        buttonContainer.setAlignment(Pos.CENTER_RIGHT);
+
+        Button closeButton = new Button("Close");
+        closeButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        closeButton.setOnMouseEntered(e -> closeButton.setStyle(
+                closeButton.getStyle().replace("#4CAF50", "#45a049")
+        ));
+        closeButton.setOnMouseExited(e -> closeButton.setStyle(
+                closeButton.getStyle().replace("#45a049", "#4CAF50")
+        ));
+
+        closeButton.setOnAction(e -> dialogStage.close());
+
+        buttonContainer.getChildren().add(closeButton);
+
+        mainContainer.getChildren().addAll(header, infoLabel, batchTable, buttonContainer);
+
+        // Create scene and load CSS
+        Scene scene = new Scene(mainContainer);
+
+        // Load the inventory.css stylesheet
+        try {
+            scene.getStylesheets().add(
+                    Objects.requireNonNull(getClass().getResource("/css/inventory.css")).toExternalForm()
+            );
+        } catch (Exception ex) {
+            System.err.println("Warning: Could not load inventory.css for batch dialog: " + ex.getMessage());
+        }
+
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.show();
     }
 
     // Helper method to create styled text fields
