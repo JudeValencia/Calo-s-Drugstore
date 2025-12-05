@@ -1199,12 +1199,38 @@
             subtitleLabel.setWrapText(true);
     
             VBox header = new VBox(5, titleLabel, subtitleLabel);
-    
-            // ScrollPane for medicine forms
+
             ScrollPane scrollPane = new ScrollPane();
             scrollPane.setFitToWidth(true);
-            scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
             scrollPane.setPrefHeight(350);
+
+            String scrollBarStyle =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color: #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+
+            scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.getStylesheets().add("data:text/css," + scrollBarStyle);
+                }
+            });
     
             VBox medicineFormsContainer = new VBox(15);
             scrollPane.setContent(medicineFormsContainer);
@@ -1404,9 +1430,10 @@
     
             // Add all sections to main container
             mainContainer.getChildren().addAll(header, scrollPane, addButtonContainer, buttonContainer);
-    
+
             // Create scene
             Scene scene = new Scene(mainContainer);
+            scene.getStylesheets().add("data:text/css," + scrollBarStyle);
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
@@ -1463,7 +1490,7 @@
                             "-fx-border-color: #E0E0E0; " +
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 8px; " +
-                            "-fx-padding: 12px 15px; " +
+                            "-fx-padding: 14px 16px; " +
                             "-fx-font-size: 14px;"
             );
     
@@ -1513,7 +1540,7 @@
             medicineCard.setStyle(
                     "-fx-background-color: #F8F9FA; " +
                             "-fx-background-radius: 10px; " +
-                            "-fx-padding: 20; " +
+                            "-fx-padding: 25; " +
                             "-fx-border-color: #E0E0E0; " +
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 10px;"
@@ -1656,7 +1683,7 @@
                             "-fx-border-color: #E0E0E0; " +
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 8px; " +
-                            "-fx-padding: 12px 15px; " +
+                            "-fx-padding: 14px 16px; " +
                             "-fx-font-size: 14px; " +
                             "-fx-text-fill: #2c3e50;"
             );
@@ -1678,7 +1705,7 @@
                             "-fx-border-color: #E0E0E0; " +
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 8px; " +
-                            "-fx-padding: 12px 15px; " +
+                            "-fx-padding: 14px 16px; " +
                             "-fx-font-size: 14px;"
             );
         }
@@ -1791,14 +1818,35 @@
             // ScrollPane for content
             ScrollPane scrollPane = new ScrollPane();
             scrollPane.setFitToWidth(true);
-            scrollPane.setStyle(
-                    "-fx-background-color: transparent; " +
-                            "-fx-background: transparent; " +
-                            "-fx-border-color: transparent;"
-            );
             scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
             scrollPane.setPrefHeight(450);
+
+            String scrollBarStyleDetails =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color: #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+
+            scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.getStylesheets().add("data:text/css," + scrollBarStyleDetails);
+                }
+            });
     
             VBox contentContainer = new VBox(20);
     
@@ -1902,6 +1950,7 @@
     
             // Create scene
             Scene scene = new Scene(mainContainer);
+            scene.getStylesheets().add("data:text/css," + scrollBarStyleDetails);
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
@@ -1970,7 +2019,7 @@
             VBox mainContainer = new VBox(10);
             ScrollPane scrollPane = new ScrollPane();
     
-            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 20;");
+            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
             mainContainer.setPrefWidth(600);
             mainContainer.setMaxHeight(700); // Add max height
             scrollPane.setPrefHeight(500);
@@ -1987,17 +2036,39 @@
             subtitleLabel.setWrapText(true);
     
             VBox header = new VBox(8, titleLabel, subtitleLabel);
-    
+
             scrollPane.setFitToWidth(true);
-            scrollPane.setStyle(
-                    "-fx-background-color: transparent; " +
-                            "-fx-background: transparent; " +
-                            "-fx-border-color: transparent;"
-            );
             scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+            String scrollBarStyleDialog =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color: #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+
+            scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.getStylesheets().add("data:text/css," + scrollBarStyleDialog);
+                }
+            });
     
             VBox formContainer = new VBox(15);
+            formContainer.setPadding(new javafx.geometry.Insets(15, 15, 15, 15)); //
     
             // Medicine ID (auto-generated, read-only for new, disabled for edit)
             TextField medicineIdField = createStyledTextField(
@@ -2274,6 +2345,7 @@
     
             // Create scene
             Scene scene = new Scene(mainContainer);
+            scene.getStylesheets().add("data:text/css," + scrollBarStyleDialog);
             dialogStage.setScene(scene);
     
             // Center on parent window
