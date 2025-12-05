@@ -267,26 +267,81 @@
                     }
                 }
             });
+            // ===== FIXED: Expiration Date Column - Now reads from batches WITH FALLBACK =====
+            expirationColumn.setCellFactory(column -> new TableCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                        setText(null);
+                        setStyle("");
+                    } else {
+                        Product product = getTableRow().getItem();
+                        List<Batch> batches = productService.getBatchesForProduct(product);
+
+                        LocalDate displayDate = null;
+
+                        if (!batches.isEmpty()) {
+                            // Get earliest expiration date from batches
+                            displayDate = batches.stream()
+                                    .map(Batch::getExpirationDate)
+                                    .filter(date -> date != null)
+                                    .min(LocalDate::compareTo)
+                                    .orElse(null);
+                        }
+
+                        // FALLBACK: If no batch data, use product's expiration date
+                        if (displayDate == null) {
+                            displayDate = product.getExpirationDate();
+                        }
+
+                        if (displayDate != null) {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
+                            setText(displayDate.format(formatter));
+
+                            // Check if expiring soon (within 30 days)
+                            LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
+                            if (displayDate.isBefore(thirtyDaysFromNow)) {
+                                setStyle("-fx-text-fill: #FF6B35; -fx-font-weight: bold;");
+                            } else {
+                                setStyle("-fx-text-fill: #FF6B35;");
+                            }
+                        } else {
+                            setText("N/A");
+                            setStyle("");
+                        }
+                    }
+                }
+            });
+
             expirationColumn.setCellValueFactory(data -> {
                 List<Batch> batches = productService.getBatchesForProduct(data.getValue());
+                LocalDate displayDate = null;
+
                 if (!batches.isEmpty()) {
-                    LocalDate earliestExpiry = batches.stream()
+                    displayDate = batches.stream()
                             .map(Batch::getExpirationDate)
                             .filter(date -> date != null)
                             .min(LocalDate::compareTo)
                             .orElse(null);
+                }
 
-                    if (earliestExpiry != null) {
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
-                        return new SimpleStringProperty(earliestExpiry.format(formatter));
-                    }
+                // FALLBACK to product expiration date
+                if (displayDate == null) {
+                    displayDate = data.getValue().getExpirationDate();
+                }
+
+                if (displayDate != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                    return new SimpleStringProperty(displayDate.format(formatter));
                 }
                 return new SimpleStringProperty("N/A");
             });
 
-            // ===== FIXED: Supplier Column - Now reads from batches =====
+            // ===== FIXED: Supplier Column - Now reads from batches WITH FALLBACK =====
             supplierColumn.setCellValueFactory(data -> {
                 List<Batch> batches = productService.getBatchesForProduct(data.getValue());
+
                 if (!batches.isEmpty()) {
                     // Get unique suppliers from all batches
                     List<String> suppliers = batches.stream()
@@ -305,9 +360,15 @@
                         }
                     }
                 }
+
+                // FALLBACK: If no batch data, use product's supplier
+                String productSupplier = data.getValue().getSupplier();
+                if (productSupplier != null && !productSupplier.isEmpty()) {
+                    return new SimpleStringProperty(productSupplier);
+                }
+
                 return new SimpleStringProperty("N/A");
             });
-
             // Actions Column
             actionsColumn.setCellFactory(column -> new TableCell<>() {
                 private final Button editBtn = new Button();
