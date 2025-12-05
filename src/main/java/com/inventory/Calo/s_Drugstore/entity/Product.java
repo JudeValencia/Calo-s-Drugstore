@@ -36,8 +36,8 @@ public class Product {
     @Column(name = "category")
     private String category;
 
-    @Column(name = "description")
-    private String description;
+//    @Column(name = "description")
+//    private String description;
 
     @Column(name = "min_stock_level")
     private Integer minStockLevel = 10;
@@ -184,13 +184,13 @@ public class Product {
         this.category = category;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
+//    public String getDescription() {
+//        return description;
+//    }
+//
+//    public void setDescription(String description) {
+//        this.description = description;
+//    }
 
     public Integer getMinStockLevel() {
         return minStockLevel;

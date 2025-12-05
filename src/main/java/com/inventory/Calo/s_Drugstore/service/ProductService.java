@@ -99,7 +99,7 @@ public class ProductService {
                 existing.setExpirationDate(product.getExpirationDate());
                 existing.setSupplier(product.getSupplier());
                 existing.setCategory(product.getCategory());
-                existing.setDescription(product.getDescription());
+                //existing.setDescription(product.getDescription());
                 existing.setMinStockLevel(product.getMinStockLevel());
                 existing.setBatchNumber(product.getBatchNumber());
                 existing.setPrescriptionRequired(product.getPrescriptionRequired());
@@ -132,7 +132,7 @@ public class ProductService {
             product.setExpirationDate(updatedProduct.getExpirationDate());
             product.setSupplier(updatedProduct.getSupplier());
             product.setCategory(updatedProduct.getCategory());
-            product.setDescription(updatedProduct.getDescription());
+            //product.setDescription(updatedProduct.getDescription());
             product.setMinStockLevel(updatedProduct.getMinStockLevel());
             product.setUpdatedAt(LocalDate.now());
 

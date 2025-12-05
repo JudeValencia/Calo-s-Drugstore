@@ -101,6 +101,45 @@
                     </HBox>
                 </HBox>
 
+                <!-- KPI Cards Row -->
+                <HBox spacing="20" styleClass="kpi-row">
+                    <!-- Card 1: Total Items -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Total Items" styleClass="kpi-title"/>
+                                <Label fx:id="totalItemsLabel" text="0" styleClass="kpi-value"/>
+                                <Label text="Medicines in inventory" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="📦" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 2: Low Stock Items -->
+                    <VBox styleClass="kpi-card,kpi-card-alert" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Low Stock Items" styleClass="kpi-title"/>
+                                <Label fx:id="lowStockLabel" text="0" styleClass="kpi-value,kpi-value-alert"/>
+                                <Label text="Need restocking" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="⚠" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 3: Total Inventory Value -->
+                    <VBox styleClass="kpi-card,kpi-card-sales" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Total Inventory Value" styleClass="kpi-title"/>
+                                <Label fx:id="totalValueLabel" text="₱0.00" styleClass="kpi-value,kpi-value-sales"/>
+                                <Label text="Current stock value" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="💰" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+                </HBox>
+
                 <VBox styleClass="filter-card" spacing="15">
                     <padding>
                         <Insets top="20" right="25" bottom="20" left="25"/>

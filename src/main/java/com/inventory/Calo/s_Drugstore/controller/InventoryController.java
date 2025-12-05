@@ -73,6 +73,11 @@
         // User info labels
         @FXML private Label userNameLabel;
         @FXML private Label userEmailLabel;
+
+        // KPI Labels
+        @FXML private Label totalItemsLabel;
+        @FXML private Label lowStockLabel;
+        @FXML private Label totalValueLabel;
     
         @FXML private TableColumn<Product, String> statusColumn;
     
@@ -401,6 +406,7 @@
             productList.setAll(products);
             inventoryTable.setItems(productList);
             updateTotalCount();
+            updateKPIs();
         }
     
         private void updateTotalCount() {
@@ -1740,6 +1746,23 @@
     
         private void handleViewProduct(Product product) {
             showProductDetailsDialog(product);
+        }
+
+        private void updateKPIs() {
+            // Total items
+            totalItemsLabel.setText(String.valueOf(productList.size()));
+
+            // Low stock count
+            long lowStockCount = productList.stream()
+                    .filter(p -> p.getStock() <= p.getMinStockLevel())
+                    .count();
+            lowStockLabel.setText(String.valueOf(lowStockCount));
+
+            // Total inventory value
+            BigDecimal totalValue = productList.stream()
+                    .map(p -> p.getPrice().multiply(BigDecimal.valueOf(p.getStock())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            totalValueLabel.setText("₱" + String.format("%,.2f", totalValue));
         }
     
         private void showProductDetailsDialog(Product product) {
