@@ -1,53 +1,79 @@
 package com.inventory.Calo.s_Drugstore.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users"
+)
 public class User {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
-
-    @Column(nullable = false, unique = true)
+    @Column(
+            nullable = false,
+            unique = true
+    )
     private String username;
-
-    @Column(nullable = false, unique = true)
+    @Column(
+            nullable = false,
+            unique = true
+    )
     private String email;
-
-    @Column(nullable = false)
+    @Column
+    private String contactNumber;
+    @Column
+    private String address;
+    @Column
+    private String dateOfBirth;
+    @Column(
+            nullable = false
+    )
     private String password;
-
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private String fullName;
-
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private String role;
-
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private boolean active = true;
-
-    @Column(nullable = false, updatable = false)
+    @Column(
+            nullable = false,
+            updatable = false
+    )
     private LocalDateTime createdAt;
-
     @Column
     private LocalDateTime lastLogin;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 
-    // Constructors
-    public User() {}
+    public User() {
+    }
 
-    public User(Long id, String username, String email, String password, String fullName,
-                String role, boolean active, LocalDateTime createdAt, LocalDateTime lastLogin) {
+    public User(Long id, String username, String email, String contactNumber, String address, String dateOfBirth, String password, String fullName, String role, boolean active, LocalDateTime createdAt, LocalDateTime lastLogin) {
         this.id = id;
         this.username = username;
         this.email = email;
+        this.contactNumber = contactNumber;
+        this.address = address;
+        this.dateOfBirth = dateOfBirth;
         this.password = password;
         this.fullName = fullName;
         this.role = role;
@@ -56,9 +82,8 @@ public class User {
         this.lastLogin = lastLogin;
     }
 
-    // Getters and Setters
     public Long getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(Long id) {
@@ -66,7 +91,7 @@ public class User {
     }
 
     public String getUsername() {
-        return username;
+        return this.username;
     }
 
     public void setUsername(String username) {
@@ -74,15 +99,39 @@ public class User {
     }
 
     public String getEmail() {
-        return email;
+        return this.email;
     }
 
     public void setEmail(String email) {
         this.email = email;
     }
 
+    public String getContactNumber() {
+        return this.contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
+    }
+
+    public String getAddress() {
+        return this.address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getDateOfBirth() {
+        return this.dateOfBirth;
+    }
+
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
     public String getPassword() {
-        return password;
+        return this.password;
     }
 
     public void setPassword(String password) {
@@ -90,7 +139,7 @@ public class User {
     }
 
     public String getFullName() {
-        return fullName;
+        return this.fullName;
     }
 
     public void setFullName(String fullName) {
@@ -98,7 +147,7 @@ public class User {
     }
 
     public String getRole() {
-        return role;
+        return this.role;
     }
 
     public void setRole(String role) {
@@ -106,7 +155,7 @@ public class User {
     }
 
     public boolean isActive() {
-        return active;
+        return this.active;
     }
 
     public void setActive(boolean active) {
@@ -114,7 +163,7 @@ public class User {
     }
 
     public LocalDateTime getCreatedAt() {
-        return createdAt;
+        return this.createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
@@ -122,7 +171,7 @@ public class User {
     }
 
     public LocalDateTime getLastLogin() {
-        return lastLogin;
+        return this.lastLogin;
     }
 
     public void setLastLogin(LocalDateTime lastLogin) {

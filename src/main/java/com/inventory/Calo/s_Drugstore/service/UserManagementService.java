@@ -55,7 +55,8 @@ public class UserManagementService {
      * @throws RuntimeException if username/email already exists
      */
     public User createStaffAccount(String username, String email, String password,
-                                   String fullName, String role) {
+                                   String fullName, String role, String contactNumber,
+                                   String address, String dateOfBirth) {
 
         // STEP 1: Check if username already exists
         if (userRepository.existsByUsername(username)) {
@@ -76,13 +77,16 @@ public class UserManagementService {
         user.setPassword(passwordEncoder.encode(password));
 
         user.setFullName(fullName);
+        user.setEmail(email);
         user.setRole(role);
-        user.setActive(true);  // Account is active by default
+        user.setContactNumber(contactNumber);
+        user.setAddress(address);
+        user.setDateOfBirth(dateOfBirth);
+        user.setActive(true);
 
-        // STEP 4: Save to database and return
+        // Sav to database and return
         return userRepository.save(user);
     }
-
 
     /**
      * RESET USER PASSWORD
@@ -112,13 +116,10 @@ public class UserManagementService {
 
             // Save to database
             userRepository.save(user);
-
             return true;  // Success!
         }
-
         return false;  // User not found
     }
-
 
     /**
      * GET ALL USERS
@@ -132,7 +133,6 @@ public class UserManagementService {
         return userRepository.findAll();
     }
 
-
     /**
      * GET USER BY ID
      *
@@ -144,7 +144,6 @@ public class UserManagementService {
     public Optional<User> getUserById(Long userId) {
         return userRepository.findById(userId);
     }
-
 
     /**
      * ACTIVATE/DEACTIVATE USER ACCOUNT
@@ -168,8 +167,6 @@ public class UserManagementService {
 
         return false;
     }
-
-
     /**
      * DELETE USER ACCOUNT
      *
@@ -187,7 +184,6 @@ public class UserManagementService {
         return false;
     }
 
-
     /**
      * UPDATE USER INFORMATION
      *
@@ -197,9 +193,13 @@ public class UserManagementService {
      * @param fullName - New full name
      * @param email - New email
      * @param role - New role
+     * @param contactNumber - New contact number
+     * @param address - New address
+     * @param dateOfBirth - New date of birth
      * @return Updated User object, or null if not found
      */
-    public User updateUserInfo(Long userId, String fullName, String email, String role) {
+    public User updateUserInfo(Long userId, String fullName, String email, String role,
+                               String contactNumber, String address, String dateOfBirth) {
         Optional<User> userOpt = userRepository.findById(userId);
 
         if (userOpt.isPresent()) {
@@ -209,14 +209,15 @@ public class UserManagementService {
             user.setFullName(fullName);
             user.setEmail(email);
             user.setRole(role);
+            user.setContactNumber(contactNumber);
+            user.setAddress(address);
+            user.setDateOfBirth(dateOfBirth);
 
             // Save and return
             return userRepository.save(user);
         }
-
         return null;
     }
-
 
     /**
      * COUNT TOTAL STAFF MEMBERS
@@ -268,8 +269,6 @@ public class UserManagementService {
             userRepository.save(user);
             return true;
         }
-
         return false;
     }
-
 }

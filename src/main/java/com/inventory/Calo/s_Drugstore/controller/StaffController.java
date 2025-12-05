@@ -19,7 +19,6 @@ import javafx.stage.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Controller;
-
 import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -452,7 +451,6 @@ public class StaffController implements Initializable {
             showStyledAlert(Alert.AlertType.INFORMATION, "Success", "Staff account deleted successfully!");
         }
     }
-
     private void showAddEditStaffDialog(User editUser) {
         boolean isEdit = editUser != null;
 
@@ -462,12 +460,39 @@ public class StaffController implements Initializable {
         dialogStage.setTitle(isEdit ? "Edit Staff Account" : "Add New Staff Account");
         dialogStage.setResizable(false);
 
-        VBox mainContainer = new VBox(20);
-        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
+        // ==================== MAIN CONTAINER  ====================//
+        VBox mainContainer = new VBox(0);
+        mainContainer.setStyle("-fx-background-color: white;");
         mainContainer.setPrefWidth(550);
+        mainContainer.setMaxHeight(650); //maximum height
 
+        // ==================== FIXED HEADER ====================//
+        VBox headerBox = new VBox();
+        headerBox.setStyle("-fx-background-color: white; -fx-padding: 30 30 20 30;");
         Label titleLabel = new Label(isEdit ? "Edit Staff Account" : "Add New Staff Account");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        headerBox.getChildren().add(titleLabel);
+
+        // ==================== SCROLLABLE ====================//
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        //
+        scrollPane.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-background: transparent;" +
+                        "-fx-border-width: 0;" +
+                        "-fx-background-insets: 0;"
+        );
+
+        scrollPane.lookup(".scroll-bar:vertical .track");
+
+        VBox contentBox = new VBox(20);
+        contentBox.setStyle("-fx-padding: 0 30 20 30; -fx-background-color: white;");
+
+        // ==================== FORM FIELDS ====================//
 
         // Full Name
         VBox nameBox = new VBox(8);
@@ -487,7 +512,7 @@ public class StaffController implements Initializable {
         if (isEdit) nameField.setText(editUser.getFullName());
         nameBox.getChildren().addAll(nameLabel, nameField);
 
-        // Username - NOW EDITABLE
+        // Username
         VBox usernameBox = new VBox(8);
         Label usernameLabel = new Label("Username *");
         usernameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
@@ -496,7 +521,6 @@ public class StaffController implements Initializable {
         usernameField.setStyle(nameField.getStyle());
         if (isEdit) {
             usernameField.setText(editUser.getUsername());
-            // REMOVED: usernameField.setDisable(true); - Now username is editable!
         }
         usernameBox.getChildren().addAll(usernameLabel, usernameField);
 
@@ -510,8 +534,37 @@ public class StaffController implements Initializable {
         if (isEdit) emailField.setText(editUser.getEmail());
         emailBox.getChildren().addAll(emailLabel, emailField);
 
-        // Password - NOW SHOWN FOR BOTH CREATE AND EDIT
-        // Password field with show/hide toggle
+        // Contact Number
+        VBox contactBox = new VBox(8);
+        Label contactLabel = new Label("Contact Number");
+        contactLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField contactField = new TextField();
+        contactField.setPromptText("Enter contact number");
+        contactField.setStyle(nameField.getStyle());
+        if (isEdit && editUser.getContactNumber() != null) contactField.setText(editUser.getContactNumber());
+        contactBox.getChildren().addAll(contactLabel, contactField);
+
+        // Address
+        VBox addressBox = new VBox(8);
+        Label addressLabel = new Label("Address");
+        addressLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField addressField = new TextField();
+        addressField.setPromptText("Enter address");
+        addressField.setStyle(nameField.getStyle());
+        if (isEdit && editUser.getAddress() != null) addressField.setText(editUser.getAddress());
+        addressBox.getChildren().addAll(addressLabel, addressField);
+
+        // Date of Birth
+        VBox dobBox = new VBox(8);
+        Label dobLabel = new Label("Date of Birth");
+        dobLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField dobField = new TextField();
+        dobField.setPromptText("YYYY-MM-DD");
+        dobField.setStyle(nameField.getStyle());
+        if (isEdit && editUser.getDateOfBirth() != null) dobField.setText(editUser.getDateOfBirth());
+        dobBox.getChildren().addAll(dobLabel, dobField);
+
+        // Password with show/hide toggle
         VBox passwordBox = new VBox(8);
         Label passwordLabel = new Label(isEdit ? "New Password (leave blank to keep current)" : "Password *");
         passwordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
@@ -519,11 +572,9 @@ public class StaffController implements Initializable {
         HBox passwordInputBox = new HBox(10);
         passwordInputBox.setAlignment(Pos.CENTER_LEFT);
 
-        // Create both TextField and PasswordField
         TextField passwordTextField = new TextField();
         PasswordField passwordField = new PasswordField();
 
-        // Style both the same way
         String fieldStyle =
                 "-fx-background-color: #F8F9FA; " +
                         "-fx-background-radius: 8px; " +
@@ -538,14 +589,11 @@ public class StaffController implements Initializable {
         passwordTextField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
         passwordField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
 
-        // Initially show PasswordField (hidden)
         passwordTextField.setVisible(false);
         passwordTextField.setManaged(false);
 
-        // Bind text properties so they stay in sync
         passwordTextField.textProperty().bindBidirectional(passwordField.textProperty());
 
-        // Show/Hide button
         Button toggleButton = new Button("👁");
         toggleButton.setStyle(
                 "-fx-background-color: white; " +
@@ -561,14 +609,12 @@ public class StaffController implements Initializable {
 
         toggleButton.setOnAction(e -> {
             if (passwordField.isVisible()) {
-                // Switch to visible (TextField)
                 passwordField.setVisible(false);
                 passwordField.setManaged(false);
                 passwordTextField.setVisible(true);
                 passwordTextField.setManaged(true);
                 toggleButton.setText("👁‍🗨");
             } else {
-                // Switch to hidden (PasswordField)
                 passwordTextField.setVisible(false);
                 passwordTextField.setManaged(false);
                 passwordField.setVisible(true);
@@ -583,6 +629,62 @@ public class StaffController implements Initializable {
         passwordInputBox.getChildren().addAll(passwordField, passwordTextField, toggleButton);
         passwordBox.getChildren().addAll(passwordLabel, passwordInputBox);
 
+        // Confirm Password
+        VBox confirmPasswordBox = new VBox(8);
+        Label confirmPasswordLabel = new Label(isEdit ? "Confirm New Password" : "Confirm Password *");
+        confirmPasswordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+
+        HBox confirmPasswordInputBox = new HBox(10);
+        confirmPasswordInputBox.setAlignment(Pos.CENTER_LEFT);
+
+        TextField confirmPasswordTextField = new TextField();
+        PasswordField confirmPasswordField = new PasswordField();
+
+        confirmPasswordTextField.setStyle(fieldStyle);
+        confirmPasswordField.setStyle(fieldStyle);
+        confirmPasswordTextField.setPromptText(isEdit ? "Confirm new password" : "Re-enter password");
+        confirmPasswordField.setPromptText(isEdit ? "Confirm new password" : "Re-enter password");
+
+        confirmPasswordTextField.setVisible(false);
+        confirmPasswordTextField.setManaged(false);
+
+        confirmPasswordTextField.textProperty().bindBidirectional(confirmPasswordField.textProperty());
+
+        Button confirmToggleButton = new Button("👁");
+        confirmToggleButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-font-size: 16px; " +
+                        "-fx-min-width: 45px; " +
+                        "-fx-min-height: 45px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        confirmToggleButton.setOnAction(e -> {
+            if (confirmPasswordField.isVisible()) {
+                confirmPasswordField.setVisible(false);
+                confirmPasswordField.setManaged(false);
+                confirmPasswordTextField.setVisible(true);
+                confirmPasswordTextField.setManaged(true);
+                confirmToggleButton.setText("👁‍🗨");
+            } else {
+                confirmPasswordTextField.setVisible(false);
+                confirmPasswordTextField.setManaged(false);
+                confirmPasswordField.setVisible(true);
+                confirmPasswordField.setManaged(true);
+                confirmToggleButton.setText("👁");
+            }
+        });
+
+        HBox.setHgrow(confirmPasswordField, Priority.ALWAYS);
+        HBox.setHgrow(confirmPasswordTextField, Priority.ALWAYS);
+
+        confirmPasswordInputBox.getChildren().addAll(confirmPasswordField, confirmPasswordTextField, confirmToggleButton);
+        confirmPasswordBox.getChildren().addAll(confirmPasswordLabel, confirmPasswordInputBox);
+
         // Role
         VBox roleBox = new VBox(8);
         Label roleLabel = new Label("Role *");
@@ -594,7 +696,24 @@ public class StaffController implements Initializable {
         roleCombo.setStyle(nameField.getStyle());
         roleBox.getChildren().addAll(roleLabel, roleCombo);
 
-        // Buttons
+        // ==================== ALL FIELDS TO SCROLLABLE CONTENT ====================//
+        contentBox.getChildren().addAll(
+                nameBox, usernameBox, emailBox, contactBox,
+                addressBox, dobBox, passwordBox, confirmPasswordBox, roleBox
+        );
+
+        scrollPane.setContent(contentBox);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        // ==================== FIXED FOOTER WITH BUTTONS ====================//
+        VBox footerBox = new VBox();
+        footerBox.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-padding: 20 30 30 30; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1 0 0 0;"
+        );
+
         HBox buttonBox = new HBox(15);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
@@ -627,7 +746,11 @@ public class StaffController implements Initializable {
             String name = nameField.getText().trim();
             String username = usernameField.getText().trim();
             String email = emailField.getText().trim();
+            String contactNumber = contactField.getText().trim();
+            String address = addressField.getText().trim();
+            String dateOfBirth = dobField.getText().trim();
             String password = passwordField.getText().trim();
+            String confirmPassword = confirmPasswordField.getText().trim();
             String role = roleCombo.getValue();
 
             if (name.isEmpty() || email.isEmpty() || username.isEmpty()) {
@@ -636,23 +759,25 @@ public class StaffController implements Initializable {
                 return;
             }
 
+            if (!password.isEmpty() && !password.equals(confirmPassword)) {
+                showStyledAlert(Alert.AlertType.WARNING, "Password Mismatch",
+                        "Passwords do not match. Please try again.");
+                return;
+            }
+
             try {
                 if (!isEdit) {
-                    // CREATE NEW STAFF
                     if (password.isEmpty() || password.length() < 6) {
                         showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
                                 "Password must be at least 6 characters long.");
                         return;
                     }
 
-                    userManagementService.createStaffAccount(username, email, password, name, role);
+                    userManagementService.createStaffAccount(username, email, password, name, role, contactNumber, address, dateOfBirth);
                     showStyledAlert(Alert.AlertType.INFORMATION, "Success",
                             "Staff account created successfully!");
                 } else {
-                    // UPDATE EXISTING STAFF
-                    // Check if username changed and validate it's not taken
                     if (!username.equals(editUser.getUsername())) {
-                        // Username changed - need to update it
                         boolean usernameUpdated = userManagementService.updateUsername(
                                 editUser.getId(), username);
 
@@ -663,11 +788,9 @@ public class StaffController implements Initializable {
                         }
                     }
 
-                    // Update user info (name, email, role)
                     User updatedUser = userManagementService.updateUserInfo(
-                            editUser.getId(), name, email, role);
+                            editUser.getId(), name, email, role, contactNumber, address, dateOfBirth);
 
-                    // Update password if provided
                     if (!password.isEmpty()) {
                         if (password.length() < 6) {
                             showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
@@ -697,10 +820,40 @@ public class StaffController implements Initializable {
         });
 
         buttonBox.getChildren().addAll(cancelButton, saveButton);
+        footerBox.getChildren().add(buttonBox);
 
-        mainContainer.getChildren().addAll(titleLabel, nameBox, usernameBox, emailBox, passwordBox, roleBox, buttonBox);
+        // ==================== ASSEMBLED EVERYTHING ====================//
+        mainContainer.getChildren().addAll(headerBox, scrollPane, footerBox);
 
         Scene scene = new Scene(mainContainer);
+
+
+        String scrollBarStyle =
+                ".scroll-pane {" +
+                        "    -fx-background-color: transparent;" +
+                        "    -fx-border-width: 0;" +
+                        "}" +
+                        ".scroll-pane .viewport {" +
+                        "    -fx-background-color: transparent;" +
+                        "}" +
+                        ".scroll-bar {" +
+                        "    -fx-background-color: transparent;" +
+                        "}" +
+                        ".scroll-bar .thumb {" +
+                        "    -fx-background-color: #cbd5e0;" +
+                        "    -fx-background-radius: 4px;" +
+                        "}" +
+                        ".scroll-bar .thumb:hover {" +
+                        "    -fx-background-color: #a0aec0;" +
+                        "}" +
+                        ".scroll-bar .increment-button," +
+                        ".scroll-bar .decrement-button {" +
+                        "    -fx-background-color: transparent;" +
+                        "    -fx-padding: 0;" +
+                        "}";
+
+        scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
         dialogStage.showAndWait();
