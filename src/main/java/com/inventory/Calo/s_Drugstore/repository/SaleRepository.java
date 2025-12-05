@@ -20,5 +20,5 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("SELECT s FROM Sale s ORDER BY s.id DESC")
     List<Sale> findLatestSales();
 
-    List<Sale> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<Sale> findBySaleDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 }

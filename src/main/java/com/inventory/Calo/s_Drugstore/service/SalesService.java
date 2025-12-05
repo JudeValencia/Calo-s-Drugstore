@@ -129,7 +129,7 @@ public class SalesService {
     }
 
     public List<Sale> getSalesBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
-        return saleRepository.findByCreatedAtBetween(startDate, endDate);
+        return saleRepository.findBySaleDateBetween(startDate, endDate);
     }
 
     @Transactional
@@ -247,5 +247,4 @@ public class SalesService {
         // Update and return the sale
         return saleRepository.save(sale);
     }
-
 }

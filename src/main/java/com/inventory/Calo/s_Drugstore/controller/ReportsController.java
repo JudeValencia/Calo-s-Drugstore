@@ -2032,7 +2032,7 @@ public class ReportsController implements Initializable {
                 .limit(5)
                 .collect(Collectors.toList());
 
-        com.itextpdf.layout.element.Paragraph topSellingTitle = new com.itextpdf.layout.element.Paragraph("Top Selling Medicines")
+        com.itextpdf.layout.element.Paragraph topSellingTitle = new com.itextpdf.layout.element.Paragraph("Top Selling Products")
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
                 .setFontSize(16)
                 .setFontColor(darkColor)
@@ -2043,7 +2043,7 @@ public class ReportsController implements Initializable {
         pdfTopSellingTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
 
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Rank"));
-        pdfTopSellingTable.addHeaderCell(createHeaderCell("Medicine"));
+        pdfTopSellingTable.addHeaderCell(createHeaderCell("Product"));
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Category"));
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Quantity Sold"));
 
@@ -2065,7 +2065,7 @@ public class ReportsController implements Initializable {
         document.add(pdfTopSellingTable.setMarginBottom(30));
 
         // === EXPIRING MEDICINES ===
-        com.itextpdf.layout.element.Paragraph expiringTitle = new com.itextpdf.layout.element.Paragraph("Expiring Medicines (Next 30 Days)")
+        com.itextpdf.layout.element.Paragraph expiringTitle = new com.itextpdf.layout.element.Paragraph("Expiring Products (Next 30 Days)")
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
                 .setFontSize(16)
                 .setFontColor(darkColor)
@@ -2076,7 +2076,7 @@ public class ReportsController implements Initializable {
         expiringTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
 
         expiringTable.addHeaderCell(createHeaderCell("ID"));
-        expiringTable.addHeaderCell(createHeaderCell("Medicine"));
+        expiringTable.addHeaderCell(createHeaderCell("Product"));
         expiringTable.addHeaderCell(createHeaderCell("Expiration"));
         expiringTable.addHeaderCell(createHeaderCell("Days"));
         expiringTable.addHeaderCell(createHeaderCell("Stock"));
