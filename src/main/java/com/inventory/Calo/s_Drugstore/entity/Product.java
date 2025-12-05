@@ -275,6 +275,12 @@ public class Product {
         return expirationDate.isBefore(thirtyDaysFromNow);
     }
 
+    public boolean isExpired() {
+        if (expirationDate == null) return false;
+        LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
+        return expirationDate.isAfter(thirtyDaysFromNow);
+    }
+
     public String getStockStatus() {
         if (stock == null) return "Unknown";
         return isLowStock() ? "Low" : "Good";

@@ -282,7 +282,13 @@ public class LoginController {
                 }
             }
 
-            Stage stage = (Stage) rootPane.getScene().getWindow();
+            Stage stage = (Stage) signInButton.getScene().getWindow();
+
+            if (stage == null) {
+                showError("Cannot get stage reference");
+                return;
+            }
+
             Scene scene = new Scene(root);
 
             // Load CSS

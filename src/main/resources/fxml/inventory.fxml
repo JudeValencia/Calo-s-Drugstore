@@ -96,6 +96,7 @@
                     <HBox spacing="15">
                         <Button text="+ Add Medicine" styleClass="add-btn" onAction="#handleAddMedicine"/>
                         <Button text="📦 Bulk Add" styleClass="bulk-btn" onAction="#handleBulkAdd"/>
+                        <Button text="📥 Import CSV" styleClass="bulk-btn" onAction="#handleImportCSV"/>
                         <Button text="📥 Export " styleClass="bulk-btn" onAction="#handleExportCSV"/>
                     </HBox>
                 </HBox>

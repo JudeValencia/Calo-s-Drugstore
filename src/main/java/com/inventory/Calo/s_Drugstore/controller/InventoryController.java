@@ -27,6 +27,7 @@
     import java.net.URL;
     import java.time.LocalDate;
     import java.time.format.DateTimeFormatter;
+    import java.util.ArrayList;
     import java.util.List;
     import java.util.Objects;
     import java.util.ResourceBundle;
@@ -419,6 +420,307 @@
         @FXML
         private void handleExportCSV() {
             showExportOptionsDialog();
+        }
+
+        @FXML
+        private void handleImportCSV() {
+            try {
+                // Create file chooser
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Import Inventory from CSV");
+
+                // Set file extension filter
+                javafx.stage.FileChooser.ExtensionFilter extFilter =
+                        new javafx.stage.FileChooser.ExtensionFilter("CSV files (*.csv)", "*.csv");
+                fileChooser.getExtensionFilters().add(extFilter);
+
+                // Show open dialog
+                Stage stage = (Stage) inventoryTable.getScene().getWindow();
+                java.io.File file = fileChooser.showOpenDialog(stage);
+
+                if (file != null) {
+                    // Parse and validate CSV
+                    List<Product> productsToImport = parseCSV(file);
+
+                    if (productsToImport.isEmpty()) {
+                        Platform.runLater(() -> {
+                            showStyledAlert(Alert.AlertType.WARNING, "No Data",
+                                    "The CSV file contains no valid products to import.");
+                        });
+                        return;
+                    }
+
+                    // Show preview and confirmation dialog
+                    showImportPreviewDialog(productsToImport, file.getName());
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> {
+                    showStyledAlert(Alert.AlertType.ERROR, "Import Failed",
+                            "Failed to import CSV file: " + e.getMessage());
+                });
+            }
+        }
+
+        private List<Product> parseCSV(java.io.File file) throws Exception {
+            List<Product> products = new ArrayList<>();
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+            // Get the starting Medicine ID ONCE before the loop
+            String lastMedicineId = productService.generateNextMedicineId();
+            int currentIdNumber = Integer.parseInt(lastMedicineId.substring(3)); // Extract number from "MED018"
+
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
+                String line;
+                boolean isFirstLine = true;
+
+                while ((line = reader.readLine()) != null) {
+                    // Skip header row
+                    if (isFirstLine) {
+                        isFirstLine = false;
+                        continue;
+                    }
+
+                    // Skip empty lines
+                    if (line.trim().isEmpty()) {
+                        continue;
+                    }
+
+                    try {
+                        // Parse CSV line (handling quoted values)
+                        String[] values = parseCSVLine(line);
+
+                        // Validate minimum required fields (15 fields expected)
+                        if (values.length < 15) {
+                            System.err.println("Skipping invalid row (not enough columns): " + line);
+                            continue;
+                        }
+
+                        // Create product from CSV data
+                        Product product = new Product();
+
+                        // Use the Medicine ID from CSV if provided, otherwise generate new one
+                        String csvMedicineId = values[0].trim();
+                        if (csvMedicineId != null && !csvMedicineId.isEmpty()) {
+                            product.setMedicineId(csvMedicineId);
+                        } else {
+                            // Generate sequential Medicine ID for this import batch
+                            product.setMedicineId(String.format("MED%03d", currentIdNumber));
+                            currentIdNumber++; // Increment for next product
+                        }
+
+                        // Map CSV columns to product fields
+                        product.setBrandName(values[1].trim()); // Brand Name
+                        product.setGenericName(values[2].trim()); // Generic Name
+                        product.setStock(Integer.parseInt(values[3].trim())); // Stock
+                        product.setPrice(new BigDecimal(values[4].trim())); // Price
+
+                        // Expiration Date
+                        if (!values[5].trim().isEmpty()) {
+                            product.setExpirationDate(LocalDate.parse(values[5].trim(), dateFormatter));
+                        }
+
+                        product.setSupplier(values[6].trim()); // Supplier
+                        product.setCategory(values[7].trim()); // Category
+                        product.setBatchNumber(values[8].trim()); // Batch Number
+
+                        // Min Stock Level
+                        if (!values[9].trim().isEmpty()) {
+                            product.setMinStockLevel(Integer.parseInt(values[9].trim()));
+                        }
+
+                        // Prescription Required
+                        product.setPrescriptionRequired(values[10].trim().equalsIgnoreCase("Yes"));
+
+                        product.setDosageForm(values[11].trim()); // Dosage Form
+                        product.setDosageStrength(values[12].trim()); // Dosage Strength
+                        product.setManufacturer(values[13].trim()); // Manufacturer
+                        product.setUnitOfMeasure(values[14].trim()); // Unit of Measure
+
+                        products.add(product);
+
+                    } catch (Exception e) {
+                        System.err.println("Error parsing line: " + line);
+                        System.err.println("Error: " + e.getMessage());
+                        // Continue with next line
+                    }
+                }
+            }
+
+            return products;
+        }
+
+        private String[] parseCSVLine(String line) {
+            List<String> result = new ArrayList<>();
+            boolean inQuotes = false;
+            StringBuilder current = new StringBuilder();
+
+            for (int i = 0; i < line.length(); i++) {
+                char c = line.charAt(i);
+
+                if (c == '"') {
+                    inQuotes = !inQuotes;
+                } else if (c == ',' && !inQuotes) {
+                    result.add(current.toString());
+                    current = new StringBuilder();
+                } else {
+                    current.append(c);
+                }
+            }
+            result.add(current.toString());
+
+            return result.toArray(new String[0]);
+        }
+
+        private void showImportPreviewDialog(List<Product> products, String fileName) {
+            // Create custom dialog
+            Stage dialogStage = new Stage();
+            IconUtil.setApplicationIcon(dialogStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setTitle("Import Preview");
+            dialogStage.setResizable(false);
+
+            // Main container
+            VBox mainContainer = new VBox(20);
+            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
+            mainContainer.setPrefWidth(700);
+            mainContainer.setMaxHeight(600);
+
+            // Header
+            Label titleLabel = new Label("Import Preview");
+            titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            Label subtitleLabel = new Label("Review the products to be imported from: " + fileName);
+            subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+            subtitleLabel.setWrapText(true);
+
+            VBox header = new VBox(8, titleLabel, subtitleLabel);
+
+            // Summary info
+            Label summaryLabel = new Label("Products found: " + products.size());
+            summaryLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #4CAF50;");
+
+            // Preview table
+            TableView<Product> previewTable = new TableView<>();
+            previewTable.setPrefHeight(300);
+            previewTable.setItems(FXCollections.observableArrayList(products));
+
+            // Define columns
+            TableColumn<Product, String> nameCol = new TableColumn<>("Brand Name");
+            nameCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getBrandName()));
+            nameCol.setPrefWidth(150);
+
+            TableColumn<Product, String> genericCol = new TableColumn<>("Generic Name");
+            genericCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getGenericName()));
+            genericCol.setPrefWidth(150);
+
+            TableColumn<Product, String> stockCol = new TableColumn<>("Stock");
+            stockCol.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getStock())));
+            stockCol.setPrefWidth(80);
+
+            TableColumn<Product, String> priceCol = new TableColumn<>("Price");
+            priceCol.setCellValueFactory(data -> new SimpleStringProperty("₱" + data.getValue().getPrice()));
+            priceCol.setPrefWidth(100);
+
+            TableColumn<Product, String> supplierCol = new TableColumn<>("Supplier");
+            supplierCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSupplier()));
+            supplierCol.setPrefWidth(120);
+
+            previewTable.getColumns().addAll(nameCol, genericCol, stockCol, priceCol, supplierCol);
+
+            // Warning message
+            Label warningLabel = new Label("⚠ Note: Existing Medicine IDs will be replaced with new auto-generated IDs.");
+            warningLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #FF9800; -fx-font-style: italic;");
+            warningLabel.setWrapText(true);
+
+            // Buttons
+            HBox buttonContainer = new HBox(15);
+            buttonContainer.setAlignment(Pos.CENTER_RIGHT);
+
+            Button cancelButton = new Button("Cancel");
+            cancelButton.setStyle(
+                    "-fx-background-color: white; " +
+                            "-fx-text-fill: #2c3e50; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+            cancelButton.setOnAction(e -> dialogStage.close());
+
+            Button importButton = new Button("Import All");
+            importButton.setStyle(
+                    "-fx-background-color: #4CAF50; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+
+            importButton.setOnMouseEntered(e -> importButton.setStyle(
+                    importButton.getStyle() + "-fx-background-color: #45a049;"
+            ));
+            importButton.setOnMouseExited(e -> importButton.setStyle(
+                    importButton.getStyle().replace("-fx-background-color: #45a049;", "-fx-background-color: #4CAF50;")
+            ));
+
+            importButton.setOnAction(e -> {
+                try {
+                    int successCount = 0;
+                    int failCount = 0;
+
+                    for (Product product : products) {
+                        try {
+                            System.out.println("Attempting to import: " + product.getBrandName() + " with ID: " + product.getMedicineId());
+
+                            productService.saveProduct(product);
+                            successCount++;
+                        } catch (Exception ex) {
+                            failCount++;
+                            System.err.println("Failed to import: " + product.getBrandName() + " - " + ex.getMessage());
+                        }
+                    }
+
+                    dialogStage.close();
+                    loadProducts();
+
+                    final int finalSuccess = successCount;
+                    final int finalFail = failCount;
+
+                    Platform.runLater(() -> {
+                        if (finalFail == 0) {
+                            showStyledAlert(Alert.AlertType.INFORMATION, "Import Successful",
+                                    "Successfully imported " + finalSuccess + " products!");
+                        } else {
+                            showStyledAlert(Alert.AlertType.WARNING, "Import Completed with Errors",
+                                    "Successfully imported: " + finalSuccess + " products\n" +
+                                            "Failed: " + finalFail + " products");
+                        }
+                    });
+
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        showStyledAlert(Alert.AlertType.ERROR, "Import Failed",
+                                "Failed to import products: " + ex.getMessage());
+                    });
+                }
+            });
+
+            buttonContainer.getChildren().addAll(cancelButton, importButton);
+
+            // Add all to container
+            mainContainer.getChildren().addAll(header, summaryLabel, previewTable, warningLabel, buttonContainer);
+
+            Scene scene = new Scene(mainContainer);
+            dialogStage.setScene(scene);
+            dialogStage.centerOnScreen();
+            dialogStage.showAndWait();
         }
     
         private void showExportOptionsDialog() {
@@ -1489,11 +1791,11 @@
             VBox medicalSection = createDetailSection("Medical Information",
                     createDetailRow("Dosage Form:", product.getDosageForm() != null ? product.getDosageForm() : "N/A"),
                     createDetailRow("Dosage Strength:", product.getDosageStrength() != null ? product.getDosageStrength() : "N/A"),
-                    createDetailRow("Prescription Required:", product.getPrescriptionRequired() != null && product.getPrescriptionRequired() ? "Yes ⚕️" : "No")
+                    createDetailRow("Prescription Required:", product.getPrescriptionRequired() != null && product.getPrescriptionRequired() ? "Yes ⚕" : "No")
             );
     
             // Section 3: Stock & Inventory
-            String stockStatus = product.isLowStock() ? product.getStockStatus() + " ⚠️" : product.getStockStatus();
+            String stockStatus = product.isLowStock() ? product.getStockStatus() + " ⚠" : product.getStockStatus();
             VBox stockSection = createDetailSection("Stock & Inventory",
                     createDetailRow("Current Stock:", String.valueOf(product.getStock())),
                     createDetailRow("Unit of Measure:", product.getUnitOfMeasure() != null ? product.getUnitOfMeasure() : "N/A"),
@@ -1516,12 +1818,20 @@
             // Section 6: Important Dates
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
             String expiryDateStr = product.getExpirationDate() != null ? product.getExpirationDate().format(formatter) : "N/A";
-            String expiryWarning = product.isExpiringSoon() ? " ⚠️ Expiring Soon!" : "";
+            // Determine warning based on expiry status
+            String expiryWarning = "";
+            if (product.getExpirationDate() != null) {
+                if (product.getExpirationDate().isBefore(LocalDate.now())) {
+                    expiryWarning = " ⚠ Expired!";
+                } else if (product.isExpiringSoon()) {
+                    expiryWarning = " ⚠ Expiring Soon!";
+                }
+            }
     
             long daysUntilExpiry = product.getExpirationDate() != null ?
                     java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate()) : 0;
             String daysUntilExpiryStr = daysUntilExpiry > 0 ? daysUntilExpiry + " days" : "Expired";
-    
+
             VBox datesSection = createDetailSection("Important Dates",
                     createDetailRow("Expiration Date:", expiryDateStr + expiryWarning),
                     createDetailRow("Days Until Expiry:", daysUntilExpiryStr)

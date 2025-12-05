@@ -80,15 +80,40 @@ public class ProductService {
         return productRepository.findAllCategories();
     }
 
-    // Save product (add or update)
+    // Save product (add or update based on Medicine ID)
     @Transactional
     public Product saveProduct(Product product) {
         if (product.getId() == null) {
             // New product - check if medicine ID already exists
-            if (productRepository.existsByMedicineId(product.getMedicineId())) {
-                throw new IllegalArgumentException("Medicine ID already exists: " + product.getMedicineId());
+            Optional<Product> existingProduct = productRepository.findByMedicineId(product.getMedicineId());
+
+            if (existingProduct.isPresent()) {
+                // Medicine ID exists - update the existing product instead of creating new one
+                Product existing = existingProduct.get();
+
+                // Update all fields from the new product data
+                existing.setBrandName(product.getBrandName());
+                existing.setGenericName(product.getGenericName());
+                existing.setStock(product.getStock());
+                existing.setPrice(product.getPrice());
+                existing.setExpirationDate(product.getExpirationDate());
+                existing.setSupplier(product.getSupplier());
+                existing.setCategory(product.getCategory());
+                existing.setDescription(product.getDescription());
+                existing.setMinStockLevel(product.getMinStockLevel());
+                existing.setBatchNumber(product.getBatchNumber());
+                existing.setPrescriptionRequired(product.getPrescriptionRequired());
+                existing.setDosageForm(product.getDosageForm());
+                existing.setDosageStrength(product.getDosageStrength());
+                existing.setManufacturer(product.getManufacturer());
+                existing.setUnitOfMeasure(product.getUnitOfMeasure());
+                existing.setUpdatedAt(LocalDate.now());
+
+                return productRepository.save(existing);
             }
         }
+
+        // Either it's a completely new product, or it's an update with existing ID
         return productRepository.save(product);
     }
 
