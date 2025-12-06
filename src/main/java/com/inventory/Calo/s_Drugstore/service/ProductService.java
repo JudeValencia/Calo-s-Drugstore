@@ -185,8 +185,8 @@ public class ProductService {
     }
 
     public long getExpiringProductsCount() {
-        LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-        return productRepository.countExpiringProducts(thirtyDaysFromNow);
+        // Check batches instead of products for accurate expiry count
+        return getExpiringBatchesCount(30);
     }
 
     // Generate next medicine ID
@@ -226,59 +226,67 @@ public class ProductService {
         return prefix + timestamp + "-" + String.format("%03d", count);
     }
 
+
     // Save product with batch
     @Transactional
     public Product saveProductWithBatch(Product product, Integer batchStock,
                                         LocalDate batchExpiry, BigDecimal batchPrice,
                                         String batchSupplier) {
-        // Check if product with same name already exists
-        List<Product> existingProducts = productRepository.searchByNameOrId(product.getName());
-        Product existingProduct = existingProducts.stream()
-                .filter(p -> p.getName().equalsIgnoreCase(product.getName()))
-                .findFirst()
-                .orElse(null);
+        Product targetProduct;
 
-        if (existingProduct != null) {
-            // Product exists, just add a new batch
-            Batch newBatch = new Batch();
-            newBatch.setBatchNumber(generateBatchNumber(existingProduct.getMedicineId()));
-            newBatch.setProduct(existingProduct);
-            newBatch.setStock(batchStock);
-            newBatch.setExpirationDate(batchExpiry);
-            newBatch.setPrice(batchPrice);
-            newBatch.setSupplier(batchSupplier);
-            newBatch.setDateReceived(LocalDate.now());
+        // Check if this is an existing product (has an ID) or new product
+        if (product.getId() != null) {
+            // EXISTING PRODUCT - Just add a new batch
+            targetProduct = productRepository.findById(product.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + product.getId()));
 
-            batchRepository.save(newBatch);
-
-            // Update product's total stock by summing all batches using product ID
-            int totalStock = batchRepository.findByProductId(existingProduct.getId()).stream()
-                    .mapToInt(Batch::getStock)
-                    .sum();
-            existingProduct.setStock(totalStock);
-            existingProduct.setUpdatedAt(LocalDate.now());
-
-            return productRepository.save(existingProduct);
+            System.out.println("✅ Adding batch to EXISTING product: " + targetProduct.getBrandName() + " (ID: " + targetProduct.getId() + ")");
         } else {
-            // New product, create product first
-            Product savedProduct = productRepository.save(product);
+            // NEW PRODUCT - Check if one with same Brand Name already exists
+            List<Product> existingByName = productRepository.searchByNameOrId(product.getBrandName());
+            Product existingMatch = existingByName.stream()
+                    .filter(p -> p.getBrandName().equalsIgnoreCase(product.getBrandName()))
+                    .findFirst()
+                    .orElse(null);
 
-            // Then create first batch
-            Batch newBatch = new Batch();
-            newBatch.setBatchNumber(generateBatchNumber(savedProduct.getMedicineId()));
-            newBatch.setProduct(savedProduct);
-            newBatch.setStock(batchStock);
-            newBatch.setExpirationDate(batchExpiry);
-            newBatch.setPrice(batchPrice);
-            newBatch.setSupplier(batchSupplier);
-            newBatch.setDateReceived(LocalDate.now());
-
-            batchRepository.save(newBatch);
-
-            // Update product's stock
-            savedProduct.setStock(batchStock);
-            return productRepository.save(savedProduct);
+            if (existingMatch != null) {
+                // Product with same name exists - add batch to it instead of creating duplicate
+                targetProduct = existingMatch;
+                System.out.println("✅ Found existing product by name: " + targetProduct.getBrandName() + " - Adding batch instead of creating duplicate");
+            } else {
+                // Completely new product - save it first
+                targetProduct = productRepository.save(product);
+                System.out.println("✅ Created NEW product: " + targetProduct.getBrandName() + " (ID: " + targetProduct.getId() + ")");
+            }
         }
+
+        // Create the new batch
+        Batch newBatch = new Batch();
+        newBatch.setBatchNumber(generateBatchNumber(targetProduct.getMedicineId()));
+        newBatch.setProduct(targetProduct);
+        newBatch.setStock(batchStock);
+        newBatch.setExpirationDate(batchExpiry);
+        newBatch.setPrice(batchPrice);
+        newBatch.setSupplier(batchSupplier);
+        newBatch.setDateReceived(LocalDate.now());
+
+        batchRepository.save(newBatch);
+        System.out.println("✅ Created batch: " + newBatch.getBatchNumber() + " with " + batchStock + " units, expiry: " + batchExpiry);
+
+        // Update product's total stock by summing all batches
+        int totalStock = batchRepository.findByProductId(targetProduct.getId()).stream()
+                .mapToInt(Batch::getStock)
+                .sum();
+        targetProduct.setStock(totalStock);
+        targetProduct.setUpdatedAt(LocalDate.now());
+
+        Product savedProduct = productRepository.save(targetProduct);
+        System.out.println("✅ Updated product total stock to: " + totalStock + " units");
+
+        // Clear cache after modification
+        clearBatchCache();
+
+        return savedProduct;
     }
 
     // Get all batches for a product
@@ -338,10 +346,10 @@ public class ProductService {
     }
 
     //Get expiring batches within specified days
-    public List<Batch> getExpiringBatches(int days) {
-        LocalDate targetDate = LocalDate.now().plusDays(days);
-        return batchRepository.findExpiringBatches(targetDate);
-    }
+//    public List<Batch> getExpiringBatches(int days) {
+//        LocalDate targetDate = LocalDate.now().plusDays(days);
+//        return batchRepository.findExpiringBatches(targetDate);
+//    }
 
     //Count total number of batches for a product
     public long countBatchesForProduct(Product product) {
@@ -354,5 +362,131 @@ public class ProductService {
     // Call this after any batch modification to clear cache
     public void clearBatchCache() {
         batchCache.clear();
+    }
+
+    // Deduct stock using FEFO (First Expiry First Out)
+    @Transactional
+    public void deductStockFromBatches(Long productId, int quantityToDeduct) {
+        // Get all batches for this product, ordered by expiration date (FEFO)
+        List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(productId);
+
+        if (batches.isEmpty()) {
+            throw new RuntimeException("No batches available for product ID: " + productId);
+        }
+
+        int remainingToDeduct = quantityToDeduct;
+
+        for (Batch batch : batches) {
+            if (remainingToDeduct <= 0) {
+                break;
+            }
+
+            int batchStock = batch.getStock();
+
+            if (batchStock > 0) {
+                int deductFromThisBatch = Math.min(remainingToDeduct, batchStock);
+
+                // Deduct from this batch
+                batch.setStock(batchStock - deductFromThisBatch);
+                batchRepository.save(batch);
+
+                remainingToDeduct -= deductFromThisBatch;
+
+                System.out.println("✅ FEFO: Deducted " + deductFromThisBatch + " from batch " +
+                        batch.getBatchNumber() + " (Remaining in batch: " + batch.getStock() + ")");
+            }
+        }
+
+        if (remainingToDeduct > 0) {
+            throw new RuntimeException("Insufficient batch stock. Could not fulfill " +
+                    remainingToDeduct + " units from batches.");
+        }
+
+        // Update product's total stock
+        int totalStock = batchRepository.findByProductId(productId).stream()
+                .mapToInt(Batch::getStock)
+                .sum();
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        product.setStock(totalStock);
+        productRepository.save(product);
+
+        System.out.println("✅ Product total stock updated to: " + totalStock);
+
+        // Clear cache
+        clearBatchCache();
+    }
+    @Transactional(readOnly = true)
+    public List<Product> getProductsWithExpiringBatches(int days) {
+        LocalDate today = LocalDate.now();
+        LocalDate longTimeAgo = LocalDate.of(2020, 1, 1); // Far in the past to catch ALL expired
+        LocalDate endDate = today.plusDays(days);
+
+        System.out.println("=== DEBUG: getProductsWithExpiringBatches ===");
+        System.out.println("Checking from: " + longTimeAgo + " to " + endDate);
+
+        // 1. Get ALL expiring/expired batches
+        List<Batch> expiringBatches = batchRepository.findExpiringBatches(longTimeAgo, endDate);
+        System.out.println("Found " + expiringBatches.size() + " expiring/expired batches");
+
+        List<Product> productsFromBatches = expiringBatches.stream()
+                .map(batch -> {
+                    Product product = batch.getProduct();
+                    product.getBrandName(); // Initialize proxy
+                    return product;
+                })
+                .distinct()
+                .toList();
+
+        System.out.println("Products from batches: " + productsFromBatches.size());
+
+        // 2. Get ALL expired/expiring legacy products (no batches)
+        List<Product> legacyExpiringProducts = productRepository.findExpiringProducts(endDate).stream()
+                .filter(p -> {
+                    long batchCount = batchRepository.countByProductId(p.getId());
+                    return batchCount == 0 && p.getExpirationDate() != null;
+                })
+                .toList();
+
+        System.out.println("Legacy products without batches: " + legacyExpiringProducts.size());
+
+        // 3. Combine both
+        List<Product> allProducts = new java.util.ArrayList<>(productsFromBatches);
+        for (Product legacy : legacyExpiringProducts) {
+            if (!allProducts.contains(legacy)) {
+                allProducts.add(legacy);
+            }
+        }
+
+        // Sort by expiration date
+        allProducts.sort((p1, p2) -> {
+            LocalDate date1 = getEarliestExpiryDate(p1);
+            LocalDate date2 = getEarliestExpiryDate(p2);
+            return date1.compareTo(date2);
+        });
+
+        System.out.println("Total unique expiring products: " + allProducts.size());
+        System.out.println("===========================================");
+
+        return allProducts;
+    }
+
+    private LocalDate getEarliestExpiryDate(Product product) {
+        List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(product.getId());
+        if (!batches.isEmpty()) {
+            return batches.get(0).getExpirationDate();
+        }
+        return product.getExpirationDate();
+    }
+    public long getExpiringBatchesCount(int days) {
+        LocalDate today = LocalDate.now();
+        LocalDate targetDate = today.plusDays(days);
+        List<Batch> expiringBatches = batchRepository.findExpiringBatches(today, targetDate);
+        return expiringBatches.stream()
+                .map(Batch::getProduct)
+                .map(Product::getId)
+                .distinct()
+                .count();
     }
 }

@@ -513,25 +513,103 @@ public class ReportsController implements Initializable {
     }
 
     private void setupExpiringMedicinesTable() {
-        medicineIdCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMedicineId()));
-        medicineNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getBrandName()));
-        expirationDateCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(cellData.getValue().getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
 
-        daysLeftCol.setCellValueFactory(cellData -> {
-            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
-            if (daysLeft > 0) return new SimpleStringProperty(String.valueOf(daysLeft));
-            else return new SimpleStringProperty(String.valueOf(0));
+        expiringMedicinesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        medicineIdCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getMedicineId()));
+
+        medicineNameCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getBrandName()));
+
+        // ✅ FIXED: Get expiration date from batches
+        expirationDateCol.setCellValueFactory(cellData -> {
+            Product product = cellData.getValue();
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date
+                LocalDate earliestExpiry = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+
+                if (earliestExpiry != null) {
+                    return new SimpleStringProperty(earliestExpiry.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+                }
+            }
+
+            // Fallback to product expiration date if no batches
+            if (product.getExpirationDate() != null) {
+                return new SimpleStringProperty(product.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+            }
+
+            return new SimpleStringProperty("N/A");
         });
 
-        stockCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getStock())));
+        // ✅ FIXED: Calculate days left from batches
+        daysLeftCol.setCellValueFactory(cellData -> {
+            Product product = cellData.getValue();
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
 
+            LocalDate expiryDate = null;
+
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date
+                expiryDate = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+            }
+
+            // Fallback to product expiration date
+            if (expiryDate == null) {
+                expiryDate = product.getExpirationDate();
+            }
+
+            if (expiryDate != null) {
+                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+                return new SimpleStringProperty(String.valueOf(Math.max(0, daysLeft)));
+            }
+
+            return new SimpleStringProperty("N/A");
+        });
+
+        stockCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(String.valueOf(cellData.getValue().getStock())));
+
+        // ✅ FIXED: Calculate status from batches
         statusCol.setCellValueFactory(cellData -> {
-                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
-            if (daysLeft < 0) return new SimpleStringProperty("Expired");
-            else if (daysLeft <= 7) return new SimpleStringProperty("Critical");
-            else if (daysLeft <= 30) return new SimpleStringProperty("Warning");
-            else return new SimpleStringProperty("Good");
+            Product product = cellData.getValue();
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+
+            LocalDate expiryDate = null;
+
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date
+                expiryDate = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+            }
+
+            // Fallback to product expiration date
+            if (expiryDate == null) {
+                expiryDate = product.getExpirationDate();
+            }
+
+            if (expiryDate != null) {
+                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+                if (daysLeft < 0) return new SimpleStringProperty("Expired");
+                else if (daysLeft <= 7) return new SimpleStringProperty("Critical");
+                else if (daysLeft <= 30) return new SimpleStringProperty("Warning");
+                else return new SimpleStringProperty("Good");
+            }
+
+            return new SimpleStringProperty("Unknown");
         });
 
         // Style the status column
@@ -539,10 +617,11 @@ public class ReportsController implements Initializable {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
+
+                setText(null);
+                setGraphic(null);
+
+                if (!empty && item != null) {
                     Label statusLabel = new Label(item);
                     String style = "-fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-size: 11px; -fx-font-weight: bold;";
 
@@ -556,12 +635,14 @@ public class ReportsController implements Initializable {
                         case "Warning":
                             statusLabel.setStyle(style + " -fx-background-color: #fbc02d; -fx-text-fill: #2c3e50;");
                             break;
-                        default:
+                        case "Good":
                             statusLabel.setStyle(style + " -fx-background-color: #2e7d32; -fx-text-fill: white;");
+                            break;
+                        default:
+                            statusLabel.setStyle(style + " -fx-background-color: #9e9e9e; -fx-text-fill: white;");
                     }
 
                     setGraphic(statusLabel);
-                    setText(null);
                 }
             }
         });
@@ -617,10 +698,14 @@ public class ReportsController implements Initializable {
 
     private void loadExpiringMedicines() {
         try {
-            // getExpiringProducts() already returns products expiring within 30 days
-            List<Product> expiringProducts = productService.getExpiringProducts();
+            // ✅ NOW CHECKS BATCHES - gets products with expiring batches within 30 days
+            List<Product> expiringProducts = productService.getProductsWithExpiringBatches(30);
 
             expiringMedicinesTable.setItems(FXCollections.observableArrayList(expiringProducts));
+
+            if (expiringProducts.isEmpty()) {
+                expiringMedicinesTable.setPlaceholder(new Label("No expiring medicines in the next 30 days"));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -349,9 +349,10 @@ public class Product {
                 .orElse(expirationDate);
     }
     public String getName() {
-        return "";
+        return brandName;
     }
 
-    public void setName(String trim) {
+    public void setName(String name) {
+        this.brandName = name;
     }
 }

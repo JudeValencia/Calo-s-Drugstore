@@ -31,8 +31,15 @@ public interface BatchRepository extends JpaRepository<Batch, Long> {
     Optional<Batch> findByBatchNumber(String batchNumber);
 
     // Find expiring batches
-    @Query("SELECT b FROM Batch b WHERE b.expirationDate <= :date AND b.stock > 0")
-    List<Batch> findExpiringBatches(@Param("date") LocalDate date);
+    // Find batches that expired in last 30 days OR will expire in next 30 days
+    @Query("SELECT b FROM Batch b WHERE b.expirationDate >= :startDate AND b.expirationDate <= :endDate AND b.stock > 0 ORDER BY b.expirationDate ASC")
+    List<Batch> findExpiringBatches(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    // Find products that have expiration dates but NO batches
+    @Query("SELECT p FROM Product p WHERE p.expirationDate >= :startDate AND p.expirationDate <= :endDate " +
+            "AND p.stock > 0 AND NOT EXISTS (SELECT b FROM Batch b WHERE b.product = p)")
+    List<Product> findProductsExpiringWithoutBatches(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
 
     // Check if batch number exists
     boolean existsByBatchNumber(String batchNumber);

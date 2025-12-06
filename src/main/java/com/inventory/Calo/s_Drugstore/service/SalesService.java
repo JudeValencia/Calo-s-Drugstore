@@ -54,9 +54,8 @@ public class SalesService {
                         ". Available: " + product.getStock() + ", Requested: " + item.getQuantity());
             }
 
-            // Update product stock
-            product.setStock(product.getStock() - item.getQuantity());
-            productService.updateProduct(product.getId(), product);
+            // ✅ NEW: Deduct from batches using FEFO instead of just updating product stock
+            productService.deductStockFromBatches(product.getId(), item.getQuantity());
 
             // Create new sale item (don't reuse cart item)
             SaleItem saleItem = new SaleItem();
@@ -85,7 +84,7 @@ public class SalesService {
         return savedSale;
     }
 
-    // THIS METHOD EXISTS - MAKE SURE IT'S IN YOUR FILE
+
     public Map<String, Object> getTodaysSummary() {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = LocalDate.now().plusDays(1).atStartOfDay();
@@ -165,7 +164,7 @@ public class SalesService {
 
         Sale sale = saleOpt.get();
 
-        // Restore inventory for all items
+        // Restore inventory for all items - ADD BACK TO EARLIEST EXPIRING BATCH
         for (SaleItem item : sale.getItems()) {
             // Find product by medicine ID
             List<Product> allProducts = productService.getAllProducts();
@@ -175,19 +174,30 @@ public class SalesService {
 
             if (productOpt.isPresent()) {
                 Product product = productOpt.get();
-                // Restore stock
-                product.setStock(product.getStock() + item.getQuantity());
-                productService.updateProduct(product.getId(), product);
 
-                System.out.println("✅ Restored " + item.getQuantity() + " units of " +
-                        product.getBrandName() + " (New stock: " + product.getStock() + ")");
+                // Get batches ordered by expiration (FEFO)
+                List<com.inventory.Calo.s_Drugstore.entity.Batch> batches =
+                        productService.getBatchesForProduct(product);
+
+                if (!batches.isEmpty()) {
+                    // Add back to the earliest expiring batch
+                    com.inventory.Calo.s_Drugstore.entity.Batch earliestBatch = batches.get(0);
+                    earliestBatch.setStock(earliestBatch.getStock() + item.getQuantity());
+                    productService.updateBatchStock(earliestBatch.getId(), earliestBatch.getStock());
+
+                    System.out.println("✅ Restored " + item.getQuantity() + " units to batch " +
+                            earliestBatch.getBatchNumber() + " of " + product.getBrandName());
+                } else {
+                    // Fallback: just update product stock if no batches exist
+                    product.setStock(product.getStock() + item.getQuantity());
+                    productService.updateProduct(product.getId(), product);
+                }
             }
         }
 
         // Delete the sale
         saleRepository.deleteById(saleId);
         System.out.println("✅ Transaction " + sale.getTransactionId() + " deleted");
-
     }
 
     @Transactional
@@ -204,13 +214,23 @@ public class SalesService {
 
             if (productOpt.isPresent()) {
                 Product product = productOpt.get();
-                // Restore the original quantity
-                product.setStock(product.getStock() + originalQty);
-                productService.updateProduct(product.getId(), product);
+
+                // Restore to earliest expiring batch
+                List<com.inventory.Calo.s_Drugstore.entity.Batch> batches =
+                        productService.getBatchesForProduct(product);
+
+                if (!batches.isEmpty()) {
+                    com.inventory.Calo.s_Drugstore.entity.Batch earliestBatch = batches.get(0);
+                    earliestBatch.setStock(earliestBatch.getStock() + originalQty);
+                    productService.updateBatchStock(earliestBatch.getId(), earliestBatch.getStock());
+                } else {
+                    product.setStock(product.getStock() + originalQty);
+                    productService.updateProduct(product.getId(), product);
+                }
             }
         }
 
-        // Then, deduct new quantities
+        // Then, deduct new quantities using FEFO
         for (SaleItem item : sale.getItems()) {
             List<Product> allProducts = productService.getAllProducts();
             Optional<Product> productOpt = allProducts.stream()
@@ -226,9 +246,8 @@ public class SalesService {
                             ". Available: " + product.getStock() + ", Required: " + item.getQuantity());
                 }
 
-                // Deduct the new quantity
-                product.setStock(product.getStock() - item.getQuantity());
-                productService.updateProduct(product.getId(), product);
+                // ✅ Use FEFO deduction
+                productService.deductStockFromBatches(product.getId(), item.getQuantity());
             }
         }
 

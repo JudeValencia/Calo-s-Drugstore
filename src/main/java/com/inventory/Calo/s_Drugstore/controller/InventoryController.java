@@ -750,7 +750,7 @@
             previewTable.getColumns().addAll(nameCol, genericCol, stockCol, priceCol, supplierCol);
 
             // Warning message
-            Label warningLabel = new Label("⚠ Note: Existing Medicine IDs will be replaced with new auto-generated IDs.");
+            Label warningLabel = new Label("⚠ Note: Existing Product IDs will be replaced with new auto-generated IDs.");
             warningLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #FF9800; -fx-font-style: italic;");
             warningLabel.setWrapText(true);
 
@@ -797,9 +797,14 @@
 
                     for (Product product : products) {
                         try {
-                            System.out.println("Attempting to import: " + product.getBrandName() + " with ID: " + product.getMedicineId());
-
-                            productService.saveProduct(product);
+                            // Import as batch instead of direct product save
+                            productService.saveProductWithBatch(
+                                    product,
+                                    product.getStock(),
+                                    product.getExpirationDate(),
+                                    product.getPrice(),
+                                    product.getSupplier()
+                            );
                             successCount++;
                         } catch (Exception ex) {
                             failCount++;
@@ -1076,7 +1081,7 @@
             try (java.io.PrintWriter writer = new java.io.PrintWriter(file)) {
     
                 // Write CSV header
-                writer.println("Medicine ID,Brand Name,Generic Name,Stock,Price,Expiration Date," +
+                writer.println("Product ID,Brand Name,Generic Name,Stock,Price,Expiration Date," +
                         "Supplier,Category,Batch Number,Min Stock Level,Prescription Required," +
                         "Dosage Form,Dosage Strength,Manufacturer,Unit of Measure");
     
@@ -1208,7 +1213,7 @@
             table.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
     
             // Header row
-            String[] headers = {"Medicine ID", "Brand Name", "Generic Name", "Stock", "Price", "Expiry Date", "Status", "Supplier"};
+            String[] headers = {"Product ID", "Brand Name", "Generic Name", "Stock", "Price", "Expiry Date", "Status", "Supplier"};
             for (String header : headers) {
                 table.addHeaderCell(createHeaderCell(header));
             }
@@ -1295,7 +1300,7 @@
             Stage dialogStage = new Stage();
             IconUtil.setApplicationIcon(dialogStage);
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.setTitle("Bulk Add Medicines");
+            dialogStage.setTitle("Bulk Add Products");
             dialogStage.setResizable(false);
     
             // Main container
@@ -1305,10 +1310,10 @@
             mainContainer.setMaxHeight(600);
     
             // Header
-            Label titleLabel = new Label("Bulk Add Medicines");
+            Label titleLabel = new Label("Bulk Add Products");
             titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
     
-            Label subtitleLabel = new Label("Add multiple medicines to inventory at once. Fill in the details for each medicine you want to add.");
+            Label subtitleLabel = new Label("Add multiple products to inventory at once. Fill in the details for each medicine you want to add.");
             subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
             subtitleLabel.setWrapText(true);
     
@@ -1317,9 +1322,35 @@
             // ScrollPane for medicine forms
             ScrollPane scrollPane = new ScrollPane();
             scrollPane.setFitToWidth(true);
-            scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
             scrollPane.setPrefHeight(350);
-    
+
+            String scrollBarStyle =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color: #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+            scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.getStylesheets().add("data:text/css," + scrollBarStyle);
+                }
+            });
+
             VBox medicineFormsContainer = new VBox(15);
             scrollPane.setContent(medicineFormsContainer);
     
@@ -1510,7 +1541,7 @@
                     }
     
                 } catch (Exception ex) {
-                    showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to add medicines: " + ex.getMessage());
+                    showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to add products: " + ex.getMessage());
                 }
             });
     
@@ -1521,6 +1552,7 @@
     
             // Create scene
             Scene scene = new Scene(mainContainer);
+            scene.getStylesheets().add("data:text/css," + scrollBarStyle);
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
@@ -1532,7 +1564,7 @@
             medicineCard.setStyle(
                     "-fx-background-color: #F8F9FA; " +
                             "-fx-background-radius: 10px; " +
-                            "-fx-padding: 20; " +
+                            "-fx-padding: 25; " +
                             "-fx-border-color: #E0E0E0; " +
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 10px;"
@@ -1878,59 +1910,79 @@
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             totalValueLabel.setText("₱" + String.format("%,.2f", totalValue));
         }
-    
+
         private void showProductDetailsDialog(Product product) {
             // Create custom dialog
             Stage dialogStage = new Stage();
             IconUtil.setApplicationIcon(dialogStage);
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.setTitle("Medicine Details");
+            dialogStage.setTitle("Product Details");
             dialogStage.setResizable(false);
-    
+
             // Main container
             VBox mainContainer = new VBox(10);
             mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
             mainContainer.setPrefWidth(700);
             mainContainer.setMaxHeight(700);
-    
+
             // Header
             Label titleLabel = new Label(product.getBrandName());
             titleLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-    
-            Label subtitleLabel = new Label("Medicine ID: " + product.getMedicineId());
+
+            Label subtitleLabel = new Label("Product ID: " + product.getMedicineId());
             subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
-    
+
             VBox header = new VBox(5, titleLabel, subtitleLabel);
-    
+
             // ScrollPane for content
             ScrollPane scrollPane = new ScrollPane();
             scrollPane.setFitToWidth(true);
-            scrollPane.setStyle(
-                    "-fx-background-color: transparent; " +
-                            "-fx-background: transparent; " +
-                            "-fx-border-color: transparent;"
-            );
             scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
             scrollPane.setPrefHeight(450);
-    
+
+            String scrollBarStyleDetails =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color: #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+            scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.getStylesheets().add("data:text/css," + scrollBarStyleDetails);
+                }
+            });
+
             VBox contentContainer = new VBox(20);
-    
+
             // Section 1: Basic Information
             VBox basicSection = createDetailSection("Basic Information",
                     createDetailRow("Brand Name:", product.getBrandName()),
                     createDetailRow("Generic Name:", product.getGenericName() != null ? product.getGenericName() : "N/A"),
-                    createDetailRow("Medicine ID:", product.getMedicineId()),
+                    createDetailRow("Product ID:", product.getMedicineId()),
                     createDetailRow("Category:", product.getCategory() != null ? product.getCategory() : "N/A")
             );
-    
+
             // Section 2: Medical Information
-            VBox medicalSection = createDetailSection("Medical Information",
+            VBox medicalSection = createDetailSection("Product Information",
                     createDetailRow("Dosage Form:", product.getDosageForm() != null ? product.getDosageForm() : "N/A"),
                     createDetailRow("Dosage Strength:", product.getDosageStrength() != null ? product.getDosageStrength() : "N/A"),
                     createDetailRow("Prescription Required:", product.getPrescriptionRequired() != null && product.getPrescriptionRequired() ? "Yes ⚕" : "No")
             );
-    
+
             // Section 3: Stock & Inventory
             String stockStatus = product.isLowStock() ? product.getStockStatus() + " ⚠" : product.getStockStatus();
             VBox stockSection = createDetailSection("Stock & Inventory",
@@ -1939,41 +1991,138 @@
                     createDetailRow("Minimum Stock Level:", product.getMinStockLevel() != null ? String.valueOf(product.getMinStockLevel()) : "N/A"),
                     createDetailRow("Stock Status:", stockStatus)
             );
-    
-            // Section 4: Pricing
+
+            // Section 4: Pricing - GET FROM BATCHES
+            List<Batch> batches = productService.getBatchesForProduct(product);
+            String priceDisplay = "N/A";
+            if (!batches.isEmpty()) {
+                // Get the most common price from batches
+                BigDecimal batchPrice = batches.get(0).getPrice();
+                priceDisplay = "₱" + batchPrice.toString();
+
+                // Check if there are multiple prices
+                boolean multiplePrices = batches.stream()
+                        .map(Batch::getPrice)
+                        .distinct()
+                        .count() > 1;
+
+                if (multiplePrices) {
+                    priceDisplay += " (varies by batch)";
+                }
+            } else if (product.getPrice() != null) {
+                // Fallback to product price
+                priceDisplay = "₱" + product.getPrice().toString();
+            }
+
             VBox pricingSection = createDetailSection("Pricing",
-                    createDetailRow("Price per Unit:", "₱" + product.getPrice().toString())
+                    createDetailRow("Price per Unit:", priceDisplay)
             );
-    
-            // Section 5: Supplier & Manufacturing
+
+            // Section 5: Supplier & Manufacturing - GET FROM BATCHES
+            String supplierDisplay = "N/A";
+            if (!batches.isEmpty()) {
+                List<String> suppliers = batches.stream()
+                        .map(Batch::getSupplier)
+                        .filter(s -> s != null && !s.isEmpty())
+                        .distinct()
+                        .toList();
+
+                if (!suppliers.isEmpty()) {
+                    if (suppliers.size() == 1) {
+                        supplierDisplay = suppliers.get(0);
+                    } else {
+                        supplierDisplay = suppliers.get(0) + " (+" + (suppliers.size() - 1) + " more)";
+                    }
+                }
+            } else if (product.getSupplier() != null && !product.getSupplier().isEmpty()) {
+                // Fallback to product supplier
+                supplierDisplay = product.getSupplier();
+            }
+
+            String batchNumberDisplay = "N/A";
+            long batchCount = productService.countBatchesForProduct(product);
+            if (batchCount > 0) {
+                batchNumberDisplay = batchCount + " batch" + (batchCount > 1 ? "es" : "") + " (click 'View Batches' below)";
+            }
+
             VBox supplierSection = createDetailSection("Supplier & Manufacturing",
-                    createDetailRow("Supplier:", product.getSupplier()),
+                    createDetailRow("Supplier:", supplierDisplay),
                     createDetailRow("Manufacturer:", product.getManufacturer() != null ? product.getManufacturer() : "N/A"),
-                    createDetailRow("Batch Number:", product.getBatchNumber() != null ? product.getBatchNumber() : "N/A")
+                    createDetailRow("Batches:", batchNumberDisplay)
             );
-    
-            // Section 6: Important Dates
+
+            // Section 6: Important Dates - GET FROM BATCHES
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
-            String expiryDateStr = product.getExpirationDate() != null ? product.getExpirationDate().format(formatter) : "N/A";
-            // Determine warning based on expiry status
+
+            LocalDate earliestExpiry = null;
+            if (!batches.isEmpty()) {
+                earliestExpiry = batches.stream()
+                        .map(Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+            }
+
+            // Fallback to product expiry if no batches
+            if (earliestExpiry == null) {
+                earliestExpiry = product.getExpirationDate();
+            }
+
+            String expiryDateStr = earliestExpiry != null ? earliestExpiry.format(formatter) : "N/A";
             String expiryWarning = "";
-            if (product.getExpirationDate() != null) {
-                if (product.getExpirationDate().isBefore(LocalDate.now())) {
+            String daysUntilExpiryStr = "N/A";
+
+            if (earliestExpiry != null) {
+                long daysUntilExpiry = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), earliestExpiry);
+
+                if (earliestExpiry.isBefore(LocalDate.now())) {
                     expiryWarning = " ⚠ Expired!";
-                } else if (product.isExpiringSoon()) {
+                    daysUntilExpiryStr = "Expired";
+                } else if (daysUntilExpiry <= 30) {
                     expiryWarning = " ⚠ Expiring Soon!";
+                    daysUntilExpiryStr = daysUntilExpiry + " days";
+                } else {
+                    daysUntilExpiryStr = daysUntilExpiry + " days";
                 }
             }
-    
-            long daysUntilExpiry = product.getExpirationDate() != null ?
-                    java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate()) : 0;
-            String daysUntilExpiryStr = daysUntilExpiry > 0 ? daysUntilExpiry + " days" : "Expired";
 
             VBox datesSection = createDetailSection("Important Dates",
                     createDetailRow("Expiration Date:", expiryDateStr + expiryWarning),
                     createDetailRow("Days Until Expiry:", daysUntilExpiryStr)
             );
-    
+
+            // Add "View Batches" button if product has batches
+            if (batchCount > 0) {
+                Button viewBatchesBtn = new Button("📦 View All Batches (" + batchCount + ")");
+                viewBatchesBtn.setStyle(
+                        "-fx-background-color: #2196F3; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-font-size: 14px; " +
+                                "-fx-font-weight: bold; " +
+                                "-fx-padding: 12px 20px; " +
+                                "-fx-background-radius: 8px; " +
+                                "-fx-cursor: hand;"
+                );
+
+                viewBatchesBtn.setOnMouseEntered(e -> viewBatchesBtn.setStyle(
+                        viewBatchesBtn.getStyle().replace("#2196F3", "#1976D2")
+                ));
+                viewBatchesBtn.setOnMouseExited(e -> viewBatchesBtn.setStyle(
+                        viewBatchesBtn.getStyle().replace("#1976D2", "#2196F3")
+                ));
+
+                viewBatchesBtn.setOnAction(e -> {
+                    dialogStage.close();
+                    showBatchesDialog(product);
+                });
+
+                HBox batchButtonContainer = new HBox(viewBatchesBtn);
+                batchButtonContainer.setAlignment(Pos.CENTER);
+                batchButtonContainer.setStyle("-fx-padding: 10 0 10 0;");
+
+                contentContainer.getChildren().add(batchButtonContainer);
+            }
+
             contentContainer.getChildren().addAll(
                     basicSection,
                     medicalSection,
@@ -1982,13 +2131,13 @@
                     supplierSection,
                     datesSection
             );
-    
+
             scrollPane.setContent(contentContainer);
-    
+
             // Close button
             HBox buttonContainer = new HBox();
             buttonContainer.setAlignment(Pos.CENTER_RIGHT);
-    
+
             Button closeButton = new Button("Close");
             closeButton.setStyle(
                     "-fx-background-color: #4CAF50; " +
@@ -1999,28 +2148,28 @@
                             "-fx-background-radius: 8px; " +
                             "-fx-cursor: hand;"
             );
-    
+
             closeButton.setOnMouseEntered(e -> closeButton.setStyle(
                     closeButton.getStyle() + "-fx-background-color: #45a049;"
             ));
             closeButton.setOnMouseExited(e -> closeButton.setStyle(
                     closeButton.getStyle().replace("-fx-background-color: #45a049;", "-fx-background-color: #4CAF50;")
             ));
-    
+
             closeButton.setOnAction(e -> dialogStage.close());
             buttonContainer.getChildren().add(closeButton);
-    
+
             // Add all sections to main container
             mainContainer.getChildren().addAll(header, scrollPane, buttonContainer);
             VBox.setVgrow(scrollPane, Priority.ALWAYS);
-    
+
             // Create scene
             Scene scene = new Scene(mainContainer);
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
         }
-    
+
         private VBox createDetailSection(String sectionTitle, HBox... rows) {
             VBox section = new VBox(12);
             section.setStyle(
@@ -2318,7 +2467,7 @@
             Stage dialogStage = new Stage();
             IconUtil.setApplicationIcon(dialogStage);
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.setTitle(product == null ? "Add New Medicine" : "Edit Medicine");
+            dialogStage.setTitle(product == null ? "Add New Product" : "Edit Product");
             dialogStage.setResizable(false);
 
             // Main container with ScrollPane for long form
@@ -2327,12 +2476,12 @@
             mainContainer.setPrefWidth(700);
 
             // Header
-            Label titleLabel = new Label(product == null ? "Add New Medicine" : "Edit Medicine");
+            Label titleLabel = new Label(product == null ? "Add New Product" : "Edit Product");
             titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
             Label subtitleLabel = new Label(product == null ?
                     "Enter the details of the new medicine batch to add to inventory." :
-                    "Update the medicine details or add a new batch.");
+                    "Update the product details or add a new batch.");
             subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
             subtitleLabel.setWrapText(true);
 
@@ -2378,7 +2527,7 @@
             );
 
             // ===== MEDICAL INFORMATION SECTION =====
-            Label medicalInfoLabel = new Label("Medical Information");
+            Label medicalInfoLabel = new Label("Product Information");
             medicalInfoLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 15 0 0 0;");
 
             // Dosage Form
@@ -2408,12 +2557,6 @@
             // ===== BATCH/STOCK INFORMATION SECTION =====
             Label batchInfoLabel = new Label(product == null ? "Initial Batch Information" : "New Batch Information");
             batchInfoLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 15 0 0 0;");
-
-            // Batch Number
-            TextField batchNumberField = createStyledTextField(
-                    product == null ? "" : (product.getBatchNumber() != null ? product.getBatchNumber() : ""),
-                    "Batch/Lot number"
-            );
 
             // Stock Quantity
             TextField stockField = createStyledTextField("0", "Quantity for this batch");
@@ -2465,7 +2608,7 @@
             // Add all fields to form container
             formContainer.getChildren().addAll(
                     basicInfoLabel,
-                    createFieldGroup("Medicine ID", medicineIdField),
+                    createFieldGroup("Product ID", medicineIdField),
                     createFieldGroup("Brand Name *", brandNameField),
                     createFieldGroup("Generic Name *", genericNameField),
                     createFieldGroup("Category", categoryField),
@@ -2477,7 +2620,6 @@
                     prescriptionCheckBox,
 
                     batchInfoLabel,
-                    createFieldGroup("Batch Number", batchNumberField),
                     createFieldGroup("Stock Quantity *", stockField),
                     createFieldGroup("Unit of Measure *", unitCombo),
                     createFieldGroup("Reorder Level *", minStockField),
@@ -2528,7 +2670,7 @@
             );
             cancelButton.setOnAction(e -> dialogStage.close());
 
-            Button saveButton = new Button(product == null ? "Add Medicine" : "Add New Batch");
+            Button saveButton = new Button(product == null ? "Add Product" : "Add New Batch");
             saveButton.setStyle(
                     "-fx-background-color: #4CAF50; " +
                             "-fx-text-fill: white; " +
@@ -2627,7 +2769,6 @@
                         newProduct.setPrescriptionRequired(prescriptionCheckBox.isSelected());
                         newProduct.setUnitOfMeasure(unitCombo.getValue());
                         newProduct.setMinStockLevel(minStockLevel);
-                        newProduct.setBatchNumber(batchNumberField.getText().trim());
 
                         productService.saveProductWithBatch(
                                 newProduct,
@@ -2638,7 +2779,7 @@
                         );
 
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                                "Medicine and first batch added successfully!");
+                                "Product and first batch added successfully!");
                     } else {
                         // Add new batch to existing product
                         productService.saveProductWithBatch(
@@ -2655,6 +2796,12 @@
 
                     loadProducts();
                     dialogStage.close();
+
+                    // Force refresh of dashboard data if it exists
+                    Platform.runLater(() -> {
+                        productService.clearBatchCache();
+                        updateKPIs(); // Refresh local KPIs
+                    });
 
                 } catch (Exception ex) {
                     showStyledAlert(Alert.AlertType.ERROR, "Error",
@@ -2694,7 +2841,7 @@
             // Summary info
             long batchCount = productService.countBatchesForProduct(product);
             Label summaryLabel = new Label(String.format(
-                    "Total Stock: %d units | Medicine ID: %s | Total Batches: %d",
+                    "Total Stock: %d units | Product ID: %s | Total Batches: %d",
                     product.getStock(),
                     product.getMedicineId(),
                     batchCount
