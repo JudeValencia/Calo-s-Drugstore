@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -458,15 +459,14 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<Product> getProductsWithExpiringBatches(int days) {
         LocalDate today = LocalDate.now();
-        LocalDate longTimeAgo = LocalDate.of(2020, 1, 1); // Far in the past to catch ALL expired
         LocalDate endDate = today.plusDays(days);
 
         System.out.println("=== DEBUG: getProductsWithExpiringBatches ===");
-        System.out.println("Checking from: " + longTimeAgo + " to " + endDate);
+        System.out.println("Checking from: " + today + " to " + endDate);
 
-        // 1. Get ALL expiring/expired batches
-        List<Batch> expiringBatches = batchRepository.findExpiringBatches(longTimeAgo, endDate);
-        System.out.println("Found " + expiringBatches.size() + " expiring/expired batches");
+        // 1. Get expiring batches (from today to future days)
+        List<Batch> expiringBatches = batchRepository.findExpiringBatches(today, endDate);
+        System.out.println("Found " + expiringBatches.size() + " expiring batches");
 
         List<Product> productsFromBatches = expiringBatches.stream()
                 .map(batch -> {
@@ -475,6 +475,12 @@ public class ProductService {
                     return product;
                 })
                 .distinct()
+                .filter(product -> {
+                    // Double-check: only include if earliest batch is actually expiring (not expired)
+                    LocalDate earliestExpiry = getEarliestExpiryDate(product);
+                    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), earliestExpiry);
+                    return daysLeft >= 0 && daysLeft <= days;
+                })
                 .toList();
 
         System.out.println("Products from batches: " + productsFromBatches.size());

@@ -1054,6 +1054,44 @@ public class ReportsController implements Initializable {
         txnIdCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getTransactionId()));
         txnIdCol.setStyle("-fx-alignment: CENTER-LEFT;");
+        txnIdCol.setCellFactory(column -> new TableCell<Sale, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                Sale sale = getTableRow() != null ? getTableRow().getItem() : null;
+                
+                if (empty || item == null || sale == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    if (sale.isVoided()) {
+                        // Show void tag
+                        Label idLabel = new Label(item);
+                        idLabel.setStyle("-fx-text-fill: #2c3e50;");
+                        
+                        Label voidTag = new Label("VOID");
+                        voidTag.setStyle(
+                            "-fx-background-color: #F44336; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 10px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 2px 8px; " +
+                            "-fx-background-radius: 3px;"
+                        );
+                        
+                        HBox container = new HBox(8, idLabel, voidTag);
+                        container.setAlignment(Pos.CENTER_LEFT);
+                        setGraphic(container);
+                        setText(null);
+                    } else {
+                        setText(item);
+                        setGraphic(null);
+                    }
+                    setStyle("-fx-alignment: CENTER-LEFT;");
+                }
+            }
+        });
 
         txnDateCol.setCellValueFactory(data -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. d, yyyy h:mm a");
@@ -1147,7 +1185,7 @@ public class ReportsController implements Initializable {
                                 "-fx-cursor: hand;";
 
                 String voidStyle =
-                        "-fx-background-color: #FF9800; " +
+                        "-fx-background-color: #F44336; " +
                                 "-fx-text-fill: white; " +
                                 "-fx-font-size: 12px; " +
                                 "-fx-padding: 6px 12px; " +
@@ -1170,9 +1208,18 @@ public class ReportsController implements Initializable {
                 if (empty || sale == null) {
                     setGraphic(null);
                 } else {
+                    buttons.getChildren().clear();
+                    
+                    // Always show view button
                     viewBtn.setOnAction(e -> handleViewTransaction(sale));
-                    editBtn.setOnAction(e -> handleEditTransaction(sale));
-                    voidBtn.setOnAction(e -> handleVoidTransaction(sale));
+                    buttons.getChildren().add(viewBtn);
+                    
+                    // Only show edit and void buttons for non-voided transactions
+                    if (!sale.isVoided()) {
+                        editBtn.setOnAction(e -> handleEditTransaction(sale));
+                        voidBtn.setOnAction(e -> handleVoidTransaction(sale));
+                        buttons.getChildren().addAll(editBtn, voidBtn);
+                    }
 
                     setGraphic(buttons);
                 }
@@ -2298,14 +2345,44 @@ public class ReportsController implements Initializable {
         expiringTable.addHeaderCell(createHeaderCell("Status"));
 
         for (Product product : expiringMedicinesTable.getItems()) {
-            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate());
+            // Get earliest batch expiration date (same logic as the UI table)
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+            
+            LocalDate expiryDate = null;
+            
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date from batches
+                expiryDate = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+            }
+            
+            // Fallback to product expiration date if no batches
+            if (expiryDate == null) {
+                expiryDate = product.getExpirationDate();
+            }
+            
+            // Skip products without expiration date
+            if (expiryDate == null) {
+                continue;
+            }
+            
+            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+            
+            // Only include products expiring within 30 days (not yet expired)
+            if (daysLeft < 0 || daysLeft > 30) {
+                continue;
+            }
+            
             String status = daysLeft < 0 ? "Expired" :
                     daysLeft <= 7 ? "Critical" :
                             daysLeft <= 30 ? "Warning" : "Good";
 
             expiringTable.addCell(createTableCell(product.getMedicineId()));
             expiringTable.addCell(createTableCell(product.getBrandName()));
-            expiringTable.addCell(createTableCell(product.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
+            expiringTable.addCell(createTableCell(expiryDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
             expiringTable.addCell(createTableCell(String.valueOf(Math.max(0, daysLeft))));
             expiringTable.addCell(createTableCell(String.valueOf(product.getStock())));
             expiringTable.addCell(createTableCell(status));

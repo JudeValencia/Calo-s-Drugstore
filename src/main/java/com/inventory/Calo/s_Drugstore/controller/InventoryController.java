@@ -1002,18 +1002,16 @@
             }
         }
     
-        private void handlePDFExport() {
-            try {
-                // Get all products from inventory
-                List<Product> products = productService.getAllProducts();
-    
-                if (products.isEmpty()) {
-                    showStyledAlert(Alert.AlertType.WARNING, "No Data",
-                            "There are no products in the inventory to export.");
-                    return;
-                }
-    
-                // Create file chooser
+    private void handlePDFExport() {
+        try {
+            // Get products from the inventory table (filters out deleted products)
+            List<Product> products = new ArrayList<>(inventoryTable.getItems());
+
+            if (products.isEmpty()) {
+                showStyledAlert(Alert.AlertType.WARNING, "No Data",
+                        "There are no products in the inventory to export.");
+                return;
+            }                // Create file chooser
                 javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
                 fileChooser.setTitle("Export Inventory Report to PDF");
     
@@ -1193,21 +1191,44 @@
                 table.addHeaderCell(createHeaderCell(header));
             }
     
-            // Data rows
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
-            for (Product product : products) {
-                table.addCell(createTableCell(product.getMedicineId()));
-                table.addCell(createTableCell(product.getBrandName()));
-                table.addCell(createTableCell(product.getGenericName() != null ? product.getGenericName() : "N/A"));
-                table.addCell(createTableCell(String.valueOf(product.getStock())));
-                table.addCell(createTableCell("₱" + product.getPrice().toString()));
-                table.addCell(createTableCell(product.getExpirationDate() != null ?
-                        product.getExpirationDate().format(dateFormatter) : "N/A"));
-                table.addCell(createTableCell(product.getStockStatus()));
-                table.addCell(createTableCell(product.getSupplier()));
+        // Data rows
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+        for (Product product : products) {
+            // Get earliest batch expiration date (same logic as UI table)
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+            LocalDate expiryDate = null;
+            String supplier = product.getSupplier();
+            
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date
+                expiryDate = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+                
+                // Get supplier from most recent batch (latest creation date)
+                supplier = batches.stream()
+                        .max((b1, b2) -> b1.getCreatedAt().compareTo(b2.getCreatedAt()))
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getSupplier)
+                        .orElse(product.getSupplier());
             }
-    
-            document.add(table);
+            
+            // Fallback to product expiration date
+            if (expiryDate == null) {
+                expiryDate = product.getExpirationDate();
+            }
+            
+            table.addCell(createTableCell(product.getMedicineId()));
+            table.addCell(createTableCell(product.getBrandName()));
+            table.addCell(createTableCell(product.getGenericName() != null ? product.getGenericName() : "N/A"));
+            table.addCell(createTableCell(String.valueOf(product.getStock())));
+            table.addCell(createTableCell("₱" + product.getPrice().toString()));
+            table.addCell(createTableCell(expiryDate != null ?
+                    expiryDate.format(dateFormatter) : "N/A"));
+            table.addCell(createTableCell(product.getStockStatus() != null ? product.getStockStatus() : "N/A"));
+            table.addCell(createTableCell(supplier != null ? supplier : "N/A"));
+        }            document.add(table);
     
             // Footer
             document.add(new com.itextpdf.layout.element.Paragraph("\n"));
@@ -1249,15 +1270,15 @@
                     .setPadding(5);
         }
     
-        private com.itextpdf.layout.element.Cell createTableCell(String text) throws Exception {
-            return new com.itextpdf.layout.element.Cell()
-                    .add(new com.itextpdf.layout.element.Paragraph(text))
-                    .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
-                    .setFontSize(8)
-                    .setPadding(4);
-        }
-    
-        private String escapeCSV(String value) {
+    private com.itextpdf.layout.element.Cell createTableCell(String text) throws Exception {
+        // Handle null values
+        String cellText = (text != null && !text.isEmpty()) ? text : "N/A";
+        return new com.itextpdf.layout.element.Cell()
+                .add(new com.itextpdf.layout.element.Paragraph(cellText))
+                .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
+                .setFontSize(8)
+                .setPadding(4);
+    }        private String escapeCSV(String value) {
             if (value == null) {
                 return "";
             }
