@@ -1158,7 +1158,30 @@
                     .map(p -> p.getPrice().multiply(new BigDecimal(p.getStock())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             long lowStockCount = products.stream().filter(Product::isLowStock).count();
-            long expiringCount = products.stream().filter(Product::isExpiringSoon).count();
+            
+            // Count products with batches expiring in next 30 days (check actual batch dates)
+            LocalDate today = LocalDate.now();
+            LocalDate thirtyDaysFromNow = today.plusDays(30);
+            long expiringCount = products.stream()
+                    .filter(product -> {
+                        List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+                        if (batches.isEmpty()) {
+                            // Fallback to product expiration date
+                            return product.getExpirationDate() != null &&
+                                   !product.getExpirationDate().isBefore(today) &&
+                                   product.getExpirationDate().isBefore(thirtyDaysFromNow);
+                        }
+                        // Check if any batch expires in next 30 days
+                        LocalDate earliestExpiry = batches.stream()
+                                .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                                .filter(date -> date != null)
+                                .min(LocalDate::compareTo)
+                                .orElse(null);
+                        return earliestExpiry != null &&
+                               !earliestExpiry.isBefore(today) &&
+                               earliestExpiry.isBefore(thirtyDaysFromNow);
+                    })
+                    .count();
     
             // Statistics Table
             com.itextpdf.layout.element.Table statsTable = new com.itextpdf.layout.element.Table(2);

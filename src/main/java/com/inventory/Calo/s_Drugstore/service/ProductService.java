@@ -472,6 +472,7 @@ public class ProductService {
                 .map(batch -> {
                     Product product = batch.getProduct();
                     product.getBrandName(); // Initialize proxy
+                    System.out.println("  Batch found: " + product.getBrandName() + " (MED: " + product.getMedicineId() + ") - Expiry: " + batch.getExpirationDate());
                     return product;
                 })
                 .distinct()
@@ -479,7 +480,9 @@ public class ProductService {
                     // Double-check: only include if earliest batch is actually expiring (not expired)
                     LocalDate earliestExpiry = getEarliestExpiryDate(product);
                     long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), earliestExpiry);
-                    return daysLeft >= 0 && daysLeft <= days;
+                    boolean include = daysLeft >= 0 && daysLeft <= days;
+                    System.out.println("  Product: " + product.getBrandName() + " - Earliest expiry: " + earliestExpiry + " - Days left: " + daysLeft + " - Include: " + include);
+                    return include;
                 })
                 .toList();
 

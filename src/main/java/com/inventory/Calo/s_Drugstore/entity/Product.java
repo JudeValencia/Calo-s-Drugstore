@@ -276,8 +276,10 @@ public class Product {
 
     public boolean isExpiringSoon() {
         if (expirationDate == null) return false;
-        LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-        return expirationDate.isBefore(thirtyDaysFromNow);
+        LocalDate today = LocalDate.now();
+        LocalDate thirtyDaysFromNow = today.plusDays(30);
+        // Only include products expiring between today and 30 days from now (not already expired)
+        return !expirationDate.isBefore(today) && expirationDate.isBefore(thirtyDaysFromNow);
     }
 
     public boolean isExpired() {
