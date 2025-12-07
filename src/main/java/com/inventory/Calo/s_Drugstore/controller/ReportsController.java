@@ -1169,11 +1169,6 @@ public class ReportsController implements Initializable {
         });
     }
 
-    @FXML
-    private void handleRefreshTransactions() {
-        loadAllTransactions();
-    }
-
     private void loadAllTransactions() {
         try {
             // Get last 30 days of transactions

@@ -153,7 +153,7 @@
                             product.getBrandName().toLowerCase().contains(searchText) ||
                                     product.getMedicineId().toLowerCase().contains(searchText) ||
                                     product.getCategory().toLowerCase().contains(searchText) ||
-                                    product.getSupplier().toLowerCase().contains(searchText)
+                                    (product.getSupplier() != null && product.getSupplier().toLowerCase().contains(searchText))
                     );
     
                     medicineCombo.setItems(filtered);
@@ -692,7 +692,7 @@
                             product.getBrandName().toLowerCase().contains(searchText) ||
                                     product.getMedicineId().toLowerCase().contains(searchText) ||
                                     product.getCategory().toLowerCase().contains(searchText) ||
-                                    product.getSupplier().toLowerCase().contains(searchText)
+                                    (product.getSupplier() != null && product.getSupplier().toLowerCase().contains(searchText))
                     );
     
                     productCombo.setItems(filtered);

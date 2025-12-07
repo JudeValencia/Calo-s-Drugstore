@@ -227,7 +227,6 @@ public class ProductService {
     }
 
 
-    // Save product with batch
     @Transactional
     public Product saveProductWithBatch(Product product, Integer batchStock,
                                         LocalDate batchExpiry, BigDecimal batchPrice,
@@ -258,6 +257,29 @@ public class ProductService {
                 targetProduct = productRepository.save(product);
                 System.out.println("✅ Created NEW product: " + targetProduct.getBrandName() + " (ID: " + targetProduct.getId() + ")");
             }
+        }
+
+        // ✅ NEW: Check if product has stock but no batches (legacy stock)
+        long existingBatchCount = batchRepository.countByProductId(targetProduct.getId());
+        if (existingBatchCount == 0 && targetProduct.getStock() > 0) {
+            // Create a legacy batch for existing stock
+            System.out.println("⚠️ Found legacy stock: " + targetProduct.getStock() + " units with no batch records");
+
+            Batch legacyBatch = new Batch();
+            legacyBatch.setBatchNumber("LEGACY-" + targetProduct.getMedicineId() + "-" + System.currentTimeMillis());
+            legacyBatch.setProduct(targetProduct);
+            legacyBatch.setStock(targetProduct.getStock());
+            legacyBatch.setExpirationDate(targetProduct.getExpirationDate() != null ?
+                    targetProduct.getExpirationDate() :
+                    LocalDate.now().plusYears(2)); // Default 2 years if no expiry
+            legacyBatch.setPrice(targetProduct.getPrice());
+            legacyBatch.setSupplier(targetProduct.getSupplier() != null ?
+                    targetProduct.getSupplier() : "Unknown");
+            legacyBatch.setDateReceived(LocalDate.now());
+
+            batchRepository.save(legacyBatch);
+            System.out.println("✅ Created legacy batch: " + legacyBatch.getBatchNumber() +
+                    " with " + legacyBatch.getStock() + " units");
         }
 
         // Create the new batch
@@ -345,11 +367,6 @@ public class ProductService {
         }
     }
 
-    //Get expiring batches within specified days
-//    public List<Batch> getExpiringBatches(int days) {
-//        LocalDate targetDate = LocalDate.now().plusDays(days);
-//        return batchRepository.findExpiringBatches(targetDate);
-//    }
 
     //Count total number of batches for a product
     public long countBatchesForProduct(Product product) {

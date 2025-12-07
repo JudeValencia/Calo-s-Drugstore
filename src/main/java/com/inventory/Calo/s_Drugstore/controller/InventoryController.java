@@ -33,8 +33,8 @@
     import java.util.Objects;
     import java.util.ResourceBundle;
     import com.itextpdf.layout.properties.UnitValue;
-    
-    
+
+
     @Controller
     public class InventoryController implements Initializable {
     
@@ -2345,18 +2345,21 @@
                         boolean deleteProduct = showLastBatchWarning(product.getName());
 
                         if (deleteProduct) {
+                            // Get the stage reference before deletion
+                            Stage batchDialogStage = (Stage) batchTable.getScene().getWindow();
+
                             // Delete the entire product (cascade will delete the batch)
                             productService.deleteProduct(product.getId());
 
-                            // Refresh main inventory table
-                            loadProducts();
-
                             // Close the batch dialog
-                            Stage batchDialogStage = (Stage) batchTable.getScene().getWindow();
                             batchDialogStage.close();
 
-                            showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                                    "Last batch deleted. Product removed from inventory.");
+                            // Use Platform.runLater to ensure UI updates after deletion completes
+                            Platform.runLater(() -> {
+                                loadProducts();
+                                showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                                        "Last batch deleted. Product removed from inventory.");
+                            });
                         } else {
                             return; // User cancelled
                         }
@@ -2395,7 +2398,7 @@
             mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
             mainContainer.setPrefWidth(500);
 
-            Label titleLabel = new Label("⚠️ Last Batch - Product Will Be Deleted");
+            Label titleLabel = new Label("⚠ Last Batch - Product Will Be Deleted");
             titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FF9800;");
             titleLabel.setWrapText(true);
 
@@ -3585,5 +3588,5 @@
                 showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to logout: " + e.getMessage());
             }
         }
-    
+
     }

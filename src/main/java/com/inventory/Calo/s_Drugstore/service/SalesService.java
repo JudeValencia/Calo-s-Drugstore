@@ -1,9 +1,8 @@
 package com.inventory.Calo.s_Drugstore.service;
 
-import com.inventory.Calo.s_Drugstore.entity.Product;
-import com.inventory.Calo.s_Drugstore.entity.Sale;
-import com.inventory.Calo.s_Drugstore.entity.SaleItem;
-import com.inventory.Calo.s_Drugstore.entity.User;
+import com.inventory.Calo.s_Drugstore.entity.*;
+import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
+import com.inventory.Calo.s_Drugstore.repository.ProductRepository;
 import com.inventory.Calo.s_Drugstore.repository.SaleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SalesService {
@@ -22,6 +22,12 @@ public class SalesService {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private BatchRepository batchRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @Transactional
     public Sale completeSale(List<SaleItem> cartItems, User user) {
@@ -56,6 +62,7 @@ public class SalesService {
 
             // ✅ NEW: Deduct from batches using FEFO instead of just updating product stock
             productService.deductStockFromBatches(product.getId(), item.getQuantity());
+            //cleanupDepletedBatches(product.getId());
 
             // Create new sale item (don't reuse cart item)
             SaleItem saleItem = new SaleItem();
@@ -164,7 +171,7 @@ public class SalesService {
 
         Sale sale = saleOpt.get();
 
-        // Restore inventory for all items - ADD BACK TO EARLIEST EXPIRING BATCH
+        // Restore inventory for all items
         for (SaleItem item : sale.getItems()) {
             // Find product by medicine ID
             List<Product> allProducts = productService.getAllProducts();
@@ -175,29 +182,76 @@ public class SalesService {
             if (productOpt.isPresent()) {
                 Product product = productOpt.get();
 
-                // Get batches ordered by expiration (FEFO)
-                List<com.inventory.Calo.s_Drugstore.entity.Batch> batches =
-                        productService.getBatchesForProduct(product);
+                // Get all batches (including depleted ones)
+                List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(product.getId());
 
                 if (!batches.isEmpty()) {
-                    // Add back to the earliest expiring batch
-                    com.inventory.Calo.s_Drugstore.entity.Batch earliestBatch = batches.get(0);
-                    earliestBatch.setStock(earliestBatch.getStock() + item.getQuantity());
-                    productService.updateBatchStock(earliestBatch.getId(), earliestBatch.getStock());
+                    // ✅ SMART RESTORE: Fill depleted batches first, then active ones
+                    int remainingToRestore = item.getQuantity();
 
-                    System.out.println("✅ Restored " + item.getQuantity() + " units to batch " +
-                            earliestBatch.getBatchNumber() + " of " + product.getBrandName());
+                    // Separate depleted and active batches
+                    List<Batch> depletedBatches = new java.util.ArrayList<>();
+                    List<Batch> activeBatches = new java.util.ArrayList<>();
+
+                    for (Batch batch : batches) {
+                        if (batch.getStock() == 0) {
+                            depletedBatches.add(batch);
+                        } else {
+                            activeBatches.add(batch);
+                        }
+                    }
+
+                    System.out.println("Found " + depletedBatches.size() + " depleted batches and " +
+                            activeBatches.size() + " active batches");
+
+                    // ✅ Strategy 1: Fill depleted batches first (in FEFO order)
+                    for (Batch batch : depletedBatches) {
+                        if (remainingToRestore <= 0) break;
+
+                        // Add to this depleted batch
+                        batch.setStock(batch.getStock() + remainingToRestore);
+                        batchRepository.save(batch);
+
+                        System.out.println("✅ Restored " + remainingToRestore + " units to depleted batch " +
+                                batch.getBatchNumber() + " (Expiry: " + batch.getExpirationDate() +
+                                ", Supplier: " + batch.getSupplier() + ")");
+
+                        remainingToRestore = 0; // All restored to first depleted batch
+                        break; // Only fill the first depleted batch
+                    }
+
+                    // ✅ Strategy 2: If no depleted batches, add to first active batch
+                    if (remainingToRestore > 0 && !activeBatches.isEmpty()) {
+                        Batch firstActive = activeBatches.get(0);
+                        firstActive.setStock(firstActive.getStock() + remainingToRestore);
+                        batchRepository.save(firstActive);
+
+                        System.out.println("✅ Restored " + remainingToRestore + " units to active batch " +
+                                firstActive.getBatchNumber());
+
+                        remainingToRestore = 0;
+                    }
+
+                    // Update product total stock
+                    int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                            .mapToInt(Batch::getStock)
+                            .sum();
+                    product.setStock(totalStock);
+                    productRepository.save(product);
+
+                    System.out.println("✅ Product total stock updated to: " + totalStock);
+
                 } else {
-                    // Fallback: just update product stock if no batches exist
+                    // No batches - just update product stock
                     product.setStock(product.getStock() + item.getQuantity());
-                    productService.updateProduct(product.getId(), product);
+                    productRepository.save(product);
                 }
             }
         }
 
         // Delete the sale
         saleRepository.deleteById(saleId);
-        System.out.println("✅ Transaction " + sale.getTransactionId() + " deleted");
+        System.out.println("✅ Transaction deleted");
     }
 
     @Transactional
@@ -215,14 +269,19 @@ public class SalesService {
             if (productOpt.isPresent()) {
                 Product product = productOpt.get();
 
-                // Restore to earliest expiring batch
+                // Restore to batches in FEFO order (reverse the original deduction)
                 List<com.inventory.Calo.s_Drugstore.entity.Batch> batches =
-                        productService.getBatchesForProduct(product);
+                        batchRepository.findByProductOrderByExpirationDate(product.getId());
 
                 if (!batches.isEmpty()) {
-                    com.inventory.Calo.s_Drugstore.entity.Batch earliestBatch = batches.get(0);
-                    earliestBatch.setStock(earliestBatch.getStock() + originalQty);
-                    productService.updateBatchStock(earliestBatch.getId(), earliestBatch.getStock());
+                    // ✅ Add back to first batch (simulating FEFO reversal)
+                    com.inventory.Calo.s_Drugstore.entity.Batch firstBatch = batches.get(0);
+                    firstBatch.setStock(firstBatch.getStock() + originalQty);
+                    batchRepository.save(firstBatch);
+
+                    // Update product stock
+                    product.setStock(product.getStock() + originalQty);
+                    productService.updateProduct(product.getId(), product);
                 } else {
                     product.setStock(product.getStock() + originalQty);
                     productService.updateProduct(product.getId(), product);
@@ -246,8 +305,11 @@ public class SalesService {
                             ". Available: " + product.getStock() + ", Required: " + item.getQuantity());
                 }
 
-                // ✅ Use FEFO deduction
+                // Use FEFO deduction
                 productService.deductStockFromBatches(product.getId(), item.getQuantity());
+
+                // ✅ Cleanup depleted batches
+                //cleanupDepletedBatches(product.getId());
             }
         }
 
@@ -265,5 +327,30 @@ public class SalesService {
 
         // Update and return the sale
         return saleRepository.save(sale);
+    }
+
+    private void cleanupDepletedBatches(Long productId) {
+        List<Batch> allBatches = batchRepository.findByProductOrderByExpirationDate(productId);
+
+        // Filter out depleted batches (stock = 0)
+        List<Batch> depletedBatches = allBatches.stream()
+                .filter(batch -> batch.getStock() == 0)
+                .collect(Collectors.toList());
+
+        // Only delete if there are other batches remaining
+        if (!depletedBatches.isEmpty() && depletedBatches.size() < allBatches.size()) {
+            // There are still active batches, safe to delete depleted ones
+            for (Batch batch : depletedBatches) {
+                batchRepository.delete(batch);
+                System.out.println("🗑️ Deleted depleted batch: " + batch.getBatchNumber());
+            }
+        } else if (!depletedBatches.isEmpty()) {
+            // All batches are depleted, delete all of them
+            for (Batch batch : depletedBatches) {
+                batchRepository.delete(batch);
+                System.out.println("🗑️ Deleted last depleted batch: " + batch.getBatchNumber());
+            }
+            System.out.println("⚠ All batches depleted for product ID " + productId + " - product has no stock");
+        }
     }
 }
