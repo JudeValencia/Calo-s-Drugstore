@@ -85,8 +85,9 @@
         @FXML private Label userEmailLabel;
         @FXML private Label userRoleLabel;
     
-        // Cart data
-        private ObservableList<SaleItem> cartItems = FXCollections.observableArrayList();
+        // Cart data - STATIC to persist across navigation
+        private static ObservableList<SaleItem> sharedCartItems = FXCollections.observableArrayList();
+        private ObservableList<SaleItem> cartItems = sharedCartItems; // Reference to shared cart
         private ObservableList<Product> allProducts = FXCollections.observableArrayList();
     
         @Override
@@ -101,6 +102,9 @@
             loadTodaysSummary();
             loadTodaysTransactions();
             setActiveButton(salesBtn);
+            
+            // ✅ FIX: Update cart UI on initialization to show existing items
+            updateCartUI();
         }
     
         public void setCurrentUser(User user) {

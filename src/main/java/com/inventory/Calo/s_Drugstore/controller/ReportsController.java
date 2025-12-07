@@ -98,6 +98,9 @@ public class ReportsController implements Initializable {
     // Transaction Management table
     @FXML private TableView<Sale> transactionsTable;
     @FXML private TableColumn<Sale, String> txnIdCol;
+    
+    // Flag to track if showing voided transactions
+    private boolean showVoidedTransactions = false;
     @FXML private TableColumn<Sale, String> txnDateCol;
     @FXML private TableColumn<Sale, String> txnItemsCol;
     @FXML private TableColumn<Sale, String> txnTotalCol;
@@ -1104,7 +1107,7 @@ public class ReportsController implements Initializable {
         txnActionsCol.setCellFactory(column -> new TableCell<Sale, Void>() {
             private final Button viewBtn = new Button("👁");
             private final Button editBtn = new Button("🔧");
-            private final Button deleteBtn = new Button("🗑");
+            private final Button voidBtn = new Button("⊘ Void");
             private final HBox buttons = new HBox(8);
 
             {
@@ -1143,11 +1146,19 @@ public class ReportsController implements Initializable {
                                 "-fx-border-radius: 6px; " +
                                 "-fx-cursor: hand;";
 
+                String voidStyle =
+                        "-fx-background-color: #FF9800; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-font-size: 12px; " +
+                                "-fx-padding: 6px 12px; " +
+                                "-fx-background-radius: 6px; " +
+                                "-fx-cursor: hand;";
+
                 viewBtn.setStyle(viewStyle);
                 editBtn.setStyle(editStyle);
-                deleteBtn.setStyle(deleteStyle);
+                voidBtn.setStyle(voidStyle);
 
-                buttons.getChildren().addAll(viewBtn, editBtn, deleteBtn);
+                buttons.getChildren().addAll(viewBtn, editBtn, voidBtn);
             }
 
             @Override
@@ -1161,7 +1172,7 @@ public class ReportsController implements Initializable {
                 } else {
                     viewBtn.setOnAction(e -> handleViewTransaction(sale));
                     editBtn.setOnAction(e -> handleEditTransaction(sale));
-                    deleteBtn.setOnAction(e -> handleDeleteTransaction(sale));
+                    voidBtn.setOnAction(e -> handleVoidTransaction(sale));
 
                     setGraphic(buttons);
                 }
@@ -1175,7 +1186,14 @@ public class ReportsController implements Initializable {
             LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
             LocalDateTime now = LocalDateTime.now();
 
-            List<Sale> transactions = salesService.getSalesBetweenDates(thirtyDaysAgo, now);
+            List<Sale> transactions;
+            if (showVoidedTransactions) {
+                // Show ALL including voided
+                transactions = salesService.getAllSalesBetweenDates(thirtyDaysAgo, now);
+            } else {
+                // Show only active (non-voided) transactions
+                transactions = salesService.getSalesBetweenDates(thirtyDaysAgo, now);
+            }
 
             // Sort by date descending (newest first)
             transactions.sort((a, b) -> b.getSaleDate().compareTo(a.getSaleDate()));
@@ -1183,12 +1201,20 @@ public class ReportsController implements Initializable {
             transactionsTable.setItems(FXCollections.observableArrayList(transactions));
 
             if (transactions.isEmpty()) {
-                transactionsTable.setPlaceholder(new Label("No transactions found in the last 30 days"));
+                String message = showVoidedTransactions ? 
+                    "No transactions found in the last 30 days" : 
+                    "No active transactions found in the last 30 days";
+                transactionsTable.setPlaceholder(new Label(message));
             }
         } catch (Exception e) {
             e.printStackTrace();
             showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to load transactions: " + e.getMessage());
         }
+    }
+    
+    public void toggleVoidedTransactions() {
+        showVoidedTransactions = !showVoidedTransactions;
+        loadAllTransactions();
     }
 
     private void handleViewTransaction(Sale sale) {
@@ -1799,6 +1825,115 @@ public class ReportsController implements Initializable {
         dialogStage.showAndWait();
 
         return (Boolean) dialogStage.getUserData();
+    }
+
+    private void handleVoidTransaction(Sale sale) {
+        // Check if already voided
+        if (sale.getVoided() != null && sale.getVoided()) {
+            showStyledAlert(Alert.AlertType.WARNING, "Already Voided", 
+                "This transaction has already been voided.");
+            return;
+        }
+
+        // Show reason dialog
+        String reason = showVoidReasonDialog();
+        
+        if (reason == null) {
+            return; // User cancelled
+        }
+
+        try {
+            salesService.voidTransaction(sale.getId(), reason);
+            showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                    "Transaction voided successfully!\nInventory has been restored.");
+            loadAllTransactions();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                    "Failed to void transaction: " + e.getMessage());
+        }
+    }
+
+    private String showVoidReasonDialog() {
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Void Transaction");
+        dialogStage.setResizable(false);
+
+        VBox content = new VBox(20);
+        content.setStyle("-fx-padding: 30; -fx-background-color: white;");
+
+        Label titleLabel = new Label("Void Transaction");
+        titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        Label messageLabel = new Label("Please provide a reason for voiding this transaction:");
+        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+        messageLabel.setWrapText(true);
+
+        TextArea reasonArea = new TextArea();
+        reasonArea.setPromptText("Enter reason here...");
+        reasonArea.setPrefRowCount(4);
+        reasonArea.setPrefWidth(400);
+        reasonArea.setWrapText(true);
+        reasonArea.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1.5px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-padding: 10px; " +
+                "-fx-font-size: 13px;"
+        );
+
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancelBtn = new Button("Cancel");
+        cancelBtn.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-text-fill: #2c3e50; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 10px 25px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1.5px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+        cancelBtn.setOnAction(e -> {
+            dialogStage.setUserData(null);
+            dialogStage.close();
+        });
+
+        Button voidBtn = new Button("Void Transaction");
+        voidBtn.setStyle(
+                "-fx-background-color: #FF9800; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 10px 25px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+        voidBtn.setOnAction(e -> {
+            String reason = reasonArea.getText().trim();
+            if (reason.isEmpty()) {
+                showStyledAlert(Alert.AlertType.WARNING, "Reason Required", 
+                    "Please provide a reason for voiding this transaction.");
+                return;
+            }
+            dialogStage.setUserData(reason);
+            dialogStage.close();
+        });
+
+        buttonBox.getChildren().addAll(cancelBtn, voidBtn);
+        content.getChildren().addAll(titleLabel, messageLabel, reasonArea, buttonBox);
+
+        Scene scene = new Scene(content);
+        dialogStage.setScene(scene);
+        dialogStage.showAndWait();
+
+        return (String) dialogStage.getUserData();
     }
 
     private void handleDeleteTransaction(Sale sale) {

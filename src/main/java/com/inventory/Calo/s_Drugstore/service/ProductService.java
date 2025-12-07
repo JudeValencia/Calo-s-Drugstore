@@ -382,8 +382,9 @@ public class ProductService {
     }
 
     // Deduct stock using FEFO (First Expiry First Out)
+    // Returns a JSON string with batch deduction history for restoration
     @Transactional
-    public void deductStockFromBatches(Long productId, int quantityToDeduct) {
+    public String deductStockFromBatches(Long productId, int quantityToDeduct) {
         // Get all batches for this product, ordered by expiration date (FEFO)
         List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(productId);
 
@@ -392,6 +393,8 @@ public class ProductService {
         }
 
         int remainingToDeduct = quantityToDeduct;
+        StringBuilder batchInfoJson = new StringBuilder("[");
+        boolean first = true;
 
         for (Batch batch : batches) {
             if (remainingToDeduct <= 0) {
@@ -407,6 +410,19 @@ public class ProductService {
                 batch.setStock(batchStock - deductFromThisBatch);
                 batchRepository.save(batch);
 
+                // Track this deduction for restoration
+                if (!first) batchInfoJson.append(",");
+                batchInfoJson.append("{\"batchId\":")
+                        .append(batch.getId())
+                        .append(",\"batchNumber\":\"")
+                        .append(batch.getBatchNumber())
+                        .append("\",\"quantity\":")
+                        .append(deductFromThisBatch)
+                        .append(",\"expiryDate\":\"")
+                        .append(batch.getExpirationDate())
+                        .append("\"}");
+                first = false;
+
                 remainingToDeduct -= deductFromThisBatch;
 
                 System.out.println("✅ FEFO: Deducted " + deductFromThisBatch + " from batch " +
@@ -419,6 +435,8 @@ public class ProductService {
                     remainingToDeduct + " units from batches.");
         }
 
+        batchInfoJson.append("]");
+
         // Update product's total stock
         int totalStock = batchRepository.findByProductId(productId).stream()
                 .mapToInt(Batch::getStock)
@@ -430,9 +448,12 @@ public class ProductService {
         productRepository.save(product);
 
         System.out.println("✅ Product total stock updated to: " + totalStock);
+        System.out.println("📝 Batch deduction info: " + batchInfoJson.toString());
 
         // Clear cache
         clearBatchCache();
+        
+        return batchInfoJson.toString();
     }
     @Transactional(readOnly = true)
     public List<Product> getProductsWithExpiringBatches(int days) {

@@ -60,9 +60,8 @@ public class SalesService {
                         ". Available: " + product.getStock() + ", Requested: " + item.getQuantity());
             }
 
-            // ✅ NEW: Deduct from batches using FEFO instead of just updating product stock
-            productService.deductStockFromBatches(product.getId(), item.getQuantity());
-            //cleanupDepletedBatches(product.getId());
+            // ✅ NEW: Deduct from batches using FEFO and get batch deduction history
+            String batchInfo = productService.deductStockFromBatches(product.getId(), item.getQuantity());
 
             // Create new sale item (don't reuse cart item)
             SaleItem saleItem = new SaleItem();
@@ -71,6 +70,7 @@ public class SalesService {
             saleItem.setQuantity(item.getQuantity());
             saleItem.setUnitPrice(item.getUnitPrice());
             saleItem.setSubtotal(item.getSubtotal());
+            saleItem.setBatchInfo(batchInfo);  // Store batch deduction history
 
             // Add to sale
             sale.addItem(saleItem);
@@ -138,6 +138,16 @@ public class SalesService {
         return saleRepository.findBySaleDateBetween(startDate, endDate);
     }
 
+    // Get ALL transactions including voided (for viewing in reports with filter)
+    public List<Sale> getAllSalesBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
+        return saleRepository.findAllBySaleDateBetweenIncludingVoided(startDate, endDate);
+    }
+
+    // Get only voided transactions
+    public List<Sale> getVoidedTransactions() {
+        return saleRepository.findVoidedTransactions();
+    }
+
     @Transactional
     public Sale updateTransaction(Sale sale) {
         // Validate sale has ID
@@ -181,70 +191,74 @@ public class SalesService {
 
             if (productOpt.isPresent()) {
                 Product product = productOpt.get();
+                String batchInfo = item.getBatchInfo();
 
-                // Get all batches (including depleted ones)
-                List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(product.getId());
-
-                if (!batches.isEmpty()) {
-                    // ✅ SMART RESTORE: Fill depleted batches first, then active ones
-                    int remainingToRestore = item.getQuantity();
-
-                    // Separate depleted and active batches
-                    List<Batch> depletedBatches = new java.util.ArrayList<>();
-                    List<Batch> activeBatches = new java.util.ArrayList<>();
-
-                    for (Batch batch : batches) {
-                        if (batch.getStock() == 0) {
-                            depletedBatches.add(batch);
-                        } else {
-                            activeBatches.add(batch);
+                if (batchInfo != null && !batchInfo.isEmpty() && !batchInfo.equals("[]")) {
+                    // ✅ PERFECT RESTORATION: Use stored batch info for exact restoration
+                    System.out.println("🔄 Restoring using batch history: " + batchInfo);
+                    
+                    // Parse JSON manually (simple parsing for our format)
+                    String[] batches = batchInfo.replace("[", "").replace("]", "").split("\\},\\{");
+                    
+                    for (String batchStr : batches) {
+                        batchStr = batchStr.replace("{", "").replace("}", "");
+                        
+                        // Extract batchId and quantity
+                        String[] parts = batchStr.split(",");
+                        Long batchId = null;
+                        int quantity = 0;
+                        
+                        for (String part : parts) {
+                            part = part.trim();
+                            if (part.contains("batchId")) {
+                                String value = part.split(":")[1].trim().replace("\"", "");
+                                batchId = Long.parseLong(value);
+                            } else if (part.contains("quantity")) {
+                                String value = part.split(":")[1].trim().replace("\"", "");
+                                quantity = Integer.parseInt(value);
+                            }
+                        }
+                        
+                        if (batchId != null && quantity > 0) {
+                            Optional<Batch> batchOpt = batchRepository.findById(batchId);
+                            if (batchOpt.isPresent()) {
+                                Batch batch = batchOpt.get();
+                                batch.setStock(batch.getStock() + quantity);
+                                batchRepository.save(batch);
+                                
+                                System.out.println("✅ Restored " + quantity + " units to batch " +
+                                        batch.getBatchNumber() + " (New Stock: " + batch.getStock() + ")");
+                            }
                         }
                     }
-
-                    System.out.println("Found " + depletedBatches.size() + " depleted batches and " +
-                            activeBatches.size() + " active batches");
-
-                    // ✅ Strategy 1: Fill depleted batches first (in FEFO order)
-                    for (Batch batch : depletedBatches) {
-                        if (remainingToRestore <= 0) break;
-
-                        // Add to this depleted batch
-                        batch.setStock(batch.getStock() + remainingToRestore);
-                        batchRepository.save(batch);
-
-                        System.out.println("✅ Restored " + remainingToRestore + " units to depleted batch " +
-                                batch.getBatchNumber() + " (Expiry: " + batch.getExpirationDate() +
-                                ", Supplier: " + batch.getSupplier() + ")");
-
-                        remainingToRestore = 0; // All restored to first depleted batch
-                        break; // Only fill the first depleted batch
-                    }
-
-                    // ✅ Strategy 2: If no depleted batches, add to first active batch
-                    if (remainingToRestore > 0 && !activeBatches.isEmpty()) {
-                        Batch firstActive = activeBatches.get(0);
-                        firstActive.setStock(firstActive.getStock() + remainingToRestore);
-                        batchRepository.save(firstActive);
-
-                        System.out.println("✅ Restored " + remainingToRestore + " units to active batch " +
-                                firstActive.getBatchNumber());
-
-                        remainingToRestore = 0;
-                    }
-
+                    
                     // Update product total stock
                     int totalStock = batchRepository.findByProductId(product.getId()).stream()
                             .mapToInt(Batch::getStock)
                             .sum();
                     product.setStock(totalStock);
                     productRepository.save(product);
-
+                    
                     System.out.println("✅ Product total stock updated to: " + totalStock);
-
                 } else {
-                    // No batches - just update product stock
-                    product.setStock(product.getStock() + item.getQuantity());
-                    productRepository.save(product);
+                    // Fallback: No batch info available (old transaction or no batches)
+                    System.out.println("⚠️ No batch info available, using fallback restoration");
+                    
+                    List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(product.getId());
+                    if (!batches.isEmpty()) {
+                        Batch firstBatch = batches.get(0);
+                        firstBatch.setStock(firstBatch.getStock() + item.getQuantity());
+                        batchRepository.save(firstBatch);
+                        
+                        int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                                .mapToInt(Batch::getStock)
+                                .sum();
+                        product.setStock(totalStock);
+                        productRepository.save(product);
+                    } else {
+                        product.setStock(product.getStock() + item.getQuantity());
+                        productRepository.save(product);
+                    }
                 }
             }
         }
@@ -252,6 +266,114 @@ public class SalesService {
         // Delete the sale
         saleRepository.deleteById(saleId);
         System.out.println("✅ Transaction deleted");
+    }
+
+    @Transactional
+    public void voidTransaction(Long saleId, String reason) {
+        Optional<Sale> saleOpt = saleRepository.findById(saleId);
+
+        if (!saleOpt.isPresent()) {
+            throw new RuntimeException("Transaction not found");
+        }
+
+        Sale sale = saleOpt.get();
+
+        if (sale.isVoided()) {
+            throw new RuntimeException("Transaction is already voided");
+        }
+
+        // Mark as voided
+        sale.setVoided(true);
+        sale.setVoidDate(LocalDateTime.now());
+        sale.setVoidReason(reason != null ? reason : "No reason provided");
+
+        // Restore inventory for all items using batch history
+        for (SaleItem item : sale.getItems()) {
+            List<Product> allProducts = productService.getAllProducts();
+            Optional<Product> productOpt = allProducts.stream()
+                    .filter(p -> p.getMedicineId().equals(item.getMedicineId()))
+                    .findFirst();
+
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                String batchInfo = item.getBatchInfo();
+
+                if (batchInfo != null && !batchInfo.isEmpty() && !batchInfo.equals("[]")) {
+                    // ✅ PERFECT RESTORATION: Use stored batch info
+                    System.out.println("🔄 Voiding: Restoring using batch history: " + batchInfo);
+                    
+                    try {
+                        // Parse JSON manually: [{"batchId":1,"quantity":50},{"batchId":2,"quantity":30}]
+                        String[] batches = batchInfo.replace("[", "").replace("]", "").split("\\},\\{");
+                        
+                        for (String batchStr : batches) {
+                            batchStr = batchStr.replace("{", "").replace("}", "").trim();
+                            
+                            Long batchId = null;
+                            int quantity = 0;
+                            
+                            // Split by comma and parse key-value pairs
+                            String[] parts = batchStr.split(",");
+                            for (String part : parts) {
+                                part = part.trim();
+                                if (part.contains("\"batchId\"")) {
+                                    String value = part.split(":")[1].trim();
+                                    batchId = Long.parseLong(value);
+                                } else if (part.contains("\"quantity\"")) {
+                                    String value = part.split(":")[1].trim();
+                                    quantity = Integer.parseInt(value);
+                                }
+                            }
+                            
+                            if (batchId != null && quantity > 0) {
+                                Optional<Batch> batchOpt = batchRepository.findById(batchId);
+                                if (batchOpt.isPresent()) {
+                                    Batch batch = batchOpt.get();
+                                    batch.setStock(batch.getStock() + quantity);
+                                    batchRepository.save(batch);
+                                    
+                                    System.out.println("✅ Restored " + quantity + " units to batch " +
+                                            batch.getBatchNumber() + " (New Stock: " + batch.getStock() + ")");
+                                } else {
+                                    System.err.println("❌ Batch not found: " + batchId);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("❌ Error parsing batch info: " + e.getMessage());
+                        e.printStackTrace();
+                        throw new RuntimeException("Failed to restore inventory from batch info", e);
+                    }
+                    
+                    int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                            .mapToInt(Batch::getStock)
+                            .sum();
+                    product.setStock(totalStock);
+                    productRepository.save(product);
+                } else {
+                    // Fallback restoration
+                    List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(product.getId());
+                    if (!batches.isEmpty()) {
+                        Batch firstBatch = batches.get(0);
+                        firstBatch.setStock(firstBatch.getStock() + item.getQuantity());
+                        batchRepository.save(firstBatch);
+                        
+                        int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                                .mapToInt(Batch::getStock)
+                                .sum();
+                        product.setStock(totalStock);
+                        productRepository.save(product);
+                    } else {
+                        product.setStock(product.getStock() + item.getQuantity());
+                        productRepository.save(product);
+                    }
+                }
+            }
+        }
+
+        // Save the voided sale (don't delete it)
+        saleRepository.save(sale);
+        System.out.println("✅ Transaction voided and inventory restored");
     }
 
     @Transactional

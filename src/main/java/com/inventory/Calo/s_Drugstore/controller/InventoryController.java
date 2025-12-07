@@ -225,7 +225,7 @@
             });
             priceColumn.setCellValueFactory(data ->
                     new SimpleStringProperty("₱" + data.getValue().getPrice().toString()));
-            // ===== FIXED: Expiration Date Column - Now reads from batches =====
+            // ===== FIXED: Expiration Date Column - Now reads from batches WITH STOCK CHECK =====
             expirationColumn.setCellFactory(column -> new TableCell<>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
@@ -235,63 +235,29 @@
                         setStyle("");
                     } else {
                         Product product = getTableRow().getItem();
-                        List<Batch> batches = productService.getBatchesForProduct(product);
-
-                        if (!batches.isEmpty()) {
-                            // Get earliest expiration date from batches
-                            LocalDate earliestExpiry = batches.stream()
-                                    .map(Batch::getExpirationDate)
-                                    .filter(date -> date != null)
-                                    .min(LocalDate::compareTo)
-                                    .orElse(null);
-
-                            if (earliestExpiry != null) {
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
-                                setText(earliestExpiry.format(formatter));
-
-                                // Check if expiring soon (within 30 days)
-                                LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-                                if (earliestExpiry.isBefore(thirtyDaysFromNow)) {
-                                    setStyle("-fx-text-fill: #FF6B35; -fx-font-weight: bold;");
-                                } else {
-                                    setStyle("-fx-text-fill: #FF6B35;");
-                                }
-                            } else {
-                                setText("N/A");
-                                setStyle("");
-                            }
-                        } else {
+                        
+                        // Check if product has any stock at all
+                        if (product.getStock() == 0) {
                             setText("N/A");
                             setStyle("");
+                            return;
                         }
-                    }
-                }
-            });
-            // ===== FIXED: Expiration Date Column - Now reads from batches WITH FALLBACK =====
-            expirationColumn.setCellFactory(column -> new TableCell<>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || getTableRow() == null || getTableRow().getItem() == null) {
-                        setText(null);
-                        setStyle("");
-                    } else {
-                        Product product = getTableRow().getItem();
+                        
                         List<Batch> batches = productService.getBatchesForProduct(product);
-
                         LocalDate displayDate = null;
 
                         if (!batches.isEmpty()) {
-                            // Get earliest expiration date from batches
+                            // Get earliest expiration date from batches that HAVE STOCK
                             displayDate = batches.stream()
+                                    .filter(batch -> batch.getStock() > 0)  // Only consider batches with stock
                                     .map(Batch::getExpirationDate)
                                     .filter(date -> date != null)
                                     .min(LocalDate::compareTo)
                                     .orElse(null);
                         }
 
-                        // FALLBACK: If no batch data, use product's expiration date
-                        if (displayDate == null) {
+                        // FALLBACK: If no batch data with stock, check if product has expiration
+                        if (displayDate == null && product.getExpirationDate() != null) {
                             displayDate = product.getExpirationDate();
                         }
 
@@ -315,20 +281,29 @@
             });
 
             expirationColumn.setCellValueFactory(data -> {
-                List<Batch> batches = productService.getBatchesForProduct(data.getValue());
+                Product product = data.getValue();
+                
+                // If no stock, show N/A
+                if (product.getStock() == 0) {
+                    return new SimpleStringProperty("N/A");
+                }
+                
+                List<Batch> batches = productService.getBatchesForProduct(product);
                 LocalDate displayDate = null;
 
                 if (!batches.isEmpty()) {
+                    // Only get expiry from batches that have stock
                     displayDate = batches.stream()
+                            .filter(batch -> batch.getStock() > 0)
                             .map(Batch::getExpirationDate)
                             .filter(date -> date != null)
                             .min(LocalDate::compareTo)
                             .orElse(null);
                 }
 
-                // FALLBACK to product expiration date
-                if (displayDate == null) {
-                    displayDate = data.getValue().getExpirationDate();
+                // FALLBACK to product expiration date if it has stock
+                if (displayDate == null && product.getExpirationDate() != null) {
+                    displayDate = product.getExpirationDate();
                 }
 
                 if (displayDate != null) {
