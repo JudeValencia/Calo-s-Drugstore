@@ -3,7 +3,8 @@
     import com.inventory.Calo.s_Drugstore.entity.Batch;
     import com.inventory.Calo.s_Drugstore.entity.Product;
     import com.inventory.Calo.s_Drugstore.entity.User;
-    import com.inventory.Calo.s_Drugstore.service.ProductService;
+import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
+import com.inventory.Calo.s_Drugstore.service.ProductService;
     import com.inventory.Calo.s_Drugstore.service.UserManagementService;
     import com.inventory.Calo.s_Drugstore.util.IconUtil;
     import javafx.application.Platform;
@@ -32,7 +33,6 @@
     import java.util.List;
     import java.util.Objects;
     import java.util.ResourceBundle;
-    import com.itextpdf.layout.properties.UnitValue;
 
 
     @Controller
@@ -46,6 +46,9 @@
     
         @Autowired
         private UserManagementService userManagementService;
+
+        @Autowired
+private BatchRepository batchRepository;
     
         private User currentUser;
     
@@ -2241,169 +2244,178 @@
         }
 
         private void handleDeleteBatch(Batch batch, Product product, TableView<Batch> batchTable) {
-            // Create confirmation dialog
-            Stage confirmStage = new Stage();
-            IconUtil.setApplicationIcon(confirmStage);
-            confirmStage.initModality(Modality.APPLICATION_MODAL);
-            confirmStage.setTitle("Delete Batch");
-            confirmStage.setResizable(false);
-            confirmStage.setUserData(false);
+    // Create confirmation dialog
+    Stage confirmStage = new Stage();
+    IconUtil.setApplicationIcon(confirmStage);
+    confirmStage.initModality(Modality.APPLICATION_MODAL);
+    confirmStage.setTitle("Delete Batch");
+    confirmStage.setResizable(false);
+    confirmStage.setUserData(false);
 
-            VBox mainContainer = new VBox(20);
-            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
-            mainContainer.setPrefWidth(500);
+    VBox mainContainer = new VBox(20);
+    mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+    mainContainer.setPrefWidth(500);
 
-            // Title
-            Label titleLabel = new Label("Delete Batch?");
-            titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+    // Title
+    Label titleLabel = new Label("Delete Batch?");
+    titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-            // Batch details
-            VBox detailsBox = new VBox(8);
-            detailsBox.setStyle(
-                    "-fx-background-color: #F8F9FA; " +
-                            "-fx-padding: 15; " +
-                            "-fx-background-radius: 8px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 8px;"
-            );
+    // Batch details
+    VBox detailsBox = new VBox(8);
+    detailsBox.setStyle(
+            "-fx-background-color: #F8F9FA; " +
+                    "-fx-padding: 15; " +
+                    "-fx-background-radius: 8px; " +
+                    "-fx-border-color: #E0E0E0; " +
+                    "-fx-border-width: 1px; " +
+                    "-fx-border-radius: 8px;"
+    );
 
-            Label batchNumLabel = new Label("Batch Number: " + batch.getBatchNumber());
-            batchNumLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+    Label batchNumLabel = new Label("Batch Number: " + batch.getBatchNumber());
+    batchNumLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
 
-            Label stockLabel = new Label("Stock: " + batch.getStock() + " units");
-            stockLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+    Label stockLabel = new Label("Stock: " + batch.getStock() + " units");
+    stockLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
 
-            Label expiryLabel = new Label("Expiry: " +
-                    (batch.getExpirationDate() != null ?
-                            batch.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) :
-                            "N/A"));
-            expiryLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+    Label expiryLabel = new Label("Expiry: " +
+            (batch.getExpirationDate() != null ?
+                    batch.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) :
+                    "N/A"));
+    expiryLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
 
-            Label supplierLabel = new Label("Supplier: " + batch.getSupplier());
-            supplierLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+    Label supplierLabel = new Label("Supplier: " + batch.getSupplier());
+    supplierLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
 
-            detailsBox.getChildren().addAll(batchNumLabel, stockLabel, expiryLabel, supplierLabel);
+    detailsBox.getChildren().addAll(batchNumLabel, stockLabel, expiryLabel, supplierLabel);
 
-            // Warning message
-            Label messageLabel = new Label(
-                    "⚠ This action cannot be undone. The batch will be permanently removed from inventory, " +
-                            "and the total stock count will be updated."
-            );
-            messageLabel.setWrapText(true);
-            messageLabel.setStyle(
+    // Warning message
+    Label messageLabel = new Label(
+            "⚠ This action cannot be undone. The batch will be permanently removed from inventory, " +
+                    "and the total stock count will be updated."
+    );
+    messageLabel.setWrapText(true);
+    messageLabel.setStyle(
+            "-fx-font-size: 14px; " +
+                    "-fx-text-fill: #7f8c8d; " +
+                    "-fx-line-spacing: 3px; " +
+                    "-fx-padding: 10; " +
+                    "-fx-background-color: #FFF3CD; " +
+                    "-fx-background-radius: 6px;"
+    );
+
+    // Buttons
+    HBox buttonBox = new HBox(15);
+    buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+    Button cancelButton = new Button("Cancel");
+    cancelButton.setStyle(
+            "-fx-background-color: white; " +
+                    "-fx-text-fill: #2c3e50; " +
                     "-fx-font-size: 14px; " +
-                            "-fx-text-fill: #7f8c8d; " +
-                            "-fx-line-spacing: 3px; " +
-                            "-fx-padding: 10; " +
-                            "-fx-background-color: #FFF3CD; " +
-                            "-fx-background-radius: 6px;"
-            );
+                    "-fx-padding: 12px 30px; " +
+                    "-fx-background-radius: 8px; " +
+                    "-fx-border-color: #E0E0E0; " +
+                    "-fx-border-width: 1.5px; " +
+                    "-fx-border-radius: 8px; " +
+                    "-fx-cursor: hand;"
+    );
+    cancelButton.setOnAction(e -> {
+        confirmStage.setUserData(false);
+        confirmStage.close();
+    });
 
-            // Buttons
-            HBox buttonBox = new HBox(15);
-            buttonBox.setAlignment(Pos.CENTER_RIGHT);
+    Button deleteButton = new Button("Delete Batch");
+    deleteButton.setStyle(
+            "-fx-background-color: #dc3545; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-font-size: 14px; " +
+                    "-fx-font-weight: bold; " +
+                    "-fx-padding: 12px 30px; " +
+                    "-fx-background-radius: 8px; " +
+                    "-fx-cursor: hand;"
+    );
 
-            Button cancelButton = new Button("Cancel");
-            cancelButton.setStyle(
-                    "-fx-background-color: white; " +
-                            "-fx-text-fill: #2c3e50; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-padding: 12px 30px; " +
-                            "-fx-background-radius: 8px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1.5px; " +
-                            "-fx-border-radius: 8px; " +
-                            "-fx-cursor: hand;"
-            );
-            cancelButton.setOnAction(e -> {
-                confirmStage.setUserData(false);
-                confirmStage.close();
-            });
+    deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(
+            deleteButton.getStyle().replace("#dc3545", "#c82333")
+    ));
+    deleteButton.setOnMouseExited(e -> deleteButton.setStyle(
+            deleteButton.getStyle().replace("#c82333", "#dc3545")
+    ));
 
-            Button deleteButton = new Button("Delete Batch");
-            deleteButton.setStyle(
-                    "-fx-background-color: #dc3545; " +
-                            "-fx-text-fill: white; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-padding: 12px 30px; " +
-                            "-fx-background-radius: 8px; " +
-                            "-fx-cursor: hand;"
-            );
+    deleteButton.setOnAction(e -> {
+        confirmStage.setUserData(true);
+        confirmStage.close();
+    });
 
-            deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(
-                    deleteButton.getStyle().replace("#dc3545", "#c82333")
-            ));
-            deleteButton.setOnMouseExited(e -> deleteButton.setStyle(
-                    deleteButton.getStyle().replace("#c82333", "#dc3545")
-            ));
+    buttonBox.getChildren().addAll(cancelButton, deleteButton);
+    mainContainer.getChildren().addAll(titleLabel, detailsBox, messageLabel, buttonBox);
 
-            deleteButton.setOnAction(e -> {
-                confirmStage.setUserData(true);
-                confirmStage.close();
-            });
+    Scene scene = new Scene(mainContainer);
+    scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+    confirmStage.setScene(scene);
+    confirmStage.centerOnScreen();
+    confirmStage.showAndWait();
 
-            buttonBox.getChildren().addAll(cancelButton, deleteButton);
-            mainContainer.getChildren().addAll(titleLabel, detailsBox, messageLabel, buttonBox);
+    // If confirmed, proceed with deletion
+    if ((Boolean) confirmStage.getUserData()) {
+        try {
+            // ✅ Store product ID before deletion
+            Long productId = product.getId();
+            
+            // Check if this is the last batch
+            long batchCount = productService.countBatchesForProduct(product);
 
-            Scene scene = new Scene(mainContainer);
-            scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
-            confirmStage.setScene(scene);
-            confirmStage.centerOnScreen();
-            confirmStage.showAndWait();
+            if (batchCount <= 1) {
+                // This is the last batch - warn user that product will be deleted too
+                boolean deleteProduct = showLastBatchWarning(product.getName());
 
-            // If confirmed, proceed with deletion
-            if ((Boolean) confirmStage.getUserData()) {
-                try {
-                    // Check if this is the last batch
-                    long batchCount = productService.countBatchesForProduct(product);
+                if (deleteProduct) {
+                    // Get the stage reference before deletion
+                    Stage batchDialogStage = (Stage) batchTable.getScene().getWindow();
+                    
+                    // Delete the entire product (cascade will delete the batch)
+                    productService.deleteProduct(productId);
 
-                    if (batchCount <= 1) {
-                        // This is the last batch - warn user that product will be deleted too
-                        boolean deleteProduct = showLastBatchWarning(product.getName());
-
-                        if (deleteProduct) {
-                            // Get the stage reference before deletion
-                            Stage batchDialogStage = (Stage) batchTable.getScene().getWindow();
-
-                            // Delete the entire product (cascade will delete the batch)
-                            productService.deleteProduct(product.getId());
-
-                            // Close the batch dialog
-                            batchDialogStage.close();
-
-                            // Use Platform.runLater to ensure UI updates after deletion completes
-                            Platform.runLater(() -> {
-                                loadProducts();
-                                showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                                        "Last batch deleted. Product removed from inventory.");
-                            });
-                        } else {
-                            return; // User cancelled
-                        }
-                    } else {
-                        // Delete the batch
-                        productService.deleteBatch(batch.getId());
-
-                        // Refresh the batch table
-                        List<Batch> updatedBatches = productService.getBatchesForProduct(product);
-                        batchTable.getItems().setAll(updatedBatches);
-
-                        // Refresh main inventory table to show updated total stock
+                    // Close the batch dialog
+                    batchDialogStage.close();
+                    
+                    // ✅ Use Platform.runLater to ensure UI updates after deletion completes
+                    Platform.runLater(() -> {
                         loadProducts();
-
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                                "Batch deleted successfully. Total stock updated.");
-                    }
-
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    showStyledAlert(Alert.AlertType.ERROR, "Error",
-                            "Failed to delete batch: " + ex.getMessage());
+                                "Last batch deleted. Product removed from inventory.");
+                    });
+                } else {
+                    return; // User cancelled
                 }
+            } else {
+                // Delete the batch
+                productService.deleteBatch(batch.getId());
+
+                // ✅ Reload batches using product ID (not stale product object)
+                List<Batch> updatedBatches = batchRepository.findByProductOrderByExpirationDate(productId);
+                
+                // ✅ Clear and reload table
+                batchTable.getItems().clear();
+                batchTable.setItems(FXCollections.observableArrayList(updatedBatches));
+                batchTable.refresh();
+
+                // ✅ Refresh main inventory table to show updated total stock
+                Platform.runLater(() -> {
+                    loadProducts();
+                });
+
+                showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                        "Batch deleted successfully. Total stock updated.");
             }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                    "Failed to delete batch: " + ex.getMessage());
         }
+    }
+}
 
         private boolean showLastBatchWarning(String productName) {
             Stage warningStage = new Stage();

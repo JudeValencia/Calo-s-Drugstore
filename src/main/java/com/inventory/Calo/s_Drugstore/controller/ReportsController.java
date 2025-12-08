@@ -1882,6 +1882,16 @@ public class ReportsController implements Initializable {
             return;
         }
 
+        // Check if transaction is from today
+        LocalDate saleDate = sale.getSaleDate().toLocalDate();
+        LocalDate today = LocalDate.now();
+        if (!saleDate.equals(today)) {
+            showStyledAlert(Alert.AlertType.WARNING, "Cannot Void", 
+                "Only transactions made today can be voided.\n" +
+                "Transaction date: " + saleDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+            return;
+        }
+
         // Show reason dialog
         String reason = showVoidReasonDialog();
         
@@ -1906,6 +1916,15 @@ public class ReportsController implements Initializable {
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Void Transaction");
         dialogStage.setResizable(false);
+
+        // Set logo
+        try {
+            javafx.scene.image.Image icon = new javafx.scene.image.Image(
+                getClass().getResourceAsStream("/icons/pharmatrack-icon.png"));
+            dialogStage.getIcons().add(icon);
+        } catch (Exception e) {
+            System.err.println("Failed to load dialog icon: " + e.getMessage());
+        }
 
         VBox content = new VBox(20);
         content.setStyle("-fx-padding: 30; -fx-background-color: white;");
