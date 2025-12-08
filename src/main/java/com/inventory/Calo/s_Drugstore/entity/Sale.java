@@ -32,6 +32,15 @@ public class Sale {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "voided")
+    private Boolean voided = false;
+
+    @Column(name = "void_date")
+    private LocalDateTime voidDate;
+
+    @Column(name = "void_reason")
+    private String voidReason;
+
     // CRITICAL: Add cascade and fetch settings
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<SaleItem> items = new ArrayList<>();
@@ -79,5 +88,18 @@ public class Sale {
         for (SaleItem item : items) {
             item.setSale(this);
         }
+    }
+
+    public Boolean getVoided() { return voided; }
+    public void setVoided(Boolean voided) { this.voided = voided; }
+
+    public LocalDateTime getVoidDate() { return voidDate; }
+    public void setVoidDate(LocalDateTime voidDate) { this.voidDate = voidDate; }
+
+    public String getVoidReason() { return voidReason; }
+    public void setVoidReason(String voidReason) { this.voidReason = voidReason; }
+
+    public boolean isVoided() {
+        return voided != null && voided;
     }
 }

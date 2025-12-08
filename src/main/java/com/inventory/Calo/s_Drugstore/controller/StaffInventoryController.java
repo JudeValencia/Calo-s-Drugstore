@@ -1,5 +1,6 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
 import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.User;
@@ -37,6 +38,9 @@ public class StaffInventoryController implements Initializable {
 
     @Autowired
     private ConfigurableApplicationContext springContext;
+
+    @Autowired
+    private BatchRepository batchRepository;
 
     private User currentUser;
     private ObservableList<Product> allProducts;
@@ -157,12 +161,18 @@ public class StaffInventoryController implements Initializable {
             }
         });
 
-        // Expiry Date Column
-        expiryDateCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        cellData.getValue().getExpirationDate()
-                                .format(DateTimeFormatter.ofPattern("MMM. dd, yyyy"))
-                ));
+        // Expiry Date Column - Check batches first, then product
+        expiryDateCol.setCellValueFactory(cellData -> {
+            Product product = cellData.getValue();
+            java.time.LocalDate expiryDate = getEarliestBatchExpiry(product);
+
+            if (expiryDate != null) {
+                return new SimpleStringProperty(
+                        expiryDate.format(DateTimeFormatter.ofPattern("MMM. dd, yyyy"))
+                );
+            }
+            return new SimpleStringProperty("N/A");
+        });
 
         // Add warning icon for expiring soon items
         expiryDateCol.setCellFactory(column -> new TableCell<Product, String>() {
@@ -172,14 +182,32 @@ public class StaffInventoryController implements Initializable {
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
+                    setStyle(""); // Reset style
                 } else {
                     Product product = getTableView().getItems().get(getIndex());
+                    java.time.LocalDate expiryDate = getEarliestBatchExpiry(product);
+
+                    // Check if expiration date exists
+                    if (expiryDate == null) {
+                        setText("N/A");
+                        setGraphic(null);
+                        setStyle("-fx-text-fill: #7f8c8d;");
+                        return;
+                    }
+
                     long daysUntilExpiry = java.time.temporal.ChronoUnit.DAYS.between(
                             java.time.LocalDate.now(),
-                            product.getExpirationDate()
+                            expiryDate
                     );
 
-                    if (daysUntilExpiry <= 30) {
+                    if (daysUntilExpiry <= 0) {
+                        // Already expired
+                        Label dateLabel = new Label(item + " ⚠");
+                        dateLabel.setStyle("-fx-text-fill: #c62828; -fx-font-weight: bold;");
+                        setGraphic(dateLabel);
+                        setText(null);
+                    } else if (daysUntilExpiry <= 30) {
+                        // Expiring soon (within 30 days)
                         Label dateLabel = new Label(item + " ⚠");
                         dateLabel.setStyle("-fx-text-fill: #d32f2f; -fx-font-weight: bold;");
                         setGraphic(dateLabel);
@@ -187,14 +215,17 @@ public class StaffInventoryController implements Initializable {
                     } else {
                         setText(item);
                         setGraphic(null);
+                        setStyle(""); // Reset style
                     }
                 }
             }
         });
 
         // Supplier Column
-        supplierCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(cellData.getValue().getSupplier()));
+        supplierCol.setCellValueFactory(cellData -> {
+            String supplier = cellData.getValue().getSupplier();
+            return new SimpleStringProperty(supplier != null ? supplier : "N/A");
+        });
     }
 
     private void setupSearchAndFilter() {
@@ -211,9 +242,13 @@ public class StaffInventoryController implements Initializable {
             allProducts = FXCollections.observableArrayList(productService.getAllProducts());
             filteredProducts = FXCollections.observableArrayList(allProducts);
 
-            // Load categories
+            // Load categories with "All Categories" as first option
             List<String> categories = productService.getAllCategories();
-            categoryCombo.setItems(FXCollections.observableArrayList(categories));
+            ObservableList<String> categoryList = FXCollections.observableArrayList();
+            categoryList.add("All Categories"); // Add "All" option first
+            categoryList.addAll(categories);
+            categoryCombo.setItems(categoryList);
+            categoryCombo.setValue("All Categories"); // Set as default
 
             // Update table
             inventoryTable.setItems(filteredProducts);
@@ -239,12 +274,15 @@ public class StaffInventoryController implements Initializable {
         filteredProducts = FXCollections.observableArrayList(
                 allProducts.stream()
                         .filter(product -> {
+                            // Handle null-safe search
                             boolean matchesSearch = searchText.isEmpty() ||
                                     product.getBrandName().toLowerCase().contains(searchText) ||
                                     product.getMedicineId().toLowerCase().contains(searchText) ||
-                                    product.getSupplier().toLowerCase().contains(searchText);
+                                    (product.getSupplier() != null && product.getSupplier().toLowerCase().contains(searchText));
 
+                            // Handle "All Categories" option
                             boolean matchesCategory = selectedCategory == null ||
+                                    selectedCategory.equals("All Categories") ||
                                     selectedCategory.equals(product.getCategory());
 
                             return matchesSearch && matchesCategory;
@@ -639,5 +677,18 @@ public class StaffInventoryController implements Initializable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private java.time.LocalDate getEarliestBatchExpiry(Product product) {
+        List<com.inventory.Calo.s_Drugstore.entity.Batch> batches =
+                batchRepository.findByProductOrderByExpirationDate(product.getId());
+
+        if (!batches.isEmpty()) {
+            // Return earliest batch expiry
+            return batches.get(0).getExpirationDate();
+        }
+
+        // Fallback to product expiry if no batches
+        return product.getExpirationDate();
     }
 }

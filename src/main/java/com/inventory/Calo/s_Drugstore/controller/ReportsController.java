@@ -98,6 +98,9 @@ public class ReportsController implements Initializable {
     // Transaction Management table
     @FXML private TableView<Sale> transactionsTable;
     @FXML private TableColumn<Sale, String> txnIdCol;
+    
+    // Flag to track if showing voided transactions
+    private boolean showVoidedTransactions = false;
     @FXML private TableColumn<Sale, String> txnDateCol;
     @FXML private TableColumn<Sale, String> txnItemsCol;
     @FXML private TableColumn<Sale, String> txnTotalCol;
@@ -513,25 +516,103 @@ public class ReportsController implements Initializable {
     }
 
     private void setupExpiringMedicinesTable() {
-        medicineIdCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMedicineId()));
-        medicineNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getBrandName()));
-        expirationDateCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(cellData.getValue().getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
 
-        daysLeftCol.setCellValueFactory(cellData -> {
-            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
-            if (daysLeft > 0) return new SimpleStringProperty(String.valueOf(daysLeft));
-            else return new SimpleStringProperty(String.valueOf(0));
+        expiringMedicinesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        medicineIdCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getMedicineId()));
+
+        medicineNameCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getBrandName()));
+
+        // ✅ FIXED: Get expiration date from batches
+        expirationDateCol.setCellValueFactory(cellData -> {
+            Product product = cellData.getValue();
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date
+                LocalDate earliestExpiry = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+
+                if (earliestExpiry != null) {
+                    return new SimpleStringProperty(earliestExpiry.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+                }
+            }
+
+            // Fallback to product expiration date if no batches
+            if (product.getExpirationDate() != null) {
+                return new SimpleStringProperty(product.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+            }
+
+            return new SimpleStringProperty("N/A");
         });
 
-        stockCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getStock())));
+        // ✅ FIXED: Calculate days left from batches
+        daysLeftCol.setCellValueFactory(cellData -> {
+            Product product = cellData.getValue();
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
 
+            LocalDate expiryDate = null;
+
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date
+                expiryDate = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+            }
+
+            // Fallback to product expiration date
+            if (expiryDate == null) {
+                expiryDate = product.getExpirationDate();
+            }
+
+            if (expiryDate != null) {
+                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+                return new SimpleStringProperty(String.valueOf(Math.max(0, daysLeft)));
+            }
+
+            return new SimpleStringProperty("N/A");
+        });
+
+        stockCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(String.valueOf(cellData.getValue().getStock())));
+
+        // ✅ FIXED: Calculate status from batches
         statusCol.setCellValueFactory(cellData -> {
-                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), cellData.getValue().getExpirationDate());
-            if (daysLeft < 0) return new SimpleStringProperty("Expired");
-            else if (daysLeft <= 7) return new SimpleStringProperty("Critical");
-            else if (daysLeft <= 30) return new SimpleStringProperty("Warning");
-            else return new SimpleStringProperty("Good");
+            Product product = cellData.getValue();
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+
+            LocalDate expiryDate = null;
+
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date
+                expiryDate = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+            }
+
+            // Fallback to product expiration date
+            if (expiryDate == null) {
+                expiryDate = product.getExpirationDate();
+            }
+
+            if (expiryDate != null) {
+                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+                if (daysLeft < 0) return new SimpleStringProperty("Expired");
+                else if (daysLeft <= 7) return new SimpleStringProperty("Critical");
+                else if (daysLeft <= 30) return new SimpleStringProperty("Warning");
+                else return new SimpleStringProperty("Good");
+            }
+
+            return new SimpleStringProperty("Unknown");
         });
 
         // Style the status column
@@ -539,10 +620,11 @@ public class ReportsController implements Initializable {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
+
+                setText(null);
+                setGraphic(null);
+
+                if (!empty && item != null) {
                     Label statusLabel = new Label(item);
                     String style = "-fx-padding: 5px 12px; -fx-background-radius: 12px; -fx-font-size: 11px; -fx-font-weight: bold;";
 
@@ -556,12 +638,14 @@ public class ReportsController implements Initializable {
                         case "Warning":
                             statusLabel.setStyle(style + " -fx-background-color: #fbc02d; -fx-text-fill: #2c3e50;");
                             break;
-                        default:
+                        case "Good":
                             statusLabel.setStyle(style + " -fx-background-color: #2e7d32; -fx-text-fill: white;");
+                            break;
+                        default:
+                            statusLabel.setStyle(style + " -fx-background-color: #9e9e9e; -fx-text-fill: white;");
                     }
 
                     setGraphic(statusLabel);
-                    setText(null);
                 }
             }
         });
@@ -617,10 +701,14 @@ public class ReportsController implements Initializable {
 
     private void loadExpiringMedicines() {
         try {
-            // getExpiringProducts() already returns products expiring within 30 days
-            List<Product> expiringProducts = productService.getExpiringProducts();
+            // ✅ NOW CHECKS BATCHES - gets products with expired or expiring batches within 30 days
+            List<Product> expiringProducts = productService.getProductsWithExpiringBatches(30);
 
             expiringMedicinesTable.setItems(FXCollections.observableArrayList(expiringProducts));
+
+            if (expiringProducts.isEmpty()) {
+                expiringMedicinesTable.setPlaceholder(new Label("No expired or expiring medicines"));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -966,6 +1054,44 @@ public class ReportsController implements Initializable {
         txnIdCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getTransactionId()));
         txnIdCol.setStyle("-fx-alignment: CENTER-LEFT;");
+        txnIdCol.setCellFactory(column -> new TableCell<Sale, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                Sale sale = getTableRow() != null ? getTableRow().getItem() : null;
+                
+                if (empty || item == null || sale == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    if (sale.isVoided()) {
+                        // Show void tag
+                        Label idLabel = new Label(item);
+                        idLabel.setStyle("-fx-text-fill: #2c3e50;");
+                        
+                        Label voidTag = new Label("VOID");
+                        voidTag.setStyle(
+                            "-fx-background-color: #F44336; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 10px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 2px 8px; " +
+                            "-fx-background-radius: 3px;"
+                        );
+                        
+                        HBox container = new HBox(8, idLabel, voidTag);
+                        container.setAlignment(Pos.CENTER_LEFT);
+                        setGraphic(container);
+                        setText(null);
+                    } else {
+                        setText(item);
+                        setGraphic(null);
+                    }
+                    setStyle("-fx-alignment: CENTER-LEFT;");
+                }
+            }
+        });
 
         txnDateCol.setCellValueFactory(data -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. d, yyyy h:mm a");
@@ -1019,7 +1145,7 @@ public class ReportsController implements Initializable {
         txnActionsCol.setCellFactory(column -> new TableCell<Sale, Void>() {
             private final Button viewBtn = new Button("👁");
             private final Button editBtn = new Button("🔧");
-            private final Button deleteBtn = new Button("🗑");
+            private final Button voidBtn = new Button("⊘ Void");
             private final HBox buttons = new HBox(8);
 
             {
@@ -1058,11 +1184,19 @@ public class ReportsController implements Initializable {
                                 "-fx-border-radius: 6px; " +
                                 "-fx-cursor: hand;";
 
+                String voidStyle =
+                        "-fx-background-color: #F44336; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-font-size: 12px; " +
+                                "-fx-padding: 6px 12px; " +
+                                "-fx-background-radius: 6px; " +
+                                "-fx-cursor: hand;";
+
                 viewBtn.setStyle(viewStyle);
                 editBtn.setStyle(editStyle);
-                deleteBtn.setStyle(deleteStyle);
+                voidBtn.setStyle(voidStyle);
 
-                buttons.getChildren().addAll(viewBtn, editBtn, deleteBtn);
+                buttons.getChildren().addAll(viewBtn, editBtn, voidBtn);
             }
 
             @Override
@@ -1074,19 +1208,23 @@ public class ReportsController implements Initializable {
                 if (empty || sale == null) {
                     setGraphic(null);
                 } else {
+                    buttons.getChildren().clear();
+                    
+                    // Always show view button
                     viewBtn.setOnAction(e -> handleViewTransaction(sale));
-                    editBtn.setOnAction(e -> handleEditTransaction(sale));
-                    deleteBtn.setOnAction(e -> handleDeleteTransaction(sale));
+                    buttons.getChildren().add(viewBtn);
+                    
+                    // Only show edit and void buttons for non-voided transactions
+                    if (!sale.isVoided()) {
+                        editBtn.setOnAction(e -> handleEditTransaction(sale));
+                        voidBtn.setOnAction(e -> handleVoidTransaction(sale));
+                        buttons.getChildren().addAll(editBtn, voidBtn);
+                    }
 
                     setGraphic(buttons);
                 }
             }
         });
-    }
-
-    @FXML
-    private void handleRefreshTransactions() {
-        loadAllTransactions();
     }
 
     private void loadAllTransactions() {
@@ -1095,7 +1233,14 @@ public class ReportsController implements Initializable {
             LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
             LocalDateTime now = LocalDateTime.now();
 
-            List<Sale> transactions = salesService.getSalesBetweenDates(thirtyDaysAgo, now);
+            List<Sale> transactions;
+            if (showVoidedTransactions) {
+                // Show ALL including voided
+                transactions = salesService.getAllSalesBetweenDates(thirtyDaysAgo, now);
+            } else {
+                // Show only active (non-voided) transactions
+                transactions = salesService.getSalesBetweenDates(thirtyDaysAgo, now);
+            }
 
             // Sort by date descending (newest first)
             transactions.sort((a, b) -> b.getSaleDate().compareTo(a.getSaleDate()));
@@ -1103,12 +1248,20 @@ public class ReportsController implements Initializable {
             transactionsTable.setItems(FXCollections.observableArrayList(transactions));
 
             if (transactions.isEmpty()) {
-                transactionsTable.setPlaceholder(new Label("No transactions found in the last 30 days"));
+                String message = showVoidedTransactions ? 
+                    "No transactions found in the last 30 days" : 
+                    "No active transactions found in the last 30 days";
+                transactionsTable.setPlaceholder(new Label(message));
             }
         } catch (Exception e) {
             e.printStackTrace();
             showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to load transactions: " + e.getMessage());
         }
+    }
+    
+    public void toggleVoidedTransactions() {
+        showVoidedTransactions = !showVoidedTransactions;
+        loadAllTransactions();
     }
 
     private void handleViewTransaction(Sale sale) {
@@ -1721,6 +1874,134 @@ public class ReportsController implements Initializable {
         return (Boolean) dialogStage.getUserData();
     }
 
+    private void handleVoidTransaction(Sale sale) {
+        // Check if already voided
+        if (sale.getVoided() != null && sale.getVoided()) {
+            showStyledAlert(Alert.AlertType.WARNING, "Already Voided", 
+                "This transaction has already been voided.");
+            return;
+        }
+
+        // Check if transaction is from today
+        LocalDate saleDate = sale.getSaleDate().toLocalDate();
+        LocalDate today = LocalDate.now();
+        if (!saleDate.equals(today)) {
+            showStyledAlert(Alert.AlertType.WARNING, "Cannot Void", 
+                "Only transactions made today can be voided.\n" +
+                "Transaction date: " + saleDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+            return;
+        }
+
+        // Show reason dialog
+        String reason = showVoidReasonDialog();
+        
+        if (reason == null) {
+            return; // User cancelled
+        }
+
+        try {
+            salesService.voidTransaction(sale.getId(), reason);
+            showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                    "Transaction voided successfully!\nInventory has been restored.");
+            loadAllTransactions();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                    "Failed to void transaction: " + e.getMessage());
+        }
+    }
+
+    private String showVoidReasonDialog() {
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Void Transaction");
+        dialogStage.setResizable(false);
+
+        // Set logo
+        try {
+            javafx.scene.image.Image icon = new javafx.scene.image.Image(
+                getClass().getResourceAsStream("/icons/pharmatrack-icon.png"));
+            dialogStage.getIcons().add(icon);
+        } catch (Exception e) {
+            System.err.println("Failed to load dialog icon: " + e.getMessage());
+        }
+
+        VBox content = new VBox(20);
+        content.setStyle("-fx-padding: 30; -fx-background-color: white;");
+
+        Label titleLabel = new Label("Void Transaction");
+        titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        Label messageLabel = new Label("Please provide a reason for voiding this transaction:");
+        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+        messageLabel.setWrapText(true);
+
+        TextArea reasonArea = new TextArea();
+        reasonArea.setPromptText("Enter reason here...");
+        reasonArea.setPrefRowCount(4);
+        reasonArea.setPrefWidth(400);
+        reasonArea.setWrapText(true);
+        reasonArea.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1.5px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-padding: 10px; " +
+                "-fx-font-size: 13px;"
+        );
+
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancelBtn = new Button("Cancel");
+        cancelBtn.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-text-fill: #2c3e50; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 10px 25px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1.5px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+        cancelBtn.setOnAction(e -> {
+            dialogStage.setUserData(null);
+            dialogStage.close();
+        });
+
+        Button voidBtn = new Button("Void Transaction");
+        voidBtn.setStyle(
+                "-fx-background-color: #FF9800; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 10px 25px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+        voidBtn.setOnAction(e -> {
+            String reason = reasonArea.getText().trim();
+            if (reason.isEmpty()) {
+                showStyledAlert(Alert.AlertType.WARNING, "Reason Required", 
+                    "Please provide a reason for voiding this transaction.");
+                return;
+            }
+            dialogStage.setUserData(reason);
+            dialogStage.close();
+        });
+
+        buttonBox.getChildren().addAll(cancelBtn, voidBtn);
+        content.getChildren().addAll(titleLabel, messageLabel, reasonArea, buttonBox);
+
+        Scene scene = new Scene(content);
+        dialogStage.setScene(scene);
+        dialogStage.showAndWait();
+
+        return (String) dialogStage.getUserData();
+    }
+
     private void handleDeleteTransaction(Sale sale) {
         LocalDate today = LocalDate.now();
         LocalDate transactionDate = sale.getSaleDate().toLocalDate();
@@ -2032,7 +2313,7 @@ public class ReportsController implements Initializable {
                 .limit(5)
                 .collect(Collectors.toList());
 
-        com.itextpdf.layout.element.Paragraph topSellingTitle = new com.itextpdf.layout.element.Paragraph("Top Selling Medicines")
+        com.itextpdf.layout.element.Paragraph topSellingTitle = new com.itextpdf.layout.element.Paragraph("Top Selling Products")
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
                 .setFontSize(16)
                 .setFontColor(darkColor)
@@ -2043,7 +2324,7 @@ public class ReportsController implements Initializable {
         pdfTopSellingTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
 
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Rank"));
-        pdfTopSellingTable.addHeaderCell(createHeaderCell("Medicine"));
+        pdfTopSellingTable.addHeaderCell(createHeaderCell("Product"));
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Category"));
         pdfTopSellingTable.addHeaderCell(createHeaderCell("Quantity Sold"));
 
@@ -2065,7 +2346,7 @@ public class ReportsController implements Initializable {
         document.add(pdfTopSellingTable.setMarginBottom(30));
 
         // === EXPIRING MEDICINES ===
-        com.itextpdf.layout.element.Paragraph expiringTitle = new com.itextpdf.layout.element.Paragraph("Expiring Medicines (Next 30 Days)")
+        com.itextpdf.layout.element.Paragraph expiringTitle = new com.itextpdf.layout.element.Paragraph("Expired & Expiring Products")
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
                 .setFontSize(16)
                 .setFontColor(darkColor)
@@ -2076,22 +2357,52 @@ public class ReportsController implements Initializable {
         expiringTable.setWidth(com.itextpdf.layout.properties.UnitValue.createPercentValue(100));
 
         expiringTable.addHeaderCell(createHeaderCell("ID"));
-        expiringTable.addHeaderCell(createHeaderCell("Medicine"));
+        expiringTable.addHeaderCell(createHeaderCell("Product"));
         expiringTable.addHeaderCell(createHeaderCell("Expiration"));
         expiringTable.addHeaderCell(createHeaderCell("Days"));
         expiringTable.addHeaderCell(createHeaderCell("Stock"));
         expiringTable.addHeaderCell(createHeaderCell("Status"));
 
         for (Product product : expiringMedicinesTable.getItems()) {
-            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), product.getExpirationDate());
+            // Get earliest batch expiration date (same logic as the UI table)
+            List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+            
+            LocalDate expiryDate = null;
+            
+            if (!batches.isEmpty()) {
+                // Get earliest expiration date from batches
+                expiryDate = batches.stream()
+                        .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                        .filter(date -> date != null)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+            }
+            
+            // Fallback to product expiration date if no batches
+            if (expiryDate == null) {
+                expiryDate = product.getExpirationDate();
+            }
+            
+            // Skip products without expiration date
+            if (expiryDate == null) {
+                continue;
+            }
+            
+            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+            
+            // Include expired products (daysLeft < 0) and products expiring within 30 days
+            if (daysLeft > 30) {
+                continue;
+            }
+            
             String status = daysLeft < 0 ? "Expired" :
                     daysLeft <= 7 ? "Critical" :
                             daysLeft <= 30 ? "Warning" : "Good";
 
             expiringTable.addCell(createTableCell(product.getMedicineId()));
             expiringTable.addCell(createTableCell(product.getBrandName()));
-            expiringTable.addCell(createTableCell(product.getExpirationDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
-            expiringTable.addCell(createTableCell(String.valueOf(Math.max(0, daysLeft))));
+            expiringTable.addCell(createTableCell(expiryDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
+            expiringTable.addCell(createTableCell(daysLeft < 0 ? String.valueOf(Math.abs(daysLeft)) + " (ago)" : String.valueOf(daysLeft)));
             expiringTable.addCell(createTableCell(String.valueOf(product.getStock())));
             expiringTable.addCell(createTableCell(status));
         }

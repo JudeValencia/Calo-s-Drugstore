@@ -55,9 +55,8 @@ public class DashboardService {
                     ? lowStockCount + " items need restocking"
                     : "All items well stocked";
 
-            // Expiring medicines (within 30 days)
-            List<Product> expiringProducts = productService.getExpiringProducts();
-            long expiringCount = expiringProducts.size();
+            // Expiring medicines (within 30 days) - ✅ NOW CHECKS BATCHES
+            long expiringCount = productService.getExpiringBatchesCount(30);
             String expiringMessage = expiringCount > 0
                     ? expiringCount + " products expiring soon"
                     : "No products expiring soon";

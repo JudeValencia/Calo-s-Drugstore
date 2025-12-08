@@ -34,6 +34,9 @@ public class SaleItem {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "batch_info", columnDefinition = "TEXT")
+    private String batchInfo;  // JSON string storing batch deductions
+
     @Transient
     private Product product;
 
@@ -88,4 +91,7 @@ public class SaleItem {
 
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
+
+    public String getBatchInfo() { return batchInfo; }
+    public void setBatchInfo(String batchInfo) { this.batchInfo = batchInfo; }
 }

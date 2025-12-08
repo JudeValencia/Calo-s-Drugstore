@@ -3,6 +3,8 @@ package com.inventory.Calo.s_Drugstore.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -65,6 +67,9 @@ public class Product {
 
     @Column(name = "unit_of_measure")
     private String unitOfMeasure;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Batch> batches = new ArrayList<>();
 
     // Constructors
     public Product() {
@@ -271,8 +276,10 @@ public class Product {
 
     public boolean isExpiringSoon() {
         if (expirationDate == null) return false;
-        LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-        return expirationDate.isBefore(thirtyDaysFromNow);
+        LocalDate today = LocalDate.now();
+        LocalDate thirtyDaysFromNow = today.plusDays(30);
+        // Only include products expiring between today and 30 days from now (not already expired)
+        return !expirationDate.isBefore(today) && expirationDate.isBefore(thirtyDaysFromNow);
     }
 
     public boolean isExpired() {
@@ -301,5 +308,53 @@ public class Product {
                 ", price=" + price +
                 ", supplier='" + supplier + '\'' +
                 '}';
+    }
+
+    //BATCH SUPPORT
+    public List<Batch> getBatches() {
+        return batches;
+    }
+
+    public void setBatches(List<Batch> batches) {
+        this.batches = batches;
+    }
+
+    public void addBatch(Batch batch) {
+        batches.add(batch);
+        batch.setProduct(this);
+    }
+
+    public void removeBatch(Batch batch) {
+        batches.remove(batch);
+        batch.setProduct(null);
+    }
+
+    // Update the getStock() method to calculate total from all batches:
+    public Integer getTotalStock() {
+        if (batches == null || batches.isEmpty()) {
+            return stock != null ? stock : 0;
+        }
+        return batches.stream()
+                .mapToInt(Batch::getStock)
+                .sum();
+    }
+
+    // Get the earliest expiration date from all batches
+    public LocalDate getEarliestExpirationDate() {
+        if (batches == null || batches.isEmpty()) {
+            return expirationDate;
+        }
+        return batches.stream()
+                .map(Batch::getExpirationDate)
+                .filter(date -> date != null)
+                .min(LocalDate::compareTo)
+                .orElse(expirationDate);
+    }
+    public String getName() {
+        return brandName;
+    }
+
+    public void setName(String name) {
+        this.brandName = name;
     }
 }

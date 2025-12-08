@@ -32,8 +32,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.stock <= p.minStockLevel")
     List<Product> findLowStockProducts();
 
-    // Find expiring products (within specified days)
-    @Query("SELECT p FROM Product p WHERE p.expirationDate <= :date")
+    // Find expiring products (within specified days, not yet expired)
+    @Query("SELECT p FROM Product p WHERE p.expirationDate >= CURRENT_DATE AND p.expirationDate <= :date")
     List<Product> findExpiringProducts(@Param("date") LocalDate date);
 
     // Get all suppliers (distinct)
