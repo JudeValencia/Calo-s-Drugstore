@@ -701,13 +701,13 @@ public class ReportsController implements Initializable {
 
     private void loadExpiringMedicines() {
         try {
-            // ✅ NOW CHECKS BATCHES - gets products with expiring batches within 30 days
+            // ✅ NOW CHECKS BATCHES - gets products with expired or expiring batches within 30 days
             List<Product> expiringProducts = productService.getProductsWithExpiringBatches(30);
 
             expiringMedicinesTable.setItems(FXCollections.observableArrayList(expiringProducts));
 
             if (expiringProducts.isEmpty()) {
-                expiringMedicinesTable.setPlaceholder(new Label("No expiring medicines in the next 30 days"));
+                expiringMedicinesTable.setPlaceholder(new Label("No expired or expiring medicines"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -2346,7 +2346,7 @@ public class ReportsController implements Initializable {
         document.add(pdfTopSellingTable.setMarginBottom(30));
 
         // === EXPIRING MEDICINES ===
-        com.itextpdf.layout.element.Paragraph expiringTitle = new com.itextpdf.layout.element.Paragraph("Expiring Products (Next 30 Days)")
+        com.itextpdf.layout.element.Paragraph expiringTitle = new com.itextpdf.layout.element.Paragraph("Expired & Expiring Products")
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD))
                 .setFontSize(16)
                 .setFontColor(darkColor)
@@ -2390,8 +2390,8 @@ public class ReportsController implements Initializable {
             
             long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
             
-            // Only include products expiring within 30 days (not yet expired)
-            if (daysLeft < 0 || daysLeft > 30) {
+            // Include expired products (daysLeft < 0) and products expiring within 30 days
+            if (daysLeft > 30) {
                 continue;
             }
             
@@ -2402,7 +2402,7 @@ public class ReportsController implements Initializable {
             expiringTable.addCell(createTableCell(product.getMedicineId()));
             expiringTable.addCell(createTableCell(product.getBrandName()));
             expiringTable.addCell(createTableCell(expiryDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))));
-            expiringTable.addCell(createTableCell(String.valueOf(Math.max(0, daysLeft))));
+            expiringTable.addCell(createTableCell(daysLeft < 0 ? String.valueOf(Math.abs(daysLeft)) + " (ago)" : String.valueOf(daysLeft)));
             expiringTable.addCell(createTableCell(String.valueOf(product.getStock())));
             expiringTable.addCell(createTableCell(status));
         }

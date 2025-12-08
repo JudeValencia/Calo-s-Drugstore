@@ -464,11 +464,23 @@ public class ProductService {
         System.out.println("=== DEBUG: getProductsWithExpiringBatches ===");
         System.out.println("Checking from: " + today + " to " + endDate);
 
-        // 1. Get expiring batches (from today to future days)
-        List<Batch> expiringBatches = batchRepository.findExpiringBatches(today, endDate);
-        System.out.println("Found " + expiringBatches.size() + " expiring batches");
+        // 1. Get all batches (expired + expiring)
+        List<Batch> allBatches = batchRepository.findAll();
+        System.out.println("Total batches in database: " + allBatches.size());
 
-        List<Product> productsFromBatches = expiringBatches.stream()
+        // Filter for expired or expiring within the days range
+        List<Batch> relevantBatches = allBatches.stream()
+                .filter(batch -> {
+                    LocalDate expiryDate = batch.getExpirationDate();
+                    if (expiryDate == null) return false;
+                    long daysLeft = ChronoUnit.DAYS.between(today, expiryDate);
+                    // Include if expired (daysLeft < 0) OR expiring within days range
+                    return daysLeft <= days;
+                })
+                .toList();
+        System.out.println("Found " + relevantBatches.size() + " expired/expiring batches");
+
+        List<Product> productsFromBatches = relevantBatches.stream()
                 .map(batch -> {
                     Product product = batch.getProduct();
                     product.getBrandName(); // Initialize proxy
@@ -476,14 +488,6 @@ public class ProductService {
                     return product;
                 })
                 .distinct()
-                .filter(product -> {
-                    // Double-check: only include if earliest batch is actually expiring (not expired)
-                    LocalDate earliestExpiry = getEarliestExpiryDate(product);
-                    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), earliestExpiry);
-                    boolean include = daysLeft >= 0 && daysLeft <= days;
-                    System.out.println("  Product: " + product.getBrandName() + " - Earliest expiry: " + earliestExpiry + " - Days left: " + daysLeft + " - Include: " + include);
-                    return include;
-                })
                 .toList();
 
         System.out.println("Products from batches: " + productsFromBatches.size());
