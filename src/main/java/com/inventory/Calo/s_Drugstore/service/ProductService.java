@@ -232,6 +232,12 @@ public class ProductService {
     public Product saveProductWithBatch(Product product, Integer batchStock,
                                         LocalDate batchExpiry, BigDecimal batchPrice,
                                         String batchSupplier) {
+        // Now will Prevent adding expired medicine
+        if (batchExpiry != null && batchExpiry.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Cannot add expired medicine. Expiration date: " +
+                    batchExpiry + " has already passed.");
+        }
+
         Product targetProduct;
 
         // Check if this is an existing product (has an ID) or new product

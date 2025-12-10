@@ -2724,6 +2724,14 @@ private BatchRepository batchRepository;
 
             saveButton.setOnAction(e -> {
                 try {
+                    // Will now Prevent adding expired medicine
+                    if (expirationPicker.getValue() != null &&
+                            expirationPicker.getValue().isBefore(java.time.LocalDate.now())) {
+                        showStyledAlert(Alert.AlertType.ERROR, "Cannot Add Expired Medicine",
+                                "The expiration date " + expirationPicker.getValue() +
+                                        " has already passed. Please select a future date.");
+                        return; // Don't proceed
+                    }
                     // Validate all required fields
                     StringBuilder missingFields = new StringBuilder();
 
