@@ -47,6 +47,9 @@
                 <Button fx:id="reportsBtn" text="📈  Reports" styleClass="menu-item"
                         onAction="#handleReports"/>
 
+                <Button fx:id="staffBtn" text="👥  Staff" styleClass="menu-item"
+                        onAction="#handleStaff"/>
+
             </VBox>
 
             <Separator styleClass="sidebar-separator"/>

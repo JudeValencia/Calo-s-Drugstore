@@ -963,11 +963,6 @@
                 salesBtn.requestLayout();
                 reportsBtn.requestLayout();
                 staffBtn.requestLayout();
-
-                // ✅ FIX: Only refresh staffBtn if it exists
-                if (staffBtn != null) {
-                    staffBtn.requestLayout();
-                }
     
                 // Specifically refresh the dashboard button's graphic
                 if (dashboardBtn.getGraphic() != null) {
