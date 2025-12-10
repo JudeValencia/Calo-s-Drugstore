@@ -93,6 +93,7 @@
                 <VBox VBox.vgrow="ALWAYS">
                     <Label text="Reports &amp; Analytics" styleClass="page-title"/>
                     <Label text="Comprehensive insights into your pharmacy operations" styleClass="page-subtitle"/>
+                    <Button text="📄 Export Report" onAction="#handleExportReport" styleClass="period-toggle"/>
                 </VBox>
 <!--                <Button text="📥 Export Report" styleClass="export-button" onAction="#handleExportReport"/>-->
             </HBox>
@@ -104,8 +105,8 @@
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label text="📈" style="-fx-font-size: 24px;"/>
                             <VBox>
-                                <Label text="Sales Trends" styleClass="card-title"/>
-                                <Label text="Sales performance over different time periods" styleClass="card-subtitle"/>
+                                <Label text="Sales Trends" styleClass="filter-title"/>
+                                <Label text="Sales performance over different time periods" styleClass="filter-subtitle"/>
                             </VBox>
                             <Region HBox.hgrow="ALWAYS"/>
                             <ToggleButton text="Daily" toggleGroup="$timePeriodToggle" styleClass="period-toggle" selected="true" onAction="#handleDailyView"/>
@@ -116,12 +117,12 @@
                         <StackPane fx:id="salesChartContainer" prefHeight="350" style="-fx-padding: 20 0 0 0;"/>
                     </VBox>
 
-                    <!-- Top Selling Medicines -->
+                    <!-- Top Selling Products -->
                     <VBox styleClass="filter-card">
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label text="🛒" style="-fx-font-size: 24px;"/>
                             <VBox>
-                                <Label text="Top Selling Medicines" styleClass="filter-title"/>
+                                <Label text="Top Selling Products" styleClass="filter-title"/>
                                 <Label text="Most popular items this week" styleClass="filter-subtitle"/>
                             </VBox>
                         </HBox>
@@ -129,7 +130,7 @@
                         <TableView fx:id="topSellingTable" prefHeight="350" style="-fx-padding: 20 0 0 0;">
                             <columns>
                                 <TableColumn fx:id="rankCol" text="Rank" prefWidth="100"/>
-                                <TableColumn fx:id="topMedicineNameCol" text="Medicine" prefWidth="300"/>
+                                <TableColumn fx:id="topMedicineNameCol" text="Product" prefWidth="300"/>
                                 <TableColumn fx:id="categoryCol" text="Category" prefWidth="200"/>
                                 <TableColumn fx:id="quantitySoldCol" text="Quantity" prefWidth="150"/>
                             </columns>
@@ -139,21 +140,27 @@
                     <!-- Two Column Layout -->
                     <HBox spacing="25">
                         <!-- Sales by Category -->
-                        <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <VBox styleClass="filter-card" HBox.hgrow="ALWAYS">
                             <HBox alignment="CENTER_LEFT" spacing="15">
                                 <Label text="💰" style="-fx-font-size: 24px;"/>
                                 <VBox>
-                                    <Label text="Sales by Category" styleClass="card-title"/>
-                                    <Label text="Distribution of sales across medicine categories" styleClass="card-subtitle"/>
+                                    <Label text="Sales by Category" styleClass="filter-title"/>
+                                    <Label text="Distribution of sales across medicine categories" styleClass="filter-subtitle"/>
                                 </VBox>
                             </HBox>
-                            <StackPane fx:id="categoryChartContainer" prefHeight="300" style="-fx-padding: 20 0 0 0;"/>
+                            <VBox spacing="15">
+                                <HBox alignment="CENTER_LEFT" spacing="15" styleClass="table-row-cell">
+                                    <Label text="View Month:" styleClass="label" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                                    <ComboBox fx:id="monthSelectorCombo" prefWidth="200" promptText="Select Month" styleClass="filter-combo"/>
+                                </HBox>
+                                <StackPane fx:id="categoryChartContainer" VBox.vgrow="ALWAYS"/>
+                            </VBox>
                         </VBox>
 
                         <!-- Key Performance Indicators -->
                         <VBox styleClass="filter-card" prefWidth="400">
-                            <Label text="Key Performance Indicators" styleClass="card-title"/>
-                            <Label text="Important metrics for this month" styleClass="card-subtitle" style="-fx-padding: 0 0 15 0;"/>
+                            <Label text="Key Performance Indicators" styleClass="filter-title"/>
+                            <Label text="Important metrics for this month" styleClass="filter-subtitle" style="-fx-padding: 0 0 15 0;"/>
 
                             <VBox spacing="12">
                                 <HBox styleClass="kpi-card, revenue" alignment="CENTER_LEFT">
@@ -192,20 +199,43 @@
 
                     </HBox>
 
-                    <!-- Expiring Medicines Alert -->
+                    <!-- Transaction Management (Admin Only) -->
+                    <VBox styleClass="filter-card">
+                        <HBox alignment="CENTER_LEFT" spacing="15" style="-fx-padding: 0 0 15 0;">
+                            <Label text="📝" style="-fx-font-size: 24px;"/>
+                            <VBox>
+                                <Label text="Transaction Management" styleClass="filter-title"/>
+                                <Label text="View and manage all sales transactions" styleClass="filter-subtitle"/>
+                            </VBox>
+                            <Region HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <TableView fx:id="transactionsTable" prefHeight="400" styleClass="transactions-table">
+                        <columns>
+                            <TableColumn fx:id="txnIdCol" text="Transaction ID" prefWidth="120" styleClass="transactions-table"/>
+                            <TableColumn fx:id="txnDateCol" text="Date &amp; Time" prefWidth="200" styleClass="transactions-table"/>
+                            <TableColumn fx:id="txnItemsCol" text="Items" prefWidth="100" styleClass="transactions-table"/>
+                            <TableColumn fx:id="txnTotalCol" text="Total Amount" prefWidth="130" styleClass="transactions-table"/>
+                            <TableColumn fx:id="txnStaffCol" text="Staff" prefWidth="180" styleClass="transactions-table"/>
+                            <TableColumn fx:id="txnActionsCol" text="Actions" prefWidth="220" styleClass="transactions-table"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+
+                <!-- Expiring Medicines Alert -->
                     <VBox styleClass="filter-card">
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label text="⚠" style="-fx-font-size: 24px;"/>
                             <VBox>
-                                <Label text="Expiring Medicines Alert" styleClass="card-title"/>
-                                <Label text="Medicines expiring within 30 days or already expired" styleClass="card-subtitle"/>
+                                <Label text="Expiring Products Alert" styleClass="filter-title"/>
+                                <Label text="Products expiring within 30 days or already expired" styleClass="filter-subtitle"/>
                             </VBox>
                         </HBox>
 
                         <TableView fx:id="expiringMedicinesTable" styleClass="">
                             <columns>
-                                <TableColumn fx:id="medicineIdCol" text="Medicine ID" prefWidth="120"/>
-                                <TableColumn fx:id="medicineNameCol" text="Medicine Name" prefWidth="250"/>
+                                <TableColumn fx:id="medicineIdCol" text="Product ID" prefWidth="120"/>
+                                <TableColumn fx:id="medicineNameCol" text="Product Name" prefWidth="250"/>
                                 <TableColumn fx:id="expirationDateCol" text="Expiration Date" prefWidth="150"/>
                                 <TableColumn fx:id="daysLeftCol" text="Days Left" prefWidth="150"/>
                                 <TableColumn fx:id="stockCol" text="Stock" prefWidth="100"/>

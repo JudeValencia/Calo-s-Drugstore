@@ -1,9 +1,8 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
-import com.inventory.Calo.s_Drugstore.util.IconUtil;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -85,17 +84,10 @@ public class StaffController implements Initializable {
             userEmailLabel.setText(user.getEmail());
         }
     }
-
     private void setupStaffTable() {
-
-        // CRITICAL: Set fixed cell size to prevent cell recycling issues
-        staffTable.setFixedCellSize(70);
-
-        // Prevent table from losing items on scroll
-        //staffTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        // Ensure table maintains its items
-        staffTable.setEditable(true);
+        staffTable.setEditable(false);
+        staffTable.setItems(staffList);
+        //staffTable.setFixedCellSize(70);
 
         staffIdColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getUsername()));
@@ -106,19 +98,20 @@ public class StaffController implements Initializable {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
+                // Create graphics fresh each time
                 HBox container = new HBox(10);
                 container.setAlignment(Pos.CENTER_LEFT);
 
@@ -137,24 +130,29 @@ public class StaffController implements Initializable {
                 nameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
                 container.getChildren().addAll(avatar, nameLabel);
+
+                // CRITICAL: Set graphic and ensure it's managed
                 setGraphic(container);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
 
+        contactColumn.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getEmail()));
         contactColumn.setCellFactory(column -> new TableCell<User, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
@@ -175,25 +173,28 @@ public class StaffController implements Initializable {
                 usernameBox.getChildren().addAll(usernameIcon, usernameLabel);
 
                 container.getChildren().addAll(emailBox, usernameBox);
+
                 setGraphic(container);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
-        contactColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
+        roleColumn.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getRole()));
         roleColumn.setCellFactory(column -> new TableCell<User, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
@@ -230,24 +231,26 @@ public class StaffController implements Initializable {
 
                 container.getChildren().add(roleBadge);
                 setGraphic(container);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
-        roleColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
+        statusColumn.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().isActive() ? "Active" : "Inactive"));
         statusColumn.setCellFactory(column -> new TableCell<User, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                setText(null);
+
+                if (empty || item == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
                 User user = getTableRow() != null ? getTableRow().getItem() : null;
                 if (user == null) {
                     setGraphic(null);
-                    setText(null);
                     return;
                 }
 
@@ -276,12 +279,12 @@ public class StaffController implements Initializable {
                 }
 
                 setGraphic(statusBadge);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
-        statusColumn.setCellValueFactory(data -> new SimpleStringProperty(""));
 
         createdDateColumn.setCellValueFactory(data -> {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
             return new SimpleStringProperty(data.getValue().getCreatedAt().format(formatter));
         });
 
@@ -289,6 +292,8 @@ public class StaffController implements Initializable {
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
+                setText(null);
+
                 if (empty) {
                     setGraphic(null);
                     return;
@@ -303,7 +308,6 @@ public class StaffController implements Initializable {
                 HBox buttons = new HBox(10);
                 buttons.setAlignment(Pos.CENTER_LEFT);
 
-                // Edit button
                 Button editBtn = new Button("🔧");
                 editBtn.setStyle(
                         "-fx-background-color: white; " +
@@ -313,13 +317,12 @@ public class StaffController implements Initializable {
                                 "-fx-min-height: 40px; " +
                                 "-fx-background-radius: 6px; " +
                                 "-fx-border-color: #E0E0E0; " +
-                                "-fx-border-width: 1.5px; " +
+                                "-fx-border-width: 2px; " +
                                 "-fx-border-radius: 6px; " +
                                 "-fx-cursor: hand;"
                 );
                 editBtn.setOnAction(e -> handleEditStaff(user));
 
-                // Activate/Deactivate button
                 Button toggleBtn = new Button(user.isActive() ? "Deactivate" : "Activate");
                 if (user.isActive()) {
                     toggleBtn.setStyle(
@@ -350,7 +353,6 @@ public class StaffController implements Initializable {
 
                 buttons.getChildren().addAll(editBtn, toggleBtn);
 
-                // Only show delete button for non-admin users or if current user is different
                 if (!"ADMIN".equalsIgnoreCase(user.getRole()) ||
                         (currentUser != null && !currentUser.getId().equals(user.getId()))) {
                     Button deleteBtn = new Button("🗑");
@@ -362,7 +364,7 @@ public class StaffController implements Initializable {
                                     "-fx-min-height: 40px; " +
                                     "-fx-background-radius: 6px; " +
                                     "-fx-border-color: #FFCDD2; " +
-                                    "-fx-border-width: 1.5px; " +
+                                    "-fx-border-width: 2px; " +
                                     "-fx-border-radius: 6px; " +
                                     "-fx-cursor: hand;"
                     );
@@ -371,6 +373,7 @@ public class StaffController implements Initializable {
                 }
 
                 setGraphic(buttons);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             }
         });
     }
@@ -379,7 +382,7 @@ public class StaffController implements Initializable {
         List<User> users = userManagementService.getAllUsers();
         staffList.setAll(users);
         staffTable.setItems(staffList);
-
+        staffTable.refresh();
         if (users.isEmpty()) {
             staffTable.setPlaceholder(new Label("No staff accounts found"));
         }
@@ -484,7 +487,7 @@ public class StaffController implements Initializable {
         if (isEdit) nameField.setText(editUser.getFullName());
         nameBox.getChildren().addAll(nameLabel, nameField);
 
-        // Username
+        // Username - NOW EDITABLE
         VBox usernameBox = new VBox(8);
         Label usernameLabel = new Label("Username *");
         usernameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
@@ -493,7 +496,7 @@ public class StaffController implements Initializable {
         usernameField.setStyle(nameField.getStyle());
         if (isEdit) {
             usernameField.setText(editUser.getUsername());
-            usernameField.setDisable(true); // Cannot change username
+            // REMOVED: usernameField.setDisable(true); - Now username is editable!
         }
         usernameBox.getChildren().addAll(usernameLabel, usernameField);
 
@@ -507,17 +510,78 @@ public class StaffController implements Initializable {
         if (isEdit) emailField.setText(editUser.getEmail());
         emailBox.getChildren().addAll(emailLabel, emailField);
 
-        // Password (only for new users)
+        // Password - NOW SHOWN FOR BOTH CREATE AND EDIT
+        // Password field with show/hide toggle
         VBox passwordBox = new VBox(8);
-        if (!isEdit) {
-            Label passwordLabel = new Label("Password *");
-            passwordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
-            PasswordField passwordField = new PasswordField();
-            passwordField.setPromptText("Enter password (min 6 characters)");
-            passwordField.setStyle(nameField.getStyle());
-            passwordBox.getChildren().addAll(passwordLabel, passwordField);
-            passwordBox.setUserData(passwordField);
-        }
+        Label passwordLabel = new Label(isEdit ? "New Password (leave blank to keep current)" : "Password *");
+        passwordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+
+        HBox passwordInputBox = new HBox(10);
+        passwordInputBox.setAlignment(Pos.CENTER_LEFT);
+
+        // Create both TextField and PasswordField
+        TextField passwordTextField = new TextField();
+        PasswordField passwordField = new PasswordField();
+
+        // Style both the same way
+        String fieldStyle =
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 12px 15px;";
+
+        passwordTextField.setStyle(fieldStyle);
+        passwordField.setStyle(fieldStyle);
+        passwordTextField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
+        passwordField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
+
+        // Initially show PasswordField (hidden)
+        passwordTextField.setVisible(false);
+        passwordTextField.setManaged(false);
+
+        // Bind text properties so they stay in sync
+        passwordTextField.textProperty().bindBidirectional(passwordField.textProperty());
+
+        // Show/Hide button
+        Button toggleButton = new Button("👁");
+        toggleButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-font-size: 16px; " +
+                        "-fx-min-width: 45px; " +
+                        "-fx-min-height: 45px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        toggleButton.setOnAction(e -> {
+            if (passwordField.isVisible()) {
+                // Switch to visible (TextField)
+                passwordField.setVisible(false);
+                passwordField.setManaged(false);
+                passwordTextField.setVisible(true);
+                passwordTextField.setManaged(true);
+                toggleButton.setText("👁‍🗨");
+            } else {
+                // Switch to hidden (PasswordField)
+                passwordTextField.setVisible(false);
+                passwordTextField.setManaged(false);
+                passwordField.setVisible(true);
+                passwordField.setManaged(true);
+                toggleButton.setText("👁");
+            }
+        });
+
+        HBox.setHgrow(passwordField, Priority.ALWAYS);
+        HBox.setHgrow(passwordTextField, Priority.ALWAYS);
+
+        passwordInputBox.getChildren().addAll(passwordField, passwordTextField, toggleButton);
+        passwordBox.getChildren().addAll(passwordLabel, passwordInputBox);
 
         // Role
         VBox roleBox = new VBox(8);
@@ -563,6 +627,7 @@ public class StaffController implements Initializable {
             String name = nameField.getText().trim();
             String username = usernameField.getText().trim();
             String email = emailField.getText().trim();
+            String password = passwordField.getText().trim();
             String role = roleCombo.getValue();
 
             if (name.isEmpty() || email.isEmpty() || username.isEmpty()) {
@@ -573,8 +638,7 @@ public class StaffController implements Initializable {
 
             try {
                 if (!isEdit) {
-                    PasswordField passwordField = (PasswordField) passwordBox.getUserData();
-                    String password = passwordField != null ? passwordField.getText() : "";
+                    // CREATE NEW STAFF
                     if (password.isEmpty() || password.length() < 6) {
                         showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
                                 "Password must be at least 6 characters long.");
@@ -585,8 +649,33 @@ public class StaffController implements Initializable {
                     showStyledAlert(Alert.AlertType.INFORMATION, "Success",
                             "Staff account created successfully!");
                 } else {
+                    // UPDATE EXISTING STAFF
+                    // Check if username changed and validate it's not taken
+                    if (!username.equals(editUser.getUsername())) {
+                        // Username changed - need to update it
+                        boolean usernameUpdated = userManagementService.updateUsername(
+                                editUser.getId(), username);
+
+                        if (!usernameUpdated) {
+                            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                                    "Username already taken. Please choose a different username.");
+                            return;
+                        }
+                    }
+
+                    // Update user info (name, email, role)
                     User updatedUser = userManagementService.updateUserInfo(
                             editUser.getId(), name, email, role);
+
+                    // Update password if provided
+                    if (!password.isEmpty()) {
+                        if (password.length() < 6) {
+                            showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
+                                    "Password must be at least 6 characters long.");
+                            return;
+                        }
+                        userManagementService.resetPassword(editUser.getUsername(), password);
+                    }
 
                     if (updatedUser != null) {
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
@@ -609,16 +698,13 @@ public class StaffController implements Initializable {
 
         buttonBox.getChildren().addAll(cancelButton, saveButton);
 
-        mainContainer.getChildren().addAll(titleLabel, nameBox, usernameBox, emailBox);
-        if (!isEdit) mainContainer.getChildren().add(passwordBox);
-        mainContainer.getChildren().addAll(roleBox, buttonBox);
+        mainContainer.getChildren().addAll(titleLabel, nameBox, usernameBox, emailBox, passwordBox, roleBox, buttonBox);
 
         Scene scene = new Scene(mainContainer);
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
         dialogStage.showAndWait();
     }
-
     // Navigation methods
     private void setActiveButton(Button activeButton) {
         dashboardBtn.getStyleClass().remove("active");
@@ -627,9 +713,7 @@ public class StaffController implements Initializable {
         reportsBtn.getStyleClass().remove("active");
         staffBtn.getStyleClass().remove("active");
 
-        if (!activeButton.getStyleClass().contains("active")) {
-            activeButton.getStyleClass().add("active");
-        }
+        activeButton.getStyleClass().add("active");
     }
 
     @FXML
@@ -664,6 +748,7 @@ public class StaffController implements Initializable {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
         if (confirmed) {
             performLogout();

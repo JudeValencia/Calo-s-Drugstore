@@ -50,7 +50,7 @@ public class SalesService {
             Product product = productOpt.get();
 
             if (product.getStock() < item.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for " + product.getName() +
+                throw new RuntimeException("Insufficient stock for " + product.getBrandName() +
                         ". Available: " + product.getStock() + ", Requested: " + item.getQuantity());
             }
 
@@ -61,7 +61,7 @@ public class SalesService {
             // Create new sale item (don't reuse cart item)
             SaleItem saleItem = new SaleItem();
             saleItem.setMedicineId(product.getMedicineId());
-            saleItem.setMedicineName(product.getName());
+            saleItem.setMedicineName(product.getBrandName());
             saleItem.setQuantity(item.getQuantity());
             saleItem.setUnitPrice(item.getUnitPrice());
             saleItem.setSubtotal(item.getSubtotal());
@@ -131,4 +131,121 @@ public class SalesService {
     public List<Sale> getSalesBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
         return saleRepository.findByCreatedAtBetween(startDate, endDate);
     }
+
+    @Transactional
+    public Sale updateTransaction(Sale sale) {
+        // Validate sale has ID
+        if (sale.getId() == null) {
+            throw new RuntimeException("Cannot update transaction without ID");
+        }
+
+        // Recalculate totals based on items
+        BigDecimal newTotal = BigDecimal.ZERO;
+        int newTotalItems = 0;
+
+        for (SaleItem item : sale.getItems()) {
+            newTotal = newTotal.add(item.getSubtotal());
+            newTotalItems += item.getQuantity();
+        }
+
+        sale.setTotalAmount(newTotal);
+        sale.setTotalItems(newTotalItems);
+
+        // Update the sale (cascade will update items)
+        return saleRepository.save(sale);
+    }
+
+    @Transactional
+    public void deleteTransaction(Long saleId) {
+        Optional<Sale> saleOpt = saleRepository.findById(saleId);
+
+        if (!saleOpt.isPresent()) {
+            throw new RuntimeException("Transaction not found");
+        }
+
+        Sale sale = saleOpt.get();
+
+        // Restore inventory for all items
+        for (SaleItem item : sale.getItems()) {
+            // Find product by medicine ID
+            List<Product> allProducts = productService.getAllProducts();
+            Optional<Product> productOpt = allProducts.stream()
+                    .filter(p -> p.getMedicineId().equals(item.getMedicineId()))
+                    .findFirst();
+
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                // Restore stock
+                product.setStock(product.getStock() + item.getQuantity());
+                productService.updateProduct(product.getId(), product);
+
+                System.out.println("✅ Restored " + item.getQuantity() + " units of " +
+                        product.getBrandName() + " (New stock: " + product.getStock() + ")");
+            }
+        }
+
+        // Delete the sale
+        saleRepository.deleteById(saleId);
+        System.out.println("✅ Transaction " + sale.getTransactionId() + " deleted");
+
+    }
+
+    @Transactional
+    public Sale updateTransactionWithInventory(Sale sale, Map<String, Integer> originalQuantities) {
+        // First, restore inventory for all original quantities
+        for (Map.Entry<String, Integer> entry : originalQuantities.entrySet()) {
+            String medicineId = entry.getKey();
+            int originalQty = entry.getValue();
+
+            List<Product> allProducts = productService.getAllProducts();
+            Optional<Product> productOpt = allProducts.stream()
+                    .filter(p -> p.getMedicineId().equals(medicineId))
+                    .findFirst();
+
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                // Restore the original quantity
+                product.setStock(product.getStock() + originalQty);
+                productService.updateProduct(product.getId(), product);
+            }
+        }
+
+        // Then, deduct new quantities
+        for (SaleItem item : sale.getItems()) {
+            List<Product> allProducts = productService.getAllProducts();
+            Optional<Product> productOpt = allProducts.stream()
+                    .filter(p -> p.getMedicineId().equals(item.getMedicineId()))
+                    .findFirst();
+
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+
+                // Check if we have enough stock
+                if (product.getStock() < item.getQuantity()) {
+                    throw new RuntimeException("Insufficient stock for " + product.getBrandName() +
+                            ". Available: " + product.getStock() + ", Required: " + item.getQuantity());
+                }
+
+                // Deduct the new quantity
+                product.setStock(product.getStock() - item.getQuantity());
+                productService.updateProduct(product.getId(), product);
+            }
+        }
+
+        // Recalculate totals
+        BigDecimal newTotal = BigDecimal.ZERO;
+        int newTotalItems = 0;
+
+        for (SaleItem item : sale.getItems()) {
+            newTotal = newTotal.add(item.getSubtotal());
+            newTotalItems += item.getQuantity();
+        }
+
+        sale.setTotalAmount(newTotal);
+        sale.setTotalItems(newTotalItems);
+
+        // Update and return the sale
+        return saleRepository.save(sale);
+    }
+
 }

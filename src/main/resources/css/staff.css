@@ -102,10 +102,12 @@
 }
 
 /* Staff Table */
-.staff-table {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-table-cell-border-color: transparent;
+.staff-table .table-cell {
+    -fx-padding: 0 12px;
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER;
+    -fx-wrap-text: false;
 }
 
 .staff-table .column-header-background {
@@ -346,4 +348,33 @@
 .bulk-add-table .placeholder .label {
     -fx-text-fill: #95a5a6;
     -fx-font-size: 14px;
+}
+
+/* ==================== SCROLLBAR ==================== */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #cbd5e0;
+    -fx-background-radius: 4px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #a0aec0;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
 }

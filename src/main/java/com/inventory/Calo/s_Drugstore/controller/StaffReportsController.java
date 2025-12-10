@@ -1,7 +1,7 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.Sale;
-import com.inventory.Calo.s_Drugstore.entity.SaleItem;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.SalesService;
 import com.inventory.Calo.s_Drugstore.util.IconUtil;
@@ -606,6 +606,7 @@ public class StaffReportsController implements Initializable {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
         if (confirmed) {
             performLogout();

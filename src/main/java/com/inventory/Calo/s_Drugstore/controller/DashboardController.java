@@ -1,12 +1,12 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.DashboardService;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
-import com.inventory.Calo.s_Drugstore.util.IconUtil;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -14,7 +14,6 @@ import javafx.scene.chart.BarChart;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -25,8 +24,6 @@ import org.springframework.stereotype.Controller;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 
 @Controller
@@ -260,20 +257,6 @@ public class DashboardController {
         loadInventoryDistributionChart();
     }
 
-    private void setActiveButton(Button activeButton) {
-        // Remove active class from all buttons
-        dashboardBtn.getStyleClass().remove("active");
-        inventoryBtn.getStyleClass().remove("active");
-        salesBtn.getStyleClass().remove("active");
-        reportsBtn.getStyleClass().remove("active");
-        staffBtn.getStyleClass().remove("active");
-
-        // Add active class to clicked button
-        if (!activeButton.getStyleClass().contains("active")) {
-            activeButton.getStyleClass().add("active");
-        }
-    }
-
     @FXML
     private void handleDashboard() {
         setActiveButton(dashboardBtn);
@@ -308,6 +291,7 @@ public class DashboardController {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
 
         if (confirmed) {
@@ -315,192 +299,32 @@ public class DashboardController {
         }
     }
 
-    private void showCreateStaffDialog() {
-        // Create dialog
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Create Staff Account");
-        dialog.setHeaderText("Enter new staff member details");
+    // Replace the setActiveButton method in all controllers with this version:
+    private void setActiveButton(Button activeButton) {
+        // Remove active class from all buttons
+        dashboardBtn.getStyleClass().remove("active");
+        inventoryBtn.getStyleClass().remove("active");
+        salesBtn.getStyleClass().remove("active");
+        reportsBtn.getStyleClass().remove("active");
+        staffBtn.getStyleClass().remove("active");
 
-        // Create form grid
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
+        // Add active class to the selected button
+        activeButton.getStyleClass().add("active");
 
-        // Create input fields
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Username");
+        // Force JavaFX to refresh the buttons and their graphics
+        Platform.runLater(() -> {
+            dashboardBtn.requestLayout();
+            inventoryBtn.requestLayout();
+            salesBtn.requestLayout();
+            reportsBtn.requestLayout();
+            staffBtn.requestLayout();
 
-        TextField emailField = new TextField();
-        emailField.setPromptText("Email");
-
-        TextField fullNameField = new TextField();
-        fullNameField.setPromptText("Full Name");
-
-        PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Password");
-
-        PasswordField confirmPasswordField = new PasswordField();
-        confirmPasswordField.setPromptText("Confirm Password");
-
-        ComboBox<String> roleComboBox = new ComboBox<>();
-        roleComboBox.getItems().addAll("ADMIN", "MANAGER", "STAFF");
-        roleComboBox.setValue("STAFF");  // Default to STAFF role
-
-        // Add fields to grid
-        grid.add(new Label("Username:"), 0, 0);
-        grid.add(usernameField, 1, 0);
-        grid.add(new Label("Email:"), 0, 1);
-        grid.add(emailField, 1, 1);
-        grid.add(new Label("Full Name:"), 0, 2);
-        grid.add(fullNameField, 1, 2);
-        grid.add(new Label("Password:"), 0, 3);
-        grid.add(passwordField, 1, 3);
-        grid.add(new Label("Confirm Password:"), 0, 4);
-        grid.add(confirmPasswordField, 1, 4);
-        grid.add(new Label("Role:"), 0, 5);
-        grid.add(roleComboBox, 1, 5);
-
-        dialog.getDialogPane().setContent(grid);
-
-        // Add buttons
-        ButtonType createBtn = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(createBtn, ButtonType.CANCEL);
-
-        // Show dialog and wait for response
-        Optional<ButtonType> result = dialog.showAndWait();
-
-        // If user clicked Create, validate and create account
-        if (result.isPresent() && result.get() == createBtn) {
-            String username = usernameField.getText().trim();
-            String email = emailField.getText().trim();
-            String fullName = fullNameField.getText().trim();
-            String password = passwordField.getText();
-            String confirmPassword = confirmPasswordField.getText();
-            String role = roleComboBox.getValue();
-
-            // Validation
-            if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() ||
-                    password.isEmpty() || confirmPassword.isEmpty()) {
-                showError("All fields are required!");
-                return;
+            // Specifically refresh the dashboard button's graphic
+            if (dashboardBtn.getGraphic() != null) {
+                dashboardBtn.getGraphic().setVisible(false);
+                dashboardBtn.getGraphic().setVisible(true);
             }
-
-            if (!password.equals(confirmPassword)) {
-                showError("Passwords do not match!");
-                return;
-            }
-
-            if (password.length() < 6) {
-                showError("Password must be at least 6 characters!");
-                return;
-            }
-
-            // Try to create account
-            try {
-                userManagementService.createStaffAccount(username, email, password, fullName, role);
-                showSuccess("Staff account created successfully!\n\n" +
-                        "Username: " + username + "\n" +
-                        "Password: " + password + "\n\n" +
-                        "Please share these credentials with the staff member.");
-            } catch (Exception e) {
-                showError("Error creating account: " + e.getMessage());
-            }
-        }
-    }
-
-    private void showResetPasswordDialog() {
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Reset Staff Password");
-        dialog.setHeaderText("Enter username and new password");
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Username");
-
-        PasswordField newPasswordField = new PasswordField();
-        newPasswordField.setPromptText("New Password");
-
-        PasswordField confirmPasswordField = new PasswordField();
-        confirmPasswordField.setPromptText("Confirm Password");
-
-        grid.add(new Label("Username:"), 0, 0);
-        grid.add(usernameField, 1, 0);
-        grid.add(new Label("New Password:"), 0, 1);
-        grid.add(newPasswordField, 1, 1);
-        grid.add(new Label("Confirm Password:"), 0, 2);
-        grid.add(confirmPasswordField, 1, 2);
-
-        dialog.getDialogPane().setContent(grid);
-
-        ButtonType resetBtn = new ButtonType("Reset", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(resetBtn, ButtonType.CANCEL);
-
-        Optional<ButtonType> result = dialog.showAndWait();
-
-        if (result.isPresent() && result.get() == resetBtn) {
-            String username = usernameField.getText().trim();
-            String newPassword = newPasswordField.getText();
-            String confirmPassword = confirmPasswordField.getText();
-
-            // Validation
-            if (username.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-                showError("All fields are required!");
-                return;
-            }
-
-            if (!newPassword.equals(confirmPassword)) {
-                showError("Passwords do not match!");
-                return;
-            }
-
-            if (newPassword.length() < 6) {
-                showError("Password must be at least 6 characters!");
-                return;
-            }
-
-            // Try to reset password
-            try {
-                boolean success = userManagementService.resetPassword(username, newPassword);
-                if (success) {
-                    showSuccess("Password reset successfully!\n\n" +
-                            "Username: " + username + "\n" +
-                            "New Password: " + newPassword);
-                } else {
-                    showError("User not found!");
-                }
-            } catch (Exception e) {
-                showError("Error resetting password: " + e.getMessage());
-            }
-        }
-    }
-
-    private void showComingSoon(String moduleName) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Coming Soon");
-        alert.setHeaderText(moduleName);
-        alert.setContentText("This module is under development and will be available soon.");
-        alert.showAndWait();
-    }
-
-    private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText("An error occurred");
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showSuccess(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Success");
-        alert.setHeaderText("Operation Successful");
-        alert.setContentText(message);
-        alert.showAndWait();
+        });
     }
 
 

@@ -175,6 +175,56 @@
     -fx-padding: 4px 0 0 0;
 }
 
+/* Month Selector ComboBox */
+.filter-combo {
+    -fx-background-color: white;
+    -fx-background-radius: 6px;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 10px 15px;
+    -fx-font-size: 14px;
+    -fx-text-fill: #2c3e50;
+}
+
+.filter-combo:hover {
+    -fx-border-color: #4CAF50;
+}
+
+.filter-combo:focused {
+    -fx-border-color: #4CAF50;
+    -fx-background-color: #F8F9FA;
+}
+
+.filter-combo .list-cell {
+    -fx-background-color: white;
+    -fx-text-fill: #2c3e50;
+    -fx-padding: 8px 12px;
+}
+
+.filter-combo .list-cell:hover {
+    -fx-background-color: rgba(76, 175, 80, 0.1);
+}
+
+.filter-combo .list-cell:selected {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+/* Filter Label */
+.filter-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Filter Row Container */
+.filter-row {
+    -fx-padding: 15px 20px;
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+}
+
 /* ==================== TIME PERIOD TOGGLES ==================== */
 .period-toggle {
     -fx-background-color: #f8f9fa;
@@ -371,7 +421,8 @@
 
 .table-view .column-header {
     -fx-background-color: transparent;
-    -fx-border-width: 0;
+    -fx-border-width: 0 1px 0 0;
+    -fx-border-color: #E0E0E0;
 }
 
 .table-view .column-header .label {
@@ -389,7 +440,8 @@
 }
 
 .table-view .table-cell {
-    -fx-border-width: 0;
+    -fx-border-width: 0 1px 0 0;
+    -fx-border-color: #E0E0E0;;
     -fx-padding: 12px 8px;
     -fx-font-size: 13px;
     -fx-text-fill: #2c3e50;
@@ -507,3 +559,114 @@
     -fx-vgap: 20px;
 }
 
+/* Transaction Management Styles */
+.refresh-button {
+    -fx-background-color: white;
+    -fx-text-fill: #4CAF50;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 8px;
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 2px;
+    -fx-border-radius: 8px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 2);
+}
+
+.refresh-button:hover {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.refresh-button:pressed {
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* Transaction Table Styles */
+.transactions-table {
+    -fx-background-color: white;
+    -fx-border-color: transparent;
+    -fx-table-cell-border-color: #E8E8E8;
+}
+
+.transactions-table .column-header {
+    -fx-background-color: #F8F9FA;
+    -fx-text-fill: #2c3e50;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 15px 10px;
+    -fx-border-color: transparent transparent #E8E8E8 transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.transactions-table .column-header-background {
+    -fx-background-color: #F8F9FA;
+}
+
+.transactions-table .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #F0F0F0 transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 8px 0;
+}
+
+.transactions-table .table-row-cell:odd {
+    -fx-background-color: #FAFAFA;
+}
+
+.transactions-table .table-row-cell:selected {
+    -fx-background-color: #E8F5E9;
+    -fx-text-fill: #2c3e50;
+}
+
+.transactions-table .table-row-cell:hover {
+    -fx-background-color: #F5F5F5;
+}
+
+.transactions-table .table-cell {
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 13px;
+    -fx-padding: 10px 8px;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.transactions-table:focused .table-row-cell:focused {
+    -fx-background-color: #E8F5E9;
+    -fx-background-insets: 0;
+}
+
+/* Empty table placeholder */
+.transactions-table .placeholder .label {
+    -fx-text-fill: #95a5a6;
+    -fx-font-size: 14px;
+    -fx-font-style: italic;
+}
+
+/* Table Header Emphasis - Match Top Selling Medicines Style */
+.reports-root .table-view .column-header {
+    -fx-background-color: white;
+    -fx-text-fill: #2c3e50;  /* Dark navy blue */
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 12px 10px;
+    -fx-border-color: transparent transparent #E0E0E0 transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.reports-root .table-view .column-header .label {
+    -fx-text-fill: #2c3e50;  /* Dark navy blue */
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.reports-root .table-view .column-header-background {
+    -fx-background-color: white;
+}
+
+.reports-root .table-view .column-header-background .filler {
+    -fx-background-color: white;
+}

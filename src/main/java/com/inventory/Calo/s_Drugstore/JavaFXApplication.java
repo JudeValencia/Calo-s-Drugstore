@@ -11,6 +11,8 @@ import javafx.stage.Stage;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Objects;
+
 public class JavaFXApplication extends Application {
 
     private ConfigurableApplicationContext applicationContext;

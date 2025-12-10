@@ -1,5 +1,6 @@
 package com.inventory.Calo.s_Drugstore.controller;
 
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.Sale;
 import com.inventory.Calo.s_Drugstore.entity.SaleItem;
@@ -123,12 +124,13 @@ public class SalesController implements Initializable {
             }
         }
     }
+
     private void setupMedicineCombo() {
         medicineCombo.setCellFactory(lv -> new ListCell<Product>() {
             @Override
             protected void updateItem(Product item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName() + " - ₱" + item.getPrice());
+                setText(empty || item == null ? null : item.getBrandName() + " - ₱" + item.getPrice());
             }
         });
 
@@ -136,7 +138,7 @@ public class SalesController implements Initializable {
             @Override
             protected void updateItem(Product item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName());
+                setText(empty || item == null ? null : item.getBrandName());
             }
         });
     }
@@ -150,7 +152,7 @@ public class SalesController implements Initializable {
             } else {
                 String searchText = newVal.toLowerCase();
                 ObservableList<Product> filtered = allProducts.filtered(product ->
-                        product.getName().toLowerCase().contains(searchText) ||
+                        product.getBrandName().toLowerCase().contains(searchText) ||
                                 product.getMedicineId().toLowerCase().contains(searchText) ||
                                 product.getCategory().toLowerCase().contains(searchText) ||
                                 product.getSupplier().toLowerCase().contains(searchText)
@@ -243,7 +245,7 @@ public class SalesController implements Initializable {
                 new SimpleStringProperty("₱" + String.format("%.2f", data.getValue().getTotalAmount())));
 
         dateTimeColumn.setCellValueFactory(data -> {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy, h:mm a");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy, h:mm a");
             return new SimpleStringProperty(data.getValue().getSaleDate().format(formatter));
         });
 
@@ -318,7 +320,7 @@ public class SalesController implements Initializable {
     private void handleAddToCart() {
         Product selectedProduct = medicineCombo.getValue();
         if (selectedProduct == null) {
-            showStyledAlert(Alert.AlertType.WARNING, "No Medicine Selected", "Please select a medicine to add to cart.");
+            showStyledAlert(Alert.AlertType.WARNING, "No Product Selected", "Please select a medicine to add to cart.");
             return;
         }
 
@@ -332,6 +334,15 @@ public class SalesController implements Initializable {
             int quantity = Integer.parseInt(qtyText);
             if (quantity <= 0) {
                 showStyledAlert(Alert.AlertType.WARNING, "Invalid Quantity", "Quantity must be greater than 0.");
+                return;
+            }
+
+            if (selectedProduct.getExpirationDate() != null &&
+                    selectedProduct.getExpirationDate().isBefore(java.time.LocalDate.now())) {
+                showStyledAlert(Alert.AlertType.ERROR, "Expired Product",
+                        selectedProduct.getBrandName() + " has expired on " +
+                                selectedProduct.getExpirationDate().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy")) +
+                                " and cannot be sold.");
                 return;
             }
 
@@ -375,7 +386,7 @@ public class SalesController implements Initializable {
         Stage dialogStage = new Stage();
         IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setTitle("Bulk Add Medicines");
+        dialogStage.setTitle("Bulk Add Products");
         dialogStage.setResizable(true);
         dialogStage.setWidth(900);
         dialogStage.setHeight(700);
@@ -383,17 +394,17 @@ public class SalesController implements Initializable {
         VBox mainContainer = new VBox(20);
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
 
-        Label titleLabel = new Label("Add Multiple Medicines");
+        Label titleLabel = new Label("Add Multiple Products");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-        Label subtitle = new Label("Search and select medicines to add to cart");
+        Label subtitle = new Label("Search and select products to add to cart");
         subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
 
         // ==================== SEARCH SECTION ====================
         VBox searchSection = new VBox(12);
         searchSection.setStyle("-fx-background-color: #F8F9FA; -fx-padding: 20; -fx-background-radius: 10px;");
 
-        Label searchLabel = new Label("🔍 Search and Add Medicine");
+        Label searchLabel = new Label("🔍 Search and Add Product");
         searchLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
         HBox searchRow = new HBox(15);
@@ -401,7 +412,7 @@ public class SalesController implements Initializable {
 
         // Search TextField
         TextField searchField = new TextField();
-        searchField.setPromptText("Type medicine name, ID, category, or supplier...");
+        searchField.setPromptText("Type product name, ID, category, or supplier...");
         searchField.setPrefWidth(400);
         searchField.setStyle(
                 "-fx-background-color: white; " +
@@ -415,7 +426,7 @@ public class SalesController implements Initializable {
 
         // ComboBox for filtered results
         ComboBox<Product> productCombo = new ComboBox<>();
-        productCombo.setPromptText("Select medicine");
+        productCombo.setPromptText("Select product");
         productCombo.setPrefWidth(350);
         productCombo.setItems(allProducts);
         productCombo.setStyle(
@@ -436,7 +447,7 @@ public class SalesController implements Initializable {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(item.getName() + " - ₱" + String.format("%.2f", item.getPrice()) +
+                    setText(item.getBrandName() + " - ₱" + String.format("%.2f", item.getPrice()) +
                             " (Stock: " + item.getStock() + ")");
                 }
             }
@@ -446,7 +457,7 @@ public class SalesController implements Initializable {
             @Override
             protected void updateItem(Product item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName());
+                setText(empty || item == null ? null : item.getBrandName());
             }
         });
 
@@ -485,22 +496,22 @@ public class SalesController implements Initializable {
         searchSection.getChildren().addAll(searchLabel, searchRow, addControlsRow);
 
         // ==================== SELECTED ITEMS TABLE ====================
-        Label selectedLabel = new Label("Selected Medicines (0)");
+        Label selectedLabel = new Label("Selected Products (0)");
         selectedLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
         TableView<BulkAddItem> bulkTable = new TableView<>();
         bulkTable.getStyleClass().add("bulk-add-table");
-        bulkTable.setPlaceholder(new Label("No medicines added yet. Search and add items above."));
+        bulkTable.setPlaceholder(new Label("No products added yet. Search and add items above."));
 
         bulkTable.setFixedCellSize(50);
         bulkTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
 
-        TableColumn<BulkAddItem, String> medicineCol = new TableColumn<>("Medicine");
+        TableColumn<BulkAddItem, String> medicineCol = new TableColumn<>("Product");
         medicineCol.setMinWidth(220);
         medicineCol.setMaxWidth(220);
         medicineCol.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getProduct() != null ?
-                        data.getValue().getProduct().getName() : ""));
+                        data.getValue().getProduct().getBrandName() : ""));
 
         TableColumn<BulkAddItem, Integer> quantityCol = new TableColumn<>("Quantity");
         quantityCol.setMinWidth(150);
@@ -656,7 +667,7 @@ public class SalesController implements Initializable {
                     BulkAddItem item = getTableRow().getItem();
                     if (item != null) {
                         bulkTable.getItems().remove(item);
-                        selectedLabel.setText("Selected Medicines (" + bulkTable.getItems().size() + ")");
+                        selectedLabel.setText("Selected Products (" + bulkTable.getItems().size() + ")");
                     }
                 });
             }
@@ -680,7 +691,7 @@ public class SalesController implements Initializable {
             } else {
                 String searchText = newVal.toLowerCase();
                 ObservableList<Product> filtered = allProducts.filtered(product ->
-                        product.getName().toLowerCase().contains(searchText) ||
+                        product.getBrandName().toLowerCase().contains(searchText) ||
                                 product.getMedicineId().toLowerCase().contains(searchText) ||
                                 product.getCategory().toLowerCase().contains(searchText) ||
                                 product.getSupplier().toLowerCase().contains(searchText)
@@ -737,8 +748,8 @@ public class SalesController implements Initializable {
         addToListBtn.setOnAction(e -> {
             Product selected = productCombo.getValue();
             if (selected == null) {
-                showStyledAlert(Alert.AlertType.WARNING, "No Medicine Selected",
-                        "Please select a medicine from the dropdown.");
+                showStyledAlert(Alert.AlertType.WARNING, "No Products Selected",
+                        "Please select a product from the dropdown.");
                 return;
             }
 
@@ -756,19 +767,26 @@ public class SalesController implements Initializable {
                     return;
                 }
 
+                // Check if medicine is expired
+                if (selected.getExpirationDate() != null &&
+                        selected.getExpirationDate().isBefore(java.time.LocalDate.now())) {
+                    showStyledAlert(Alert.AlertType.ERROR, "Expired Products",
+                            selected.getBrandName() + " has expired and cannot be sold.");
+                    return;
+                }
                 // Check if already in list
                 boolean alreadyAdded = bulkItems.stream()
                         .anyMatch(item -> item.getProduct().getId().equals(selected.getId()));
 
                 if (alreadyAdded) {
                     showStyledAlert(Alert.AlertType.WARNING, "Already Added",
-                            selected.getName() + " is already in your list.");
+                            selected.getBrandName() + " is already in your list.");
                     return;
                 }
 
                 // Add to list
                 bulkItems.add(new BulkAddItem(selected, qty));
-                selectedLabel.setText("Selected Medicines (" + bulkItems.size() + ")");
+                selectedLabel.setText("Selected Products (" + bulkItems.size() + ")");
 
                 // Reset fields
                 productCombo.setValue(null);
@@ -813,7 +831,7 @@ public class SalesController implements Initializable {
 
         addAllBtn.setOnAction(e -> {
             if (bulkItems.isEmpty()) {
-                showStyledAlert(Alert.AlertType.WARNING, "No Items", "Please add at least one medicine.");
+                showStyledAlert(Alert.AlertType.WARNING, "No Items", "Please add at least one product.");
                 return;
             }
 
@@ -923,27 +941,6 @@ public class SalesController implements Initializable {
         showStyledAlert(Alert.AlertType.INFORMATION, "Download", "Download receipt for " + sale.getTransactionId());
     }
 
-//    // Navigation methods
-//    private void setActiveButton(Button activeBtn) {
-//        // Remove active class from all buttons
-//        dashboardBtn.getStyleClass().remove("active");
-//        inventoryBtn.getStyleClass().remove("active");
-//        salesBtn.getStyleClass().remove("active");
-//        reportsBtn.getStyleClass().remove("active");
-//
-//        // Only remove active from staffBtn if it exists (admin view has it, staff view doesn't)
-//        if (staffBtn != null) {
-//            staffBtn.getStyleClass().remove("active");
-//        }
-//
-//        // Add active class to the clicked button
-//        if (activeBtn != null) {
-//            activeBtn.getStyleClass().add("active");
-//        }
-//    }
-
-    // Replace the setActiveButton method in all controllers with this version:
-
     private void setActiveButton(Button activeButton) {
         // Remove active class from all buttons
         dashboardBtn.getStyleClass().remove("active");
@@ -1011,7 +1008,6 @@ public class SalesController implements Initializable {
         // Already on sales page
     }
 
-
     @FXML
     private void handleReports() {
         setActiveButton(reportsBtn);
@@ -1026,7 +1022,6 @@ public class SalesController implements Initializable {
         }
     }
 
-
     @FXML
     private void handleStaff() {
         setActiveButton(staffBtn);
@@ -1035,6 +1030,7 @@ public class SalesController implements Initializable {
 
     @FXML
     private void handleLogout() {
+        setActiveButton(logoutBtn);
         boolean confirmed = showLogoutConfirmation();
 
         if (confirmed) {
@@ -1311,23 +1307,6 @@ public class SalesController implements Initializable {
         }
     }
 
-//    private void showStyledAlert(Alert.AlertType type, String title, String message) {
-//        Alert alert = new Alert(type);
-//        alert.setTitle(title);
-//        alert.setHeaderText(null);
-//        alert.setContentText(message);
-//        alert.showAndWait();
-//    }
-
-//    private boolean showConfirmation(String title, String message) {
-//        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-//        alert.setTitle(title);
-//        alert.setHeaderText(null);
-//        alert.setContentText(message);
-//        Optional<ButtonType> result = alert.showAndWait();
-//        return result.isPresent() && result.get() == ButtonType.OK;
-//    }
-
     private void showStyledAlert(Alert.AlertType type, String title, String message) {
         // Create custom dialog
         Stage dialogStage = new Stage();
@@ -1490,12 +1469,16 @@ public class SalesController implements Initializable {
         IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.setTitle("Transaction Details");
-        dialogStage.setResizable(false);
+        dialogStage.setResizable(true);  // Changed to true for better UX
+        dialogStage.setMinWidth(650);
+        dialogStage.setMinHeight(400);
 
         VBox mainContainer = new VBox(20);
         mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
-        mainContainer.setPrefWidth(600);
+        mainContainer.setPrefWidth(650);
+        mainContainer.setMaxWidth(650);
 
+        // Header
         HBox headerBox = new HBox(15);
         headerBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -1515,9 +1498,11 @@ public class SalesController implements Initializable {
 
         Separator separator1 = new Separator();
 
+        // Items Title
         Label itemsTitle = new Label("Items Purchased:");
         itemsTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
+        // Scrollable Items List
         VBox itemsList = new VBox(12);
         itemsList.setStyle("-fx-background-color: #F8F9FA; -fx-padding: 15; -fx-background-radius: 8px;");
 
@@ -1529,6 +1514,7 @@ public class SalesController implements Initializable {
 
             Label itemName = new Label(item.getMedicineName());
             itemName.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+            itemName.setWrapText(true);
             HBox.setHgrow(itemName, Priority.ALWAYS);
 
             Label itemTotal = new Label("₱" + String.format("%.2f", item.getSubtotal()));
@@ -1544,8 +1530,24 @@ public class SalesController implements Initializable {
             itemsList.getChildren().add(itemBox);
         }
 
+        // Wrap items list in ScrollPane
+        ScrollPane scrollPane = new ScrollPane(itemsList);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setPrefHeight(300);
+        scrollPane.setMaxHeight(400);
+        scrollPane.setStyle(
+                "-fx-background-color: transparent; " +
+                        "-fx-background: transparent; " +
+                        "-fx-border-color: transparent;"
+        );
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
         Separator separator2 = new Separator();
 
+        // Total
         HBox totalRow = new HBox();
         totalRow.setAlignment(Pos.CENTER_LEFT);
         totalRow.setStyle("-fx-background-color: #E8F5E9; -fx-padding: 15; -fx-background-radius: 8px;");
@@ -1558,6 +1560,7 @@ public class SalesController implements Initializable {
         totalAmount.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #4CAF50;");
         totalRow.getChildren().addAll(totalLabel, totalAmount);
 
+        // Button
         HBox buttonBox = new HBox(15);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
@@ -1574,7 +1577,15 @@ public class SalesController implements Initializable {
         closeButton.setOnAction(e -> dialogStage.close());
         buttonBox.getChildren().add(closeButton);
 
-        mainContainer.getChildren().addAll(headerBox, separator1, itemsTitle, itemsList, separator2, totalRow, buttonBox);
+        mainContainer.getChildren().addAll(
+                headerBox,
+                separator1,
+                itemsTitle,
+                scrollPane,  // Using scrollPane instead of itemsList directly
+                separator2,
+                totalRow,
+                buttonBox
+        );
 
         Scene scene = new Scene(mainContainer);
         dialogStage.setScene(scene);
