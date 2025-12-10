@@ -78,6 +78,7 @@
         @FXML private Button salesBtn;
         @FXML private Button reportsBtn;
         @FXML private Button staffBtn;
+        @FXML private Button productsBtn;
         @FXML private Button logoutBtn;
     
         // User info labels
@@ -1024,6 +1025,12 @@
         private void handleStaff() {
             setActiveButton(staffBtn);
             navigateToPage("/fxml/staff.fxml", "/css/staff.css");
+        }
+
+        @FXML
+        private void handleProducts() {
+            setActiveButton(productsBtn);
+            navigateToPage("/fxml/product-management.fxml", "/css/inventory.css");
         }
     
         @FXML

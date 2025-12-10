@@ -251,7 +251,7 @@ public class LoginController {
 //            String fxmlPath = "/fxml/product-management.fxml";
 //            String cssPath = "/css/inventory.css";
 //
-//          // TODO: Restore original dashboard redirect after testing
+            // TODO: Restore original dashboard redirect after testing
 
             String fxmlPath;
             String cssPath;

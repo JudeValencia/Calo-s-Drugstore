@@ -183,7 +183,7 @@ public class ProductManagementController implements Initializable {
 
             {
                 // Edit button
-                editBtn.setText("✏");
+                editBtn.setText("🔧");
                 editBtn.setStyle(
                         "-fx-background-color: white; " +
                         "-fx-text-fill: #2196F3; " +

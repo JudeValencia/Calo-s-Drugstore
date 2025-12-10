@@ -55,6 +55,7 @@ public class StaffController implements Initializable {
 
     // Sidebar buttons
     @FXML private Button dashboardBtn;
+    @FXML private Button productsBtn;
     @FXML private Button inventoryBtn;
     @FXML private Button salesBtn;
     @FXML private Button reportsBtn;
@@ -1137,6 +1138,12 @@ public class StaffController implements Initializable {
         setActiveButton(dashboardBtn);
         navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
     }
+    @FXML
+    private void handleProducts() {
+        setActiveButton(productsBtn);
+        navigateToPage("/fxml/product-management.fxml", "/css/inventory.css");
+    }
+
 
     @FXML
     private void handleInventory() {
@@ -1255,6 +1262,9 @@ public class StaffController implements Initializable {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("reports")) {
                 ReportsController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("product-management")) {
+                ProductManagementController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
             }
 

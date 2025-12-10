@@ -56,6 +56,7 @@ public class ReportsController implements Initializable {
 
     // FXML Components
     @FXML private Button dashboardBtn;
+    @FXML private Button productsBtn;
     @FXML private Button inventoryBtn;
     @FXML private Button salesBtn;
     @FXML private Button reportsBtn;
@@ -722,6 +723,12 @@ public class ReportsController implements Initializable {
     }
 
     @FXML
+    private void handleProducts() {
+        setActiveButton(productsBtn);
+        navigateToPage("/fxml/dashboard.fxml", "/css/dashboard.css");
+    }
+
+    @FXML
     private void handleInventory() {
         setActiveButton(inventoryBtn);
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
@@ -994,6 +1001,9 @@ public class ReportsController implements Initializable {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("staff")) {
                 StaffController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("product-management")) {
+                ProductManagementController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
             }
 
