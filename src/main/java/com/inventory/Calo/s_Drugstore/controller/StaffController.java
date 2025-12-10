@@ -833,8 +833,12 @@ public class StaffController implements Initializable {
                         "-fx-border-width: 1px; " +
                         "-fx-border-radius: 8px; " +
                         "-fx-padding: 12px 15px; " +
-                        "-fx-font-size: 14px;"
+                        "-fx-font-size: 14px;" +
+                        "-fx-text-fill: black;" +
+                        "-fx-prompt-text-fill: #7f8c8d;"
         );
+        dobPicker.getEditor().setStyle("-fx-text-fill: black;");
+        dobPicker.getStyleClass().add("custom-datepicker");
 
         // Set custom date format (MMM. dd, yyyy)
         dobPicker.setConverter(new javafx.util.StringConverter<LocalDate>() {
@@ -1126,7 +1130,6 @@ public class StaffController implements Initializable {
 
         Scene scene = new Scene(mainContainer);
 
-
         String scrollBarStyle =
                 ".scroll-pane {" +
                         "    -fx-background-color: transparent;" +
@@ -1151,7 +1154,25 @@ public class StaffController implements Initializable {
                         "    -fx-padding: 0;" +
                         "}";
 
+        // Apply scrollbar style
         scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+
+        // DatePicker calendar popup CSS
+        String datePickerCalendarCSS =
+                ".date-picker-popup .month-year-pane .label {" +
+                        "    -fx-text-fill: black !important;" +
+                        "    -fx-font-weight: bold;" +
+                        "}" +
+                        ".date-picker-popup .calendar-grid {" +
+                        "    -fx-background-color: white;" +
+                        "}" +
+                        ".date-picker-popup .day-name-cell," +
+                        ".date-picker-popup .date-cell {" +
+                        "    -fx-text-fill: black;" +
+                        "}";
+
+        // Apply date picker calendar style
+        scene.getStylesheets().add("data:text/css," + datePickerCalendarCSS);
 
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
