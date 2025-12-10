@@ -247,15 +247,22 @@ public class LoginController {
 
     private void loadDashboard(User user) {
         try {
-            // Determine which dashboard to load based on role
-            String fxmlPath;
-            String cssPath = "/css/dashboard.css";
+//            // TEMPORARY: Redirect to Product Management for testing
+//            String fxmlPath = "/fxml/product-management.fxml";
+//            String cssPath = "/css/inventory.css";
+//
+//          // TODO: Restore original dashboard redirect after testing
 
-            if (user.getRole().equalsIgnoreCase("ADMIN")) {
-                fxmlPath = "/fxml/dashboard.fxml";
-            } else {
-                fxmlPath = "/fxml/staff-dashboard.fxml";
-            }
+            String fxmlPath;
+            String cssPath;
+
+             if (user.getRole().equalsIgnoreCase("ADMIN")) {
+                 fxmlPath = "/fxml/dashboard.fxml";
+                 cssPath = "/css/dashboard.css";
+             } else {
+                 fxmlPath = "/fxml/staff-dashboard.fxml";
+                 cssPath = "/css/dashboard.css";
+             }
 
             // Load the appropriate FXML
             java.net.URL dashboardUrl = getClass().getResource(fxmlPath);
@@ -268,19 +275,26 @@ public class LoginController {
             loader.setControllerFactory(springContext::getBean);
             Parent root = loader.load();
 
-            // Set current user based on role
-            if (user.getRole().equalsIgnoreCase("ADMIN")) {
-                DashboardController dashboardController = loader.getController();
-                if (dashboardController != null) {
-                    dashboardController.setCurrentUser(user);
-                    dashboardController.refreshDashboard();
-                }
-            } else {
-                StaffDashboardController staffDashboardController = loader.getController();
-                if (staffDashboardController != null) {
-                    staffDashboardController.setCurrentUser(user);
-                }
-            }
+//            // TEMPORARY: Set current user for Product Management Controller
+//            ProductManagementController productManagementController = loader.getController();
+//            if (productManagementController != null) {
+//                productManagementController.setCurrentUser(user);
+//            }
+
+//             TODO: Restore original controller assignment after testing
+//             Original code:
+             if (user.getRole().equalsIgnoreCase("ADMIN")) {
+                 DashboardController dashboardController = loader.getController();
+                 if (dashboardController != null) {
+                     dashboardController.setCurrentUser(user);
+                     dashboardController.refreshDashboard();
+                 }
+             } else {
+                 StaffDashboardController staffDashboardController = loader.getController();
+                 if (staffDashboardController != null) {
+                     staffDashboardController.setCurrentUser(user);
+                 }
+             }
 
             Stage stage = (Stage) signInButton.getScene().getWindow();
 

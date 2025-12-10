@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.ProductManagementController"
+            styleClass="inventory-root">
+
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
+            <padding>
+                <Insets top="20" bottom="20"/>
+            </padding>
+
+            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="15">
+                <padding>
+                    <Insets top="10" right="20" bottom="10" left="20"/>
+                </padding>
+
+                <StackPane styleClass="sidebar-logo">
+                    <Label text="💊" styleClass="sidebar-logo-icon"/>
+                </StackPane>
+                <Label text="PharmaTrack" styleClass="sidebar-title"/>
+            </HBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox spacing="5" styleClass="sidebar-menu" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Button fx:id="dashboardBtn" text="📊  Dashboard" styleClass="menu-item"
+                        onAction="#handleDashboard"/>
+
+                <Button fx:id="productsBtn" text="💊  Products" styleClass="menu-item"
+                        onAction="#handleProducts"/>
+
+                <Button fx:id="inventoryBtn" text="📦  Inventory" styleClass="menu-item"
+                        onAction="#handleInventory"/>
+
+                <Button fx:id="salesBtn" text="🛒  Sales" styleClass="menu-item"
+                        onAction="#handleSales"/>
+
+                <Button fx:id="staffBtn" text="👥  Staff" styleClass="menu-item"
+                        onAction="#handleStaff"/>
+
+                <Button fx:id="reportsBtn" text="📈  Reports" styleClass="menu-item"
+                        onAction="#handleReports"/>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <VBox styleClass="sidebar-user" spacing="5">
+                <padding>
+                    <Insets top="15" right="20" bottom="15" left="20"/>
+                </padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <StackPane styleClass="user-avatar">
+                        <Label text="👤" styleClass="user-avatar-icon"/>
+                    </StackPane>
+                    <VBox spacing="2">
+                        <Label fx:id="userNameLabel" text="Admin User" styleClass="user-name"/>
+                        <Label fx:id="userEmailLabel" text="admin@pharmatrack.com" styleClass="user-email"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <Separator styleClass="sidebar-separator"/>
+
+            <Button fx:id="logoutBtn" text="Logout" styleClass="logout-btn"
+                    onAction="#handleLogout">
+                <graphic>
+                    <Label text="🚪" styleClass="menu-icon"/>
+                </graphic>
+            </Button>
+
+        </VBox>
+    </left>
+
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+            <VBox spacing="25" styleClass="main-content">
+                <padding>
+                    <Insets top="30" right="30" bottom="30" left="30"/>
+                </padding>
+
+                <!-- Header -->
+                <HBox alignment="CENTER_LEFT" spacing="20">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Product Management" styleClass="page-header"/>
+                        <Label text="Manage product profiles and master data" styleClass="page-subheader"/>
+                    </VBox>
+
+                    <Button text="+ Add Product" styleClass="add-btn" onAction="#handleAddProduct"/>
+                </HBox>
+
+                <!-- KPI Cards Row -->
+                <HBox spacing="20" styleClass="kpi-row">
+                    <!-- Card 1: Total Products -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Total Products" styleClass="kpi-title"/>
+                                <Label fx:id="totalProductsLabel" text="0" styleClass="kpi-value"/>
+                                <Label text="Product profiles" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="💊" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 2: Categories -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Categories" styleClass="kpi-title"/>
+                                <Label fx:id="totalCategoriesLabel" text="0" styleClass="kpi-value"/>
+                                <Label text="Product categories" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="📂" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 3: Suppliers -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Suppliers" styleClass="kpi-title"/>
+                                <Label fx:id="totalSuppliersLabel" text="0" styleClass="kpi-value"/>
+                                <Label text="Active suppliers" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="🏢" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 4: Low Stock -->
+                    <VBox styleClass="kpi-card,kpi-card-alert" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Low Stock Products" styleClass="kpi-title"/>
+                                <Label fx:id="lowStockLabel" text="0" styleClass="kpi-value,kpi-value-alert"/>
+                                <Label text="Need restocking" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="⚠" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+                </HBox>
+
+                <!-- Search & Filter Card -->
+                <VBox styleClass="filter-card" spacing="15">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+
+                    <VBox spacing="8">
+                        <Label text="🔎 Search &amp; Filters" styleClass="filter-title"/>
+                        <Label text="Find products by name, ID, category, or supplier" styleClass="filter-subtitle"/>
+                    </VBox>
+
+                    <HBox spacing="15">
+                        <TextField fx:id="searchField" promptText="🔍 Search by Product ID, Brand Name, or Generic Name..."
+                                   styleClass="search-field" HBox.hgrow="ALWAYS"/>
+
+                        <ComboBox fx:id="categoryFilter" promptText="All Categories" styleClass="filter-dropdown"
+                                  prefWidth="200"/>
+
+                        <ComboBox fx:id="supplierFilter" promptText="All Suppliers" styleClass="filter-dropdown"
+                                  prefWidth="200"/>
+
+                        <Button text="Clear" styleClass="bulk-btn" onAction="#handleClearFilters"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Products Table Card -->
+                <VBox styleClass="table-card" spacing="15" VBox.vgrow="ALWAYS">
+                    <padding>
+                        <Insets top="25" right="25" bottom="25" left="25"/>
+                    </padding>
+
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <VBox HBox.hgrow="ALWAYS">
+                            <Label text="Product List" styleClass="table-title"/>
+                            <Label fx:id="totalCountLabel" text="Total: 0 products" styleClass="table-subtitle"/>
+                        </VBox>
+                    </HBox>
+
+                    <TableView fx:id="productsTable" styleClass="inventory-table" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="productIdColumn" text="Product ID" prefWidth="100"/>
+                            <TableColumn fx:id="brandNameColumn" text="Brand Name" prefWidth="180"/>
+                            <TableColumn fx:id="genericNameColumn" text="Generic Name" prefWidth="160"/>
+                            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="120"/>
+                            <TableColumn fx:id="dosageFormColumn" text="Dosage Form" prefWidth="120"/>
+                            <TableColumn fx:id="dosageStrengthColumn" text="Strength" prefWidth="100"/>
+                            <TableColumn fx:id="manufacturerColumn" text="Manufacturer" prefWidth="150"/>
+                            <TableColumn fx:id="supplierColumn" text="Supplier" prefWidth="130"/>
+                            <TableColumn fx:id="stockColumn" text="Current Stock" prefWidth="100"/>
+                            <TableColumn fx:id="priceColumn" text="Price" prefWidth="100"/>
+                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
+                        </columns>
+                        <placeholder>
+                            <VBox alignment="CENTER" spacing="10">
+                                <Label text="📦" style="-fx-font-size: 48px;"/>
+                                <Label text="No products found" style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d;"/>
+                                <Label text="Click 'Add Product' to create your first product"
+                                       style="-fx-font-size: 14px; -fx-text-fill: #95a5a6;"/>
+                            </VBox>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

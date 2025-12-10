@@ -74,6 +74,9 @@ public class DashboardController {
     private Button dashboardBtn;
 
     @FXML
+    private Button productsBtn;
+
+    @FXML
     private Button inventoryBtn;
 
     @FXML
@@ -263,6 +266,12 @@ public class DashboardController {
         // Already on dashboard, no need to navigate
     }
 
+    @FXML
+    private void handleProducts() {
+        // Already on products page
+        setActiveButton(productsBtn);
+        navigateToPage("/fxml/product-management.fxml", "/css/inventory.css");
+    }
 
     @FXML
     private void handleInventory() {
@@ -404,6 +413,9 @@ public class DashboardController {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("staff")) {
                 StaffController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("product-management")) {
+                ProductManagementController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
             }
 

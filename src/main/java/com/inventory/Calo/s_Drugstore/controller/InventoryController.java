@@ -3,8 +3,8 @@
     import com.inventory.Calo.s_Drugstore.entity.Batch;
     import com.inventory.Calo.s_Drugstore.entity.Product;
     import com.inventory.Calo.s_Drugstore.entity.User;
-import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
-import com.inventory.Calo.s_Drugstore.service.ProductService;
+    import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
+    import com.inventory.Calo.s_Drugstore.service.ProductService;
     import com.inventory.Calo.s_Drugstore.service.UserManagementService;
     import com.inventory.Calo.s_Drugstore.util.IconUtil;
     import javafx.application.Platform;
@@ -465,7 +465,7 @@ private BatchRepository batchRepository;
             expirationColumn.setMinWidth(130);
             supplierColumn.setMinWidth(150);
             actionsColumn.setMinWidth(220);
-    
+
             inventoryTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         }
     
@@ -1005,7 +1005,7 @@ private BatchRepository batchRepository;
             }
         }
     
-    private void handlePDFExport() {
+        private void handlePDFExport() {
         try {
             // Get products from the inventory table (filters out deleted products)
             List<Product> products = new ArrayList<>(inventoryTable.getItems());
@@ -1296,7 +1296,7 @@ private BatchRepository batchRepository;
                     .setPadding(5);
         }
     
-    private com.itextpdf.layout.element.Cell createTableCell(String text) throws Exception {
+        private com.itextpdf.layout.element.Cell createTableCell(String text) throws Exception {
         // Handle null values
         String cellText = (text != null && !text.isEmpty()) ? text : "N/A";
         return new com.itextpdf.layout.element.Cell()
@@ -1304,7 +1304,7 @@ private BatchRepository batchRepository;
                 .setFont(com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA))
                 .setFontSize(8)
                 .setPadding(4);
-    }        private String escapeCSV(String value) {
+        }        private String escapeCSV(String value) {
             if (value == null) {
                 return "";
             }
