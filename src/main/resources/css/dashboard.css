@@ -447,7 +447,7 @@
 .scroll-pane .increment-button,
 .scroll-pane .decrement-button {
     -fx-background-color: transparent;
-    -fx-pref-height: 0;
+    -fx-pref-height: 4;
     -fx-pref-width: 0;
 }
 

@@ -19,8 +19,8 @@ import javafx.stage.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Controller;
-
 import java.net.URL;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -73,8 +73,47 @@ public class StaffController implements Initializable {
 
         setupStaffTable();
         loadStaffData();
+        setupColumnWidths();
         updateSummaryCards();
         setActiveButton(staffBtn);
+
+        // Apply custom scrollbar styling to main page
+        applyCustomScrollbarToTable();
+
+        // In case scene loads later so add listener
+        staffTable.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                applyCustomScrollbarToTable();
+            }
+        });
+    }
+
+    private void setupColumnWidths() {
+        // Set specific widths for each column
+        staffIdColumn.setPrefWidth(120);
+        staffIdColumn.setMinWidth(100);
+
+        nameColumn.setPrefWidth(200);
+        nameColumn.setMinWidth(180);
+
+        contactColumn.setPrefWidth(250);
+        contactColumn.setMinWidth(220);
+
+        roleColumn.setPrefWidth(120);
+        roleColumn.setMinWidth(100);
+
+        statusColumn.setPrefWidth(120);
+        statusColumn.setMinWidth(100);
+
+        createdDateColumn.setPrefWidth(150);
+        createdDateColumn.setMinWidth(130);
+
+        // IMPORTANT: Make actions column wider
+        actionsColumn.setPrefWidth(350);
+        actionsColumn.setMinWidth(350);
+
+        // Allow table to resize
+        staffTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
     }
 
     public void setCurrentUser(User user) {
@@ -172,7 +211,14 @@ public class StaffController implements Initializable {
                 usernameLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
                 usernameBox.getChildren().addAll(usernameIcon, usernameLabel);
 
-                container.getChildren().addAll(emailBox, usernameBox);
+                HBox contactNumberBox = new HBox(5);
+                contactNumberBox.setAlignment(Pos.CENTER_LEFT);
+                Label contactNumberIcon = new Label("\uD83D\uDCDE");
+                Label contactNumberLabel = new Label(user.getContactNumber());
+                contactNumberLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+                contactNumberBox.getChildren().addAll(contactNumberIcon, contactNumberLabel);
+
+                container.getChildren().addAll(emailBox, usernameBox, contactNumberBox);
 
                 setGraphic(container);
                 setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
@@ -308,6 +354,30 @@ public class StaffController implements Initializable {
                 HBox buttons = new HBox(10);
                 buttons.setAlignment(Pos.CENTER_LEFT);
 
+                // View button
+                Button viewBtn = new Button("👁");
+                viewBtn.setStyle(
+                        "-fx-background-color: white; " +
+                                "-fx-text-fill: #2c3e50; " +
+                                "-fx-font-size: 20px; " +
+                                "-fx-min-width: 40px; " +
+                                "-fx-min-height: 40px; " +
+                                "-fx-background-radius: 6px; " +
+                                "-fx-border-color: #E0E0E0; " +
+                                "-fx-border-width: 2px; " +
+                                "-fx-border-radius: 6px; " +
+                                "-fx-cursor: hand;"
+                );
+                viewBtn.setOnMouseEntered(e -> viewBtn.setStyle(
+                        viewBtn.getStyle() + "-fx-background-color: #E8F5E9; -fx-border-color: #4CAF50;"
+                ));
+                viewBtn.setOnMouseExited(e -> viewBtn.setStyle(
+                        viewBtn.getStyle().replace("-fx-background-color: #E8F5E9; -fx-border-color: #4CAF50;",
+                                "-fx-background-color: white; -fx-border-color: #E0E0E0;")
+                ));
+                viewBtn.setOnAction(e -> handleViewStaff(user));
+                buttons.getChildren().addAll(viewBtn);
+
                 Button editBtn = new Button("🔧");
                 editBtn.setStyle(
                         "-fx-background-color: white; " +
@@ -400,6 +470,32 @@ public class StaffController implements Initializable {
         staffMembersLabel.setText(String.valueOf(staff));
     }
 
+    private void applyCustomScrollbarToTable() {
+        String scrollBarStyle =
+                ".scroll-bar {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "}" +
+                        ".scroll-bar .thumb {" +
+                        "    -fx-background-color:  #cbd5e0 !important;" +
+                        "    -fx-background-radius: 4px !important;" +
+                        "}" +
+                        ".scroll-bar .thumb:hover {" +
+                        "    -fx-background-color: #a0aec0 !important;" +
+                        "}" +
+                        ".scroll-bar .track {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "}" +
+                        ".scroll-bar .increment-button," +
+                        ".scroll-bar .decrement-button {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "    -fx-padding: 0 !important;" +
+                        "}";
+
+        Scene scene = staffTable.getScene();
+        if (scene != null) {
+            scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+        }
+    }
     @FXML
     private void handleAddStaff() {
         showAddEditStaffDialog(null);
@@ -407,6 +503,174 @@ public class StaffController implements Initializable {
 
     private void handleEditStaff(User user) {
         showAddEditStaffDialog(user);
+    }
+
+    private void handleViewStaff(User user) {
+        showStaffDetailsDialog(user);
+    }
+
+    private void showStaffDetailsDialog(User user) {
+        // Create custom dialog
+        Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Staff Details");
+        dialogStage.setResizable(false);
+
+        // Main container
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
+        mainContainer.setPrefWidth(600);
+        mainContainer.setMaxHeight(650);
+
+        // Header
+        Label titleLabel = new Label(user.getFullName());
+        titleLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        Label subtitleLabel = new Label("@" + user.getUsername());
+        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
+        VBox header = new VBox(5, titleLabel, subtitleLabel);
+
+        // ScrollPane for content
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle(
+                "-fx-background-color: transparent; " +
+                        "-fx-background: transparent; " +
+                        "-fx-border-color: transparent;"
+        );
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPrefHeight(400);
+
+        VBox contentContainer = new VBox(20);
+
+        String addressStr = (user.getAddress() != null && !user.getAddress().isEmpty())
+                ? user.getAddress() : "Not provided";
+        String dobStr;
+        if (user.getDateOfBirth() != null && !user.getDateOfBirth().isEmpty()) {
+            try {
+                LocalDate dob = LocalDate.parse(user.getDateOfBirth());
+                DateTimeFormatter dobFormatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
+                dobStr = dob.format(dobFormatter);
+            } catch (Exception e) {
+                dobStr = user.getDateOfBirth(); // Fallback to raw value if parsing fails
+            }
+        } else {
+            dobStr = "Not provided";
+        }
+
+
+        // Section 1: Basic Information
+        VBox basicSection = createDetailSection("Basic Information",
+                createDetailRow("Full Name:", user.getFullName()),
+                createDetailRow("Username:", user.getUsername()),
+                createDetailRow("Role:", user.getRole()),
+                createDetailRow("Address:", addressStr),
+                createDetailRow("Date of Birth:", dobStr)
+        );
+
+        // Section 2: Contact Information
+        VBox contactSection = createDetailSection("Contact Information",
+                createDetailRow("Email:", user.getEmail()),
+                createDetailRow("Contact Number:", user.getContactNumber() != null ? user.getContactNumber() : "N/A")
+        );
+
+        // Section 3: Account Status
+        String statusText = user.isActive() ? "Active ✓" : "Inactive ✗";
+        VBox statusSection = createDetailSection("Account Status",
+                createDetailRow("Status:", statusText)
+        );
+
+        // Section 4: Account Dates
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a");
+        String createdAtStr = user.getCreatedAt() != null ? user.getCreatedAt().format(formatter) : "N/A";
+        String updatedAtStr = user.getLastLogin() != null ? user.getLastLogin().format(formatter) : "N/A";
+
+        VBox datesSection = createDetailSection("Account Information",
+                createDetailRow("Created On:", createdAtStr),
+                createDetailRow("Last Updated:", updatedAtStr)
+        );
+
+        contentContainer.getChildren().addAll(
+                basicSection,
+                contactSection,
+                statusSection,
+                datesSection
+        );
+
+        scrollPane.setContent(contentContainer);
+
+        // Close button
+        HBox buttonContainer = new HBox();
+        buttonContainer.setAlignment(Pos.CENTER_RIGHT);
+
+        Button closeButton = new Button("Close");
+        closeButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 40px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        closeButton.setOnMouseEntered(e -> closeButton.setStyle(
+                closeButton.getStyle() + "-fx-background-color: #45a049;"
+        ));
+        closeButton.setOnMouseExited(e -> closeButton.setStyle(
+                closeButton.getStyle().replace("-fx-background-color: #45a049;", "-fx-background-color: #4CAF50;")
+        ));
+
+        closeButton.setOnAction(e -> dialogStage.close());
+        buttonContainer.getChildren().add(closeButton);
+
+        // Add all sections to main container
+        mainContainer.getChildren().addAll(header, scrollPane, buttonContainer);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        // Create scene
+        Scene scene = new Scene(mainContainer);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+    }
+
+    private VBox createDetailSection(String sectionTitle, HBox... rows) {
+        VBox section = new VBox(12);
+        section.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 10px; " +
+                        "-fx-padding: 20; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 10px;"
+        );
+
+        Label sectionLabel = new Label(sectionTitle);
+        sectionLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        section.getChildren().add(sectionLabel);
+        section.getChildren().addAll(rows);
+
+        return section;
+    }
+
+    private HBox createDetailRow(String label, String value) {
+        HBox row = new HBox(15);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Label labelNode = new Label(label);
+        labelNode.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-min-width: 150px;");
+
+        Label valueNode = new Label(value);
+        valueNode.setStyle("-fx-font-size: 14px; -fx-text-fill: #555555;");
+        valueNode.setWrapText(true);
+
+        row.getChildren().addAll(labelNode, valueNode);
+        return row;
     }
 
     private void handleToggleStatus(User user) {
@@ -452,7 +716,6 @@ public class StaffController implements Initializable {
             showStyledAlert(Alert.AlertType.INFORMATION, "Success", "Staff account deleted successfully!");
         }
     }
-
     private void showAddEditStaffDialog(User editUser) {
         boolean isEdit = editUser != null;
 
@@ -462,12 +725,39 @@ public class StaffController implements Initializable {
         dialogStage.setTitle(isEdit ? "Edit Staff Account" : "Add New Staff Account");
         dialogStage.setResizable(false);
 
-        VBox mainContainer = new VBox(20);
-        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30;");
+        // ==================== MAIN CONTAINER  ====================//
+        VBox mainContainer = new VBox(0);
+        mainContainer.setStyle("-fx-background-color: white;");
         mainContainer.setPrefWidth(550);
+        mainContainer.setMaxHeight(650); //maximum height
 
+        // ==================== FIXED HEADER ====================//
+        VBox headerBox = new VBox();
+        headerBox.setStyle("-fx-background-color: white; -fx-padding: 30 30 20 30;");
         Label titleLabel = new Label(isEdit ? "Edit Staff Account" : "Add New Staff Account");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        headerBox.getChildren().add(titleLabel);
+
+        // ==================== SCROLLABLE ====================//
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        //
+        scrollPane.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-background: transparent;" +
+                        "-fx-border-width: 0;" +
+                        "-fx-background-insets: 0;"
+        );
+
+        scrollPane.lookup(".scroll-bar:vertical .track");
+
+        VBox contentBox = new VBox(20);
+        contentBox.setStyle("-fx-padding: 0 30 20 30; -fx-background-color: white;");
+
+        // ==================== FORM FIELDS ====================//
 
         // Full Name
         VBox nameBox = new VBox(8);
@@ -487,7 +777,7 @@ public class StaffController implements Initializable {
         if (isEdit) nameField.setText(editUser.getFullName());
         nameBox.getChildren().addAll(nameLabel, nameField);
 
-        // Username - NOW EDITABLE
+        // Username
         VBox usernameBox = new VBox(8);
         Label usernameLabel = new Label("Username *");
         usernameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
@@ -496,7 +786,6 @@ public class StaffController implements Initializable {
         usernameField.setStyle(nameField.getStyle());
         if (isEdit) {
             usernameField.setText(editUser.getUsername());
-            // REMOVED: usernameField.setDisable(true); - Now username is editable!
         }
         usernameBox.getChildren().addAll(usernameLabel, usernameField);
 
@@ -510,8 +799,71 @@ public class StaffController implements Initializable {
         if (isEdit) emailField.setText(editUser.getEmail());
         emailBox.getChildren().addAll(emailLabel, emailField);
 
-        // Password - NOW SHOWN FOR BOTH CREATE AND EDIT
-        // Password field with show/hide toggle
+        // Contact Number
+        VBox contactBox = new VBox(8);
+        Label contactLabel = new Label("Contact Number");
+        contactLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField contactField = new TextField();
+        contactField.setPromptText("Enter contact number");
+        contactField.setStyle(nameField.getStyle());
+        if (isEdit && editUser.getContactNumber() != null) contactField.setText(editUser.getContactNumber());
+        contactBox.getChildren().addAll(contactLabel, contactField);
+
+        // Address
+        VBox addressBox = new VBox(8);
+        Label addressLabel = new Label("Address");
+        addressLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField addressField = new TextField();
+        addressField.setPromptText("Enter address");
+        addressField.setStyle(nameField.getStyle());
+        if (isEdit && editUser.getAddress() != null) addressField.setText(editUser.getAddress());
+        addressBox.getChildren().addAll(addressLabel, addressField);
+
+        // Date of Birth
+        VBox dobBox = new VBox(8);
+        Label dobLabel = new Label("Date of Birth");
+        dobLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+
+        DatePicker dobPicker = new DatePicker();
+        dobPicker.setPromptText("Select date of birth");
+        dobPicker.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-padding: 12px 15px; " +
+                        "-fx-font-size: 14px;"
+        );
+
+        // Set custom date format (MMM. dd, yyyy)
+        dobPicker.setConverter(new javafx.util.StringConverter<LocalDate>() {
+            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
+
+            @Override
+            public String toString(LocalDate date) {
+                return date != null ? date.format(formatter) : "";
+            }
+
+            @Override
+            public LocalDate fromString(String string) {
+                return (string != null && !string.isEmpty()) ? LocalDate.parse(string, formatter) : null;
+            }
+        });
+
+        // Set initial value if editing and dateOfBirth exists
+        if (isEdit && editUser.getDateOfBirth() != null && !editUser.getDateOfBirth().isEmpty()) {
+            try {
+                LocalDate dob = LocalDate.parse(editUser.getDateOfBirth());
+                dobPicker.setValue(dob);
+            } catch (Exception e) {
+                System.err.println("Error parsing date of birth: " + e.getMessage());
+            }
+        }
+
+        dobBox.getChildren().addAll(dobLabel, dobPicker);
+
+        // Password with show/hide toggle
         VBox passwordBox = new VBox(8);
         Label passwordLabel = new Label(isEdit ? "New Password (leave blank to keep current)" : "Password *");
         passwordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
@@ -519,11 +871,9 @@ public class StaffController implements Initializable {
         HBox passwordInputBox = new HBox(10);
         passwordInputBox.setAlignment(Pos.CENTER_LEFT);
 
-        // Create both TextField and PasswordField
         TextField passwordTextField = new TextField();
         PasswordField passwordField = new PasswordField();
 
-        // Style both the same way
         String fieldStyle =
                 "-fx-background-color: #F8F9FA; " +
                         "-fx-background-radius: 8px; " +
@@ -538,14 +888,11 @@ public class StaffController implements Initializable {
         passwordTextField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
         passwordField.setPromptText(isEdit ? "Enter new password (optional)" : "Enter password (min 6 characters)");
 
-        // Initially show PasswordField (hidden)
         passwordTextField.setVisible(false);
         passwordTextField.setManaged(false);
 
-        // Bind text properties so they stay in sync
         passwordTextField.textProperty().bindBidirectional(passwordField.textProperty());
 
-        // Show/Hide button
         Button toggleButton = new Button("👁");
         toggleButton.setStyle(
                 "-fx-background-color: white; " +
@@ -561,14 +908,12 @@ public class StaffController implements Initializable {
 
         toggleButton.setOnAction(e -> {
             if (passwordField.isVisible()) {
-                // Switch to visible (TextField)
                 passwordField.setVisible(false);
                 passwordField.setManaged(false);
                 passwordTextField.setVisible(true);
                 passwordTextField.setManaged(true);
                 toggleButton.setText("👁‍🗨");
             } else {
-                // Switch to hidden (PasswordField)
                 passwordTextField.setVisible(false);
                 passwordTextField.setManaged(false);
                 passwordField.setVisible(true);
@@ -583,6 +928,62 @@ public class StaffController implements Initializable {
         passwordInputBox.getChildren().addAll(passwordField, passwordTextField, toggleButton);
         passwordBox.getChildren().addAll(passwordLabel, passwordInputBox);
 
+        // Confirm Password
+        VBox confirmPasswordBox = new VBox(8);
+        Label confirmPasswordLabel = new Label(isEdit ? "Confirm New Password" : "Confirm Password *");
+        confirmPasswordLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+
+        HBox confirmPasswordInputBox = new HBox(10);
+        confirmPasswordInputBox.setAlignment(Pos.CENTER_LEFT);
+
+        TextField confirmPasswordTextField = new TextField();
+        PasswordField confirmPasswordField = new PasswordField();
+
+        confirmPasswordTextField.setStyle(fieldStyle);
+        confirmPasswordField.setStyle(fieldStyle);
+        confirmPasswordTextField.setPromptText(isEdit ? "Confirm new password" : "Re-enter password");
+        confirmPasswordField.setPromptText(isEdit ? "Confirm new password" : "Re-enter password");
+
+        confirmPasswordTextField.setVisible(false);
+        confirmPasswordTextField.setManaged(false);
+
+        confirmPasswordTextField.textProperty().bindBidirectional(confirmPasswordField.textProperty());
+
+        Button confirmToggleButton = new Button("👁");
+        confirmToggleButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-font-size: 16px; " +
+                        "-fx-min-width: 45px; " +
+                        "-fx-min-height: 45px; " +
+                        "-fx-cursor: hand;"
+        );
+
+        confirmToggleButton.setOnAction(e -> {
+            if (confirmPasswordField.isVisible()) {
+                confirmPasswordField.setVisible(false);
+                confirmPasswordField.setManaged(false);
+                confirmPasswordTextField.setVisible(true);
+                confirmPasswordTextField.setManaged(true);
+                confirmToggleButton.setText("👁‍🗨");
+            } else {
+                confirmPasswordTextField.setVisible(false);
+                confirmPasswordTextField.setManaged(false);
+                confirmPasswordField.setVisible(true);
+                confirmPasswordField.setManaged(true);
+                confirmToggleButton.setText("👁");
+            }
+        });
+
+        HBox.setHgrow(confirmPasswordField, Priority.ALWAYS);
+        HBox.setHgrow(confirmPasswordTextField, Priority.ALWAYS);
+
+        confirmPasswordInputBox.getChildren().addAll(confirmPasswordField, confirmPasswordTextField, confirmToggleButton);
+        confirmPasswordBox.getChildren().addAll(confirmPasswordLabel, confirmPasswordInputBox);
+
         // Role
         VBox roleBox = new VBox(8);
         Label roleLabel = new Label("Role *");
@@ -594,7 +995,24 @@ public class StaffController implements Initializable {
         roleCombo.setStyle(nameField.getStyle());
         roleBox.getChildren().addAll(roleLabel, roleCombo);
 
-        // Buttons
+        // ==================== ALL FIELDS TO SCROLLABLE CONTENT ====================//
+        contentBox.getChildren().addAll(
+                nameBox, usernameBox, emailBox, contactBox,
+                addressBox, dobBox, passwordBox, confirmPasswordBox, roleBox
+        );
+
+        scrollPane.setContent(contentBox);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        // ==================== FIXED FOOTER WITH BUTTONS ====================//
+        VBox footerBox = new VBox();
+        footerBox.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-padding: 20 30 30 30; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1 0 0 0;"
+        );
+
         HBox buttonBox = new HBox(15);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
@@ -627,7 +1045,11 @@ public class StaffController implements Initializable {
             String name = nameField.getText().trim();
             String username = usernameField.getText().trim();
             String email = emailField.getText().trim();
+            String contactNumber = contactField.getText().trim();
+            String address = addressField.getText().trim();
+            String dateOfBirth = dobPicker.getValue() != null ? dobPicker.getValue().toString() : "";
             String password = passwordField.getText().trim();
+            String confirmPassword = confirmPasswordField.getText().trim();
             String role = roleCombo.getValue();
 
             if (name.isEmpty() || email.isEmpty() || username.isEmpty()) {
@@ -636,23 +1058,25 @@ public class StaffController implements Initializable {
                 return;
             }
 
+            if (!password.isEmpty() && !password.equals(confirmPassword)) {
+                showStyledAlert(Alert.AlertType.WARNING, "Password Mismatch",
+                        "Passwords do not match. Please try again.");
+                return;
+            }
+
             try {
                 if (!isEdit) {
-                    // CREATE NEW STAFF
                     if (password.isEmpty() || password.length() < 6) {
                         showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
                                 "Password must be at least 6 characters long.");
                         return;
                     }
 
-                    userManagementService.createStaffAccount(username, email, password, name, role);
+                    userManagementService.createStaffAccount(username, email, password, name, role, contactNumber, address, dateOfBirth);
                     showStyledAlert(Alert.AlertType.INFORMATION, "Success",
                             "Staff account created successfully!");
                 } else {
-                    // UPDATE EXISTING STAFF
-                    // Check if username changed and validate it's not taken
                     if (!username.equals(editUser.getUsername())) {
-                        // Username changed - need to update it
                         boolean usernameUpdated = userManagementService.updateUsername(
                                 editUser.getId(), username);
 
@@ -663,11 +1087,9 @@ public class StaffController implements Initializable {
                         }
                     }
 
-                    // Update user info (name, email, role)
                     User updatedUser = userManagementService.updateUserInfo(
-                            editUser.getId(), name, email, role);
+                            editUser.getId(), name, email, role, contactNumber, address, dateOfBirth);
 
-                    // Update password if provided
                     if (!password.isEmpty()) {
                         if (password.length() < 6) {
                             showStyledAlert(Alert.AlertType.WARNING, "Invalid Password",
@@ -697,10 +1119,40 @@ public class StaffController implements Initializable {
         });
 
         buttonBox.getChildren().addAll(cancelButton, saveButton);
+        footerBox.getChildren().add(buttonBox);
 
-        mainContainer.getChildren().addAll(titleLabel, nameBox, usernameBox, emailBox, passwordBox, roleBox, buttonBox);
+        // ==================== ASSEMBLED EVERYTHING ====================//
+        mainContainer.getChildren().addAll(headerBox, scrollPane, footerBox);
 
         Scene scene = new Scene(mainContainer);
+
+
+        String scrollBarStyle =
+                ".scroll-pane {" +
+                        "    -fx-background-color: transparent;" +
+                        "    -fx-border-width: 0;" +
+                        "}" +
+                        ".scroll-pane .viewport {" +
+                        "    -fx-background-color: transparent;" +
+                        "}" +
+                        ".scroll-bar {" +
+                        "    -fx-background-color: transparent;" +
+                        "}" +
+                        ".scroll-bar .thumb {" +
+                        "    -fx-background-color:  #cbd5e0;" +
+                        "    -fx-background-radius: 4px;" +
+                        "}" +
+                        ".scroll-bar .thumb:hover {" +
+                        "    -fx-background-color: #a0aec0;" +
+                        "}" +
+                        ".scroll-bar .increment-button," +
+                        ".scroll-bar .decrement-button {" +
+                        "    -fx-background-color: transparent;" +
+                        "    -fx-padding: 0;" +
+                        "}";
+
+        scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
         dialogStage.showAndWait();
@@ -852,6 +1304,28 @@ public class StaffController implements Initializable {
             boolean isMaximized = stage.isMaximized();
 
             Scene newScene = new Scene(root);
+
+            String scrollBarStyle =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color:  #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+
+            newScene.getStylesheets().add("data:text/css," + scrollBarStyle);
 
             try {
                 java.net.URL cssUrl = getClass().getResource(cssPath);

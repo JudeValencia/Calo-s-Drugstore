@@ -1,9 +1,8 @@
 package com.inventory.Calo.s_Drugstore.service;
 
-import com.inventory.Calo.s_Drugstore.entity.Product;
-import com.inventory.Calo.s_Drugstore.entity.Sale;
-import com.inventory.Calo.s_Drugstore.entity.SaleItem;
-import com.inventory.Calo.s_Drugstore.entity.User;
+import com.inventory.Calo.s_Drugstore.entity.*;
+import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
+import com.inventory.Calo.s_Drugstore.repository.ProductRepository;
 import com.inventory.Calo.s_Drugstore.repository.SaleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SalesService {
@@ -22,6 +22,12 @@ public class SalesService {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private BatchRepository batchRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @Transactional
     public Sale completeSale(List<SaleItem> cartItems, User user) {
@@ -54,9 +60,8 @@ public class SalesService {
                         ". Available: " + product.getStock() + ", Requested: " + item.getQuantity());
             }
 
-            // Update product stock
-            product.setStock(product.getStock() - item.getQuantity());
-            productService.updateProduct(product.getId(), product);
+            // ✅ NEW: Deduct from batches using FEFO and get batch deduction history
+            String batchInfo = productService.deductStockFromBatches(product.getId(), item.getQuantity());
 
             // Create new sale item (don't reuse cart item)
             SaleItem saleItem = new SaleItem();
@@ -65,6 +70,7 @@ public class SalesService {
             saleItem.setQuantity(item.getQuantity());
             saleItem.setUnitPrice(item.getUnitPrice());
             saleItem.setSubtotal(item.getSubtotal());
+            saleItem.setBatchInfo(batchInfo);  // Store batch deduction history
 
             // Add to sale
             sale.addItem(saleItem);
@@ -85,7 +91,7 @@ public class SalesService {
         return savedSale;
     }
 
-    // THIS METHOD EXISTS - MAKE SURE IT'S IN YOUR FILE
+
     public Map<String, Object> getTodaysSummary() {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = LocalDate.now().plusDays(1).atStartOfDay();
@@ -129,7 +135,17 @@ public class SalesService {
     }
 
     public List<Sale> getSalesBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
-        return saleRepository.findByCreatedAtBetween(startDate, endDate);
+        return saleRepository.findBySaleDateBetween(startDate, endDate);
+    }
+
+    // Get ALL transactions including voided (for viewing in reports with filter)
+    public List<Sale> getAllSalesBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
+        return saleRepository.findAllBySaleDateBetweenIncludingVoided(startDate, endDate);
+    }
+
+    // Get only voided transactions
+    public List<Sale> getVoidedTransactions() {
+        return saleRepository.findVoidedTransactions();
     }
 
     @Transactional
@@ -175,19 +191,189 @@ public class SalesService {
 
             if (productOpt.isPresent()) {
                 Product product = productOpt.get();
-                // Restore stock
-                product.setStock(product.getStock() + item.getQuantity());
-                productService.updateProduct(product.getId(), product);
+                String batchInfo = item.getBatchInfo();
 
-                System.out.println("✅ Restored " + item.getQuantity() + " units of " +
-                        product.getBrandName() + " (New stock: " + product.getStock() + ")");
+                if (batchInfo != null && !batchInfo.isEmpty() && !batchInfo.equals("[]")) {
+                    // ✅ PERFECT RESTORATION: Use stored batch info for exact restoration
+                    System.out.println("🔄 Restoring using batch history: " + batchInfo);
+                    
+                    // Parse JSON manually (simple parsing for our format)
+                    String[] batches = batchInfo.replace("[", "").replace("]", "").split("\\},\\{");
+                    
+                    for (String batchStr : batches) {
+                        batchStr = batchStr.replace("{", "").replace("}", "");
+                        
+                        // Extract batchId and quantity
+                        String[] parts = batchStr.split(",");
+                        Long batchId = null;
+                        int quantity = 0;
+                        
+                        for (String part : parts) {
+                            part = part.trim();
+                            if (part.contains("batchId")) {
+                                String value = part.split(":")[1].trim().replace("\"", "");
+                                batchId = Long.parseLong(value);
+                            } else if (part.contains("quantity")) {
+                                String value = part.split(":")[1].trim().replace("\"", "");
+                                quantity = Integer.parseInt(value);
+                            }
+                        }
+                        
+                        if (batchId != null && quantity > 0) {
+                            Optional<Batch> batchOpt = batchRepository.findById(batchId);
+                            if (batchOpt.isPresent()) {
+                                Batch batch = batchOpt.get();
+                                batch.setStock(batch.getStock() + quantity);
+                                batchRepository.save(batch);
+                                
+                                System.out.println("✅ Restored " + quantity + " units to batch " +
+                                        batch.getBatchNumber() + " (New Stock: " + batch.getStock() + ")");
+                            }
+                        }
+                    }
+                    
+                    // Update product total stock
+                    int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                            .mapToInt(Batch::getStock)
+                            .sum();
+                    product.setStock(totalStock);
+                    productRepository.save(product);
+                    
+                    System.out.println("✅ Product total stock updated to: " + totalStock);
+                } else {
+                    // Fallback: No batch info available (old transaction or no batches)
+                    System.out.println("⚠️ No batch info available, using fallback restoration");
+                    
+                    List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(product.getId());
+                    if (!batches.isEmpty()) {
+                        Batch firstBatch = batches.get(0);
+                        firstBatch.setStock(firstBatch.getStock() + item.getQuantity());
+                        batchRepository.save(firstBatch);
+                        
+                        int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                                .mapToInt(Batch::getStock)
+                                .sum();
+                        product.setStock(totalStock);
+                        productRepository.save(product);
+                    } else {
+                        product.setStock(product.getStock() + item.getQuantity());
+                        productRepository.save(product);
+                    }
+                }
             }
         }
 
         // Delete the sale
         saleRepository.deleteById(saleId);
-        System.out.println("✅ Transaction " + sale.getTransactionId() + " deleted");
+        System.out.println("✅ Transaction deleted");
+    }
 
+    @Transactional
+    public void voidTransaction(Long saleId, String reason) {
+        Optional<Sale> saleOpt = saleRepository.findById(saleId);
+
+        if (!saleOpt.isPresent()) {
+            throw new RuntimeException("Transaction not found");
+        }
+
+        Sale sale = saleOpt.get();
+
+        if (sale.isVoided()) {
+            throw new RuntimeException("Transaction is already voided");
+        }
+
+        // Mark as voided
+        sale.setVoided(true);
+        sale.setVoidDate(LocalDateTime.now());
+        sale.setVoidReason(reason != null ? reason : "No reason provided");
+
+        // Restore inventory for all items using batch history
+        for (SaleItem item : sale.getItems()) {
+            List<Product> allProducts = productService.getAllProducts();
+            Optional<Product> productOpt = allProducts.stream()
+                    .filter(p -> p.getMedicineId().equals(item.getMedicineId()))
+                    .findFirst();
+
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                String batchInfo = item.getBatchInfo();
+
+                if (batchInfo != null && !batchInfo.isEmpty() && !batchInfo.equals("[]")) {
+                    // ✅ PERFECT RESTORATION: Use stored batch info
+                    System.out.println("🔄 Voiding: Restoring using batch history: " + batchInfo);
+                    
+                    try {
+                        // Parse JSON manually: [{"batchId":1,"quantity":50},{"batchId":2,"quantity":30}]
+                        String[] batches = batchInfo.replace("[", "").replace("]", "").split("\\},\\{");
+                        
+                        for (String batchStr : batches) {
+                            batchStr = batchStr.replace("{", "").replace("}", "").trim();
+                            
+                            Long batchId = null;
+                            int quantity = 0;
+                            
+                            // Split by comma and parse key-value pairs
+                            String[] parts = batchStr.split(",");
+                            for (String part : parts) {
+                                part = part.trim();
+                                if (part.contains("\"batchId\"")) {
+                                    String value = part.split(":")[1].trim();
+                                    batchId = Long.parseLong(value);
+                                } else if (part.contains("\"quantity\"")) {
+                                    String value = part.split(":")[1].trim();
+                                    quantity = Integer.parseInt(value);
+                                }
+                            }
+                            
+                            if (batchId != null && quantity > 0) {
+                                Optional<Batch> batchOpt = batchRepository.findById(batchId);
+                                if (batchOpt.isPresent()) {
+                                    Batch batch = batchOpt.get();
+                                    batch.setStock(batch.getStock() + quantity);
+                                    batchRepository.save(batch);
+                                    
+                                    System.out.println("✅ Restored " + quantity + " units to batch " +
+                                            batch.getBatchNumber() + " (New Stock: " + batch.getStock() + ")");
+                                } else {
+                                    System.err.println("❌ Batch not found: " + batchId);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("❌ Error parsing batch info: " + e.getMessage());
+                        e.printStackTrace();
+                        throw new RuntimeException("Failed to restore inventory from batch info", e);
+                    }
+                    
+                    int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                            .mapToInt(Batch::getStock)
+                            .sum();
+                    product.setStock(totalStock);
+                    productRepository.save(product);
+                } else {
+                    // Fallback restoration
+                    List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(product.getId());
+                    if (!batches.isEmpty()) {
+                        Batch firstBatch = batches.get(0);
+                        firstBatch.setStock(firstBatch.getStock() + item.getQuantity());
+                        batchRepository.save(firstBatch);
+                        
+                        int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                                .mapToInt(Batch::getStock)
+                                .sum();
+                        product.setStock(totalStock);
+                        productRepository.save(product);
+                    } else {
+                        product.setStock(product.getStock() + item.getQuantity());
+                        productRepository.save(product);
+                    }
+                }
+            }
+        }
+
+        // Save the voided sale (don't delete it)
+        saleRepository.save(sale);
+        System.out.println("✅ Transaction voided and inventory restored");
     }
 
     @Transactional
@@ -204,13 +390,28 @@ public class SalesService {
 
             if (productOpt.isPresent()) {
                 Product product = productOpt.get();
-                // Restore the original quantity
-                product.setStock(product.getStock() + originalQty);
-                productService.updateProduct(product.getId(), product);
+
+                // Restore to batches in FEFO order (reverse the original deduction)
+                List<com.inventory.Calo.s_Drugstore.entity.Batch> batches =
+                        batchRepository.findByProductOrderByExpirationDate(product.getId());
+
+                if (!batches.isEmpty()) {
+                    // ✅ Add back to first batch (simulating FEFO reversal)
+                    com.inventory.Calo.s_Drugstore.entity.Batch firstBatch = batches.get(0);
+                    firstBatch.setStock(firstBatch.getStock() + originalQty);
+                    batchRepository.save(firstBatch);
+
+                    // Update product stock
+                    product.setStock(product.getStock() + originalQty);
+                    productService.updateProduct(product.getId(), product);
+                } else {
+                    product.setStock(product.getStock() + originalQty);
+                    productService.updateProduct(product.getId(), product);
+                }
             }
         }
 
-        // Then, deduct new quantities
+        // Then, deduct new quantities using FEFO
         for (SaleItem item : sale.getItems()) {
             List<Product> allProducts = productService.getAllProducts();
             Optional<Product> productOpt = allProducts.stream()
@@ -226,9 +427,11 @@ public class SalesService {
                             ". Available: " + product.getStock() + ", Required: " + item.getQuantity());
                 }
 
-                // Deduct the new quantity
-                product.setStock(product.getStock() - item.getQuantity());
-                productService.updateProduct(product.getId(), product);
+                // Use FEFO deduction
+                productService.deductStockFromBatches(product.getId(), item.getQuantity());
+
+                // ✅ Cleanup depleted batches
+                //cleanupDepletedBatches(product.getId());
             }
         }
 
@@ -248,4 +451,28 @@ public class SalesService {
         return saleRepository.save(sale);
     }
 
+    private void cleanupDepletedBatches(Long productId) {
+        List<Batch> allBatches = batchRepository.findByProductOrderByExpirationDate(productId);
+
+        // Filter out depleted batches (stock = 0)
+        List<Batch> depletedBatches = allBatches.stream()
+                .filter(batch -> batch.getStock() == 0)
+                .collect(Collectors.toList());
+
+        // Only delete if there are other batches remaining
+        if (!depletedBatches.isEmpty() && depletedBatches.size() < allBatches.size()) {
+            // There are still active batches, safe to delete depleted ones
+            for (Batch batch : depletedBatches) {
+                batchRepository.delete(batch);
+                System.out.println("🗑️ Deleted depleted batch: " + batch.getBatchNumber());
+            }
+        } else if (!depletedBatches.isEmpty()) {
+            // All batches are depleted, delete all of them
+            for (Batch batch : depletedBatches) {
+                batchRepository.delete(batch);
+                System.out.println("🗑️ Deleted last depleted batch: " + batch.getBatchNumber());
+            }
+            System.out.println("⚠ All batches depleted for product ID " + productId + " - product has no stock");
+        }
+    }
 }
