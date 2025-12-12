@@ -351,9 +351,9 @@ private BatchRepository batchRepository;
             // Actions Column
             actionsColumn.setCellFactory(column -> new TableCell<>() {
                 private final Button editBtn = new Button();
-                private final Button deleteBtn = new Button();
                 private final Button viewBtn = new Button();
-    
+                private final Button deleteBtn = new Button();
+
                 {
     
                     // View button with text icon
@@ -400,8 +400,8 @@ private BatchRepository batchRepository;
                             editBtn.getStyle().replace("-fx-background-color: #E3F2FD; -fx-border-color: #2196F3;",
                                     "-fx-background-color: white; -fx-border-color: #E0E0E0;")
                     ));
-    
-                    // Delete button with text icon
+
+                    // Delete button (only shown for legacy products with 0 batches)
                     deleteBtn.setText("🗑");
                     deleteBtn.setStyle(
                             "-fx-background-color: white; " +
@@ -414,7 +414,7 @@ private BatchRepository batchRepository;
                                     "-fx-border-radius: 6px; " +
                                     "-fx-background-radius: 6px;"
                     );
-    
+
                     deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle(
                             deleteBtn.getStyle() + "-fx-background-color: #FFEBEE; -fx-border-color: #F44336;"
                     ));
@@ -422,7 +422,7 @@ private BatchRepository batchRepository;
                             deleteBtn.getStyle().replace("-fx-background-color: #FFEBEE; -fx-border-color: #F44336;",
                                     "-fx-background-color: white; -fx-border-color: #E0E0E0;")
                     ));
-    
+
                     viewBtn.setOnAction(event -> {
                         Product product = getTableRow().getItem();
                         if (product != null) {
@@ -436,7 +436,7 @@ private BatchRepository batchRepository;
                             handleEditProduct(product);
                         }
                     });
-    
+
                     deleteBtn.setOnAction(event -> {
                         Product product = getTableRow().getItem();
                         if (product != null) {
@@ -444,16 +444,30 @@ private BatchRepository batchRepository;
                         }
                     });
                 }
-    
+
                 @Override
                 protected void updateItem(Void item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty) {
                         setGraphic(null);
                     } else {
-                        HBox buttons = new HBox(8, viewBtn, editBtn, deleteBtn);
-                        buttons.setAlignment(Pos.CENTER_LEFT);
-                        setGraphic(buttons);
+                        Product product = getTableRow().getItem();
+                        if (product != null) {
+                            // Check if product has batches
+                            long batchCount = productService.countBatchesForProduct(product);
+
+                            if (batchCount == 0) {
+                                // Legacy product - show delete button
+                                HBox buttons = new HBox(8, viewBtn, editBtn, deleteBtn);
+                                buttons.setAlignment(Pos.CENTER_LEFT);
+                                setGraphic(buttons);
+                            } else {
+                                // Product with batches - no delete button
+                                HBox buttons = new HBox(8, viewBtn, editBtn);
+                                buttons.setAlignment(Pos.CENTER_LEFT);
+                                setGraphic(buttons);
+                            }
+                        }
                     }
                 }
             });
@@ -508,7 +522,7 @@ private BatchRepository batchRepository;
     
         @FXML
         private void handleAddMedicine() {
-            showProductDialog(null);
+            showAddBatchDialog();
         }
     
         @FXML
@@ -2446,6 +2460,143 @@ private BatchRepository batchRepository;
     }
 }
 
+        private void handleDeleteProductAndBatches(Product product, Stage dialogStage) {
+            // Create confirmation dialog
+            Stage confirmStage = new Stage();
+            IconUtil.setApplicationIcon(confirmStage);
+            confirmStage.initModality(Modality.APPLICATION_MODAL);
+            confirmStage.setTitle("Delete Product & All Batches");
+            confirmStage.setResizable(false);
+            confirmStage.setUserData(false);
+
+            VBox mainContainer = new VBox(20);
+            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+            mainContainer.setPrefWidth(550);
+
+            // Warning icon and title
+            Label warningIcon = new Label("⚠");
+            warningIcon.setStyle("-fx-font-size: 48px; -fx-text-fill: #dc3545;");
+
+            Label titleLabel = new Label("Delete Product & All Batches?");
+            titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            VBox headerBox = new VBox(10, warningIcon, titleLabel);
+            headerBox.setAlignment(Pos.CENTER);
+
+            // Product details
+            long batchCount = productService.countBatchesForProduct(product);
+            VBox detailsBox = new VBox(10);
+            detailsBox.setStyle(
+                    "-fx-background-color: #FFF3CD; " +
+                            "-fx-padding: 15; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #FFE69C; " +
+                            "-fx-border-width: 2px; " +
+                            "-fx-border-radius: 8px;"
+            );
+
+            Label productLabel = new Label("Product: " + product.getBrandName());
+            productLabel.setStyle("-fx-font-size: 15px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+
+            Label batchCountLabel = new Label("Total Batches: " + batchCount);
+            batchCountLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
+            Label totalStockLabel = new Label("Total Stock: " + product.getStock() + " units");
+            totalStockLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
+            detailsBox.getChildren().addAll(productLabel, batchCountLabel, totalStockLabel);
+
+            // Warning message
+            Label warningLabel = new Label(
+                    "⚠ This action will permanently delete:\n" +
+                            "  • The product profile\n" +
+                            "  • All " + batchCount + " batch(es)\n" +
+                            "  • All associated inventory records\n\n" +
+                            "This action cannot be undone!"
+            );
+            warningLabel.setStyle(
+                    "-fx-font-size: 14px; " +
+                            "-fx-text-fill: #721c24; " +
+                            "-fx-background-color: #f8d7da; " +
+                            "-fx-padding: 15; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #f5c6cb; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-max-width: infinity;"
+            );
+            warningLabel.setWrapText(true);
+            warningLabel.setMaxWidth(Double.MAX_VALUE);
+
+            // Buttons
+            HBox buttonBox = new HBox(15);
+            buttonBox.setAlignment(Pos.CENTER);
+
+            Button cancelButton = new Button("Cancel");
+            cancelButton.setStyle(
+                    "-fx-background-color: #6c757d; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+            cancelButton.setOnMouseEntered(e -> cancelButton.setStyle(
+                    cancelButton.getStyle().replace("#6c757d", "#5a6268")
+            ));
+            cancelButton.setOnMouseExited(e -> cancelButton.setStyle(
+                    cancelButton.getStyle().replace("#5a6268", "#6c757d")
+            ));
+            cancelButton.setOnAction(e -> {
+                confirmStage.setUserData(false);
+                confirmStage.close();
+            });
+
+            Button deleteButton = new Button("Delete Everything");
+            deleteButton.setStyle(
+                    "-fx-background-color: #dc3545; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+            deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(
+                    deleteButton.getStyle().replace("#dc3545", "#c82333")
+            ));
+            deleteButton.setOnMouseExited(e -> deleteButton.setStyle(
+                    deleteButton.getStyle().replace("#c82333", "#dc3545")
+            ));
+            deleteButton.setOnAction(e -> {
+                confirmStage.setUserData(true);
+                confirmStage.close();
+            });
+
+            buttonBox.getChildren().addAll(cancelButton, deleteButton);
+
+            mainContainer.getChildren().addAll(headerBox, detailsBox, warningLabel, buttonBox);
+
+            Scene scene = new Scene(mainContainer);
+            confirmStage.setScene(scene);
+            confirmStage.showAndWait();
+
+            // Check if user confirmed
+            if (Boolean.TRUE.equals(confirmStage.getUserData())) {
+                try {
+                    productService.deleteProduct(product.getId());
+                    dialogStage.close(); // Close the View Batches dialog
+                    loadProducts(); // Refresh the main inventory table
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "Product and all batches deleted successfully!");
+                } catch (Exception ex) {
+                    showStyledAlert(Alert.AlertType.ERROR, "Error",
+                            "Failed to delete product: " + ex.getMessage());
+                }
+            }
+        }
+
         private boolean showLastBatchWarning(String productName) {
             Stage warningStage = new Stage();
             IconUtil.setApplicationIcon(warningStage);
@@ -2927,6 +3078,308 @@ private BatchRepository batchRepository;
             dialogStage.showAndWait();
         }
 
+        // NEW ADD BATCH DIALOG - Search product first, then add batch
+        private void showAddBatchDialog() {
+            Stage dialogStage = new Stage();
+            IconUtil.setApplicationIcon(dialogStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setTitle("Add New Batch");
+            dialogStage.setResizable(false);
+
+            VBox mainContainer = new VBox(20);
+            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
+            mainContainer.setPrefWidth(650);
+
+            // Header
+            Label titleLabel = new Label("Add New Batch to Inventory");
+            titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            Label subtitleLabel = new Label(
+                    "Step 1: Search and select a product from Product Management.\n" +
+                            "Step 2: Enter batch details (quantity, expiry, price, supplier)."
+            );
+            subtitleLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+            subtitleLabel.setWrapText(true);
+
+            VBox header = new VBox(10, titleLabel, subtitleLabel);
+
+            // Product Search Section
+            Label searchLabel = new Label("🔍 Step 1: Search Product");
+            searchLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            TextField searchField = new TextField();
+            searchField.setPromptText("Search by Product ID or Name...");
+            searchField.setStyle(
+                    "-fx-font-size: 14px; " +
+                            "-fx-padding: 12px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 2px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-background-radius: 8px;"
+            );
+
+            // Search results list
+            ListView<Product> searchResultsList = new ListView<>();
+            searchResultsList.setPrefHeight(150);
+            searchResultsList.setStyle(
+                    "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-background-radius: 8px;"
+            );
+            searchResultsList.setPlaceholder(new Label("Start typing to search for products..."));
+
+            // Custom cell factory for better display
+            searchResultsList.setCellFactory(lv -> new javafx.scene.control.ListCell<>() {
+                @Override
+                protected void updateItem(Product item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(String.format("[%s] %s - %s",
+                                item.getMedicineId(),
+                                item.getBrandName(),
+                                item.getGenericName() != null ? item.getGenericName() : "N/A"));
+                    }
+                }
+            });
+
+            // Search functionality
+            searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal == null || newVal.trim().isEmpty()) {
+                    searchResultsList.getItems().clear();
+                    return;
+                }
+
+                // Search products by ID or name
+                List<Product> results = productService.searchProducts(newVal.trim());
+                searchResultsList.getItems().setAll(results);
+            });
+
+            // Selected product display
+            Label selectedProductLabel = new Label("No product selected");
+            selectedProductLabel.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-text-fill: #7f8c8d; " +
+                            "-fx-padding: 10;" +
+                            "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 6px;"
+            );
+
+            final Product[] selectedProduct = {null};
+
+            searchResultsList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    selectedProduct[0] = newVal;
+                    selectedProductLabel.setText(String.format("✅ Selected: [%s] %s",
+                            newVal.getMedicineId(),
+                            newVal.getBrandName()));
+                    selectedProductLabel.setStyle(
+                            selectedProductLabel.getStyle() + "-fx-text-fill: #2c3e50; -fx-font-weight: bold;"
+                    );
+                }
+            });
+
+            VBox searchSection = new VBox(10, searchLabel, searchField, searchResultsList, selectedProductLabel);
+
+            // Batch Details Section
+            Label batchLabel = new Label("📦 Step 2: Enter Batch Details");
+            batchLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 10 0 0 0;");
+
+            GridPane batchGrid = new GridPane();
+            batchGrid.setHgap(15);
+            batchGrid.setVgap(12);
+
+            // Batch Number (auto-generated, read-only)
+            Label batchNumLabel = new Label("Batch Number:");
+            batchNumLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+            TextField batchNumField = new TextField();
+            batchNumField.setPromptText("Auto-generated");
+            batchNumField.setDisable(true);
+            batchNumField.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-padding: 10px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 6px; " +
+                            "-fx-background-radius: 6px; " +
+                            "-fx-opacity: 1;"
+            );
+
+            // Quantity
+            Label quantityLabel = new Label("Quantity:*");
+            quantityLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+            TextField quantityField = new TextField();
+            quantityField.setPromptText("Enter quantity");
+            quantityField.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-padding: 10px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 6px; " +
+                            "-fx-background-radius: 6px;"
+            );
+
+            // Price
+            Label priceLabel = new Label("Price per Unit:*");
+            priceLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+            TextField priceField = new TextField();
+            priceField.setPromptText("Enter price");
+            priceField.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-padding: 10px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 6px; " +
+                            "-fx-background-radius: 6px;"
+            );
+
+            // Expiry Date
+            Label expiryLabel = new Label("Expiry Date:*");
+            expiryLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+            DatePicker expiryPicker = new DatePicker();
+            expiryPicker.setPromptText("Select expiry date");
+            expiryPicker.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-padding: 5px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 6px; " +
+                            "-fx-background-radius: 6px;"
+            );
+
+            // Supplier
+            Label supplierLabel = new Label("Supplier:*");
+            supplierLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+            TextField supplierField = new TextField();
+            supplierField.setPromptText("Enter supplier name");
+            supplierField.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-padding: 10px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 6px; " +
+                            "-fx-background-radius: 6px;"
+            );
+
+            // Add to grid
+            batchGrid.add(batchNumLabel, 0, 0);
+            batchGrid.add(batchNumField, 1, 0);
+            batchGrid.add(quantityLabel, 0, 1);
+            batchGrid.add(quantityField, 1, 1);
+            batchGrid.add(priceLabel, 0, 2);
+            batchGrid.add(priceField, 1, 2);
+            batchGrid.add(expiryLabel, 0, 3);
+            batchGrid.add(expiryPicker, 1, 3);
+            batchGrid.add(supplierLabel, 0, 4);
+            batchGrid.add(supplierField, 1, 4);
+
+            VBox batchSection = new VBox(10, batchLabel, batchGrid);
+
+            // Buttons
+            HBox buttonBox = new HBox(15);
+            buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+            Button cancelButton = new Button("Cancel");
+            cancelButton.setStyle(
+                    "-fx-background-color: #6c757d; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+            cancelButton.setOnAction(e -> dialogStage.close());
+
+            Button addBatchButton = new Button("Add Batch");
+            addBatchButton.setStyle(
+                    "-fx-background-color: #4CAF50; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+
+            addBatchButton.setOnAction(e -> {
+                try {
+                    // Validate product selection
+                    if (selectedProduct[0] == null) {
+                        showStyledAlert(Alert.AlertType.ERROR, "No Product Selected",
+                                "Please search and select a product from Product Management first.");
+                        return;
+                    }
+
+                    // Validate required fields
+                    StringBuilder missingFields = new StringBuilder();
+                    if (quantityField.getText().trim().isEmpty()) {
+                        missingFields.append("• Quantity\n");
+                    }
+                    if (priceField.getText().trim().isEmpty()) {
+                        missingFields.append("• Price\n");
+                    }
+                    if (expiryPicker.getValue() == null) {
+                        missingFields.append("• Expiry Date\n");
+                    }
+                    if (supplierField.getText().trim().isEmpty()) {
+                        missingFields.append("• Supplier\n");
+                    }
+
+                    if (missingFields.length() > 0) {
+                        showStyledAlert(Alert.AlertType.WARNING, "Missing Required Fields",
+                                "Please fill in the following fields:\n\n" + missingFields.toString());
+                        return;
+                    }
+
+                    // Validate expiry date is not in the past
+                    if (expiryPicker.getValue().isBefore(LocalDate.now())) {
+                        showStyledAlert(Alert.AlertType.ERROR, "Invalid Expiry Date",
+                                "Cannot add expired medicine. Expiration date: " +
+                                        expiryPicker.getValue() + " has already passed.");
+                        return;
+                    }
+
+                    // Parse values
+                    int quantity = Integer.parseInt(quantityField.getText().trim());
+                    BigDecimal price = new BigDecimal(priceField.getText().trim());
+                    LocalDate expiryDate = expiryPicker.getValue();
+                    String supplier = supplierField.getText().trim();
+
+                    // Add batch using productService
+                    productService.saveProductWithBatch(
+                            selectedProduct[0],
+                            quantity,
+                            expiryDate,
+                            price,
+                            supplier
+                    );
+
+                    dialogStage.close();
+                    loadProducts(); // Refresh inventory table
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "Batch added successfully to " + selectedProduct[0].getBrandName() + "!");
+
+                } catch (NumberFormatException ex) {
+                    showStyledAlert(Alert.AlertType.ERROR, "Invalid Input",
+                            "Please enter valid numbers for Quantity and Price.");
+                } catch (Exception ex) {
+                    showStyledAlert(Alert.AlertType.ERROR, "Error",
+                            "Failed to add batch: " + ex.getMessage());
+                }
+            });
+
+            buttonBox.getChildren().addAll(cancelButton, addBatchButton);
+
+            mainContainer.getChildren().addAll(header, searchSection, batchSection, buttonBox);
+
+            Scene scene = new Scene(mainContainer);
+            dialogStage.setScene(scene);
+            dialogStage.show();
+        }
+
         //BATCH VIEW DIALOG (FOR DUPLICATION)
         private void showBatchesDialog(Product product) {
             Stage dialogStage = new Stage();
@@ -3155,10 +3608,38 @@ private BatchRepository batchRepository;
             );
             infoLabel.setWrapText(true);
 
-            // Close button
-            HBox buttonContainer = new HBox();
-            buttonContainer.setAlignment(Pos.CENTER_RIGHT);
+            // Buttons
+            HBox buttonContainer = new HBox(15);
+            buttonContainer.setAlignment(Pos.CENTER);
 
+            // Delete Product & All Batches button (left side)
+            Button deleteProductBtn = new Button("🗑 Delete Product & All Batches");
+            deleteProductBtn.setStyle(
+                    "-fx-background-color: #dc3545; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+
+            deleteProductBtn.setOnMouseEntered(e -> deleteProductBtn.setStyle(
+                    deleteProductBtn.getStyle().replace("#dc3545", "#c82333")
+            ));
+            deleteProductBtn.setOnMouseExited(e -> deleteProductBtn.setStyle(
+                    deleteProductBtn.getStyle().replace("#c82333", "#dc3545")
+            ));
+
+            deleteProductBtn.setOnAction(e -> {
+                handleDeleteProductAndBatches(product, dialogStage);
+            });
+
+            // Spacer to push buttons apart
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            // Close button (right side)
             Button closeButton = new Button("Close");
             closeButton.setStyle(
                     "-fx-background-color: #4CAF50; " +
@@ -3179,7 +3660,7 @@ private BatchRepository batchRepository;
 
             closeButton.setOnAction(e -> dialogStage.close());
 
-            buttonContainer.getChildren().add(closeButton);
+            buttonContainer.getChildren().addAll(deleteProductBtn, spacer, closeButton);
 
             mainContainer.getChildren().addAll(header, infoLabel, batchTable, buttonContainer);
 
