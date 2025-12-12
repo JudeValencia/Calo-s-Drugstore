@@ -58,8 +58,8 @@
     -fx-graphic-text-gap: 12px;
 }
 
-.menu-item:hover {
-    -fx-background-color: rgba(76, 175, 80, 0.1);
+.menu-icon {
+    -fx-font-size: 18px;
 }
 
 .menu-item.active {
@@ -67,8 +67,16 @@
     -fx-text-fill: white;
 }
 
-.menu-icon {
-    -fx-font-size: 18px;
+.menu-item.active .menu-icon {
+    -fx-text-fill: white;
+}
+
+.menu-item:hover {
+    -fx-background-color: rgba(76, 175, 80, 0.1);
+}
+
+.menu-item.active:hover {
+    -fx-background-color: #4CAF50;
 }
 
 .sidebar-user {
@@ -311,6 +319,18 @@
     -fx-alignment: CENTER_LEFT;
     -fx-text-fill: #2c3e50;
     -fx-font-size: 14px;
+}
+
+.inventory-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: #2c3e50;
+}
+
+.inventory-table:focused .table-row-cell:selected .table-cell {
+    -fx-text-fill: #2c3e50;
+}
+
+.inventory-table .table-row-cell:focused .table-cell {
+    -fx-text-fill: #2c3e50;
 }
 
 /* Remove table focus border */

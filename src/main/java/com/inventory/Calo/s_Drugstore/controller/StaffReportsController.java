@@ -4,6 +4,7 @@ import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.Sale;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.service.SalesService;
+import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

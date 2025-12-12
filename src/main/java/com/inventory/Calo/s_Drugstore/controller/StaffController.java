@@ -77,6 +77,16 @@ public class StaffController implements Initializable {
         setupColumnWidths();
         updateSummaryCards();
         setActiveButton(staffBtn);
+
+        // Apply custom scrollbar styling to main page
+        applyCustomScrollbarToTable();
+
+        // In case scene loads later so add listener
+        staffTable.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                applyCustomScrollbarToTable();
+            }
+        });
     }
 
     private void setupColumnWidths() {
@@ -461,6 +471,32 @@ public class StaffController implements Initializable {
         staffMembersLabel.setText(String.valueOf(staff));
     }
 
+    private void applyCustomScrollbarToTable() {
+        String scrollBarStyle =
+                ".scroll-bar {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "}" +
+                        ".scroll-bar .thumb {" +
+                        "    -fx-background-color:  #cbd5e0 !important;" +
+                        "    -fx-background-radius: 4px !important;" +
+                        "}" +
+                        ".scroll-bar .thumb:hover {" +
+                        "    -fx-background-color: #a0aec0 !important;" +
+                        "}" +
+                        ".scroll-bar .track {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "}" +
+                        ".scroll-bar .increment-button," +
+                        ".scroll-bar .decrement-button {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "    -fx-padding: 0 !important;" +
+                        "}";
+
+        Scene scene = staffTable.getScene();
+        if (scene != null) {
+            scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+        }
+    }
     @FXML
     private void handleAddStaff() {
         showAddEditStaffDialog(null);
@@ -798,8 +834,12 @@ public class StaffController implements Initializable {
                         "-fx-border-width: 1px; " +
                         "-fx-border-radius: 8px; " +
                         "-fx-padding: 12px 15px; " +
-                        "-fx-font-size: 14px;"
+                        "-fx-font-size: 14px;" +
+                        "-fx-text-fill: black;" +
+                        "-fx-prompt-text-fill: #7f8c8d;"
         );
+        dobPicker.getEditor().setStyle("-fx-text-fill: black;");
+        dobPicker.getStyleClass().add("custom-datepicker");
 
         // Set custom date format (MMM. dd, yyyy)
         dobPicker.setConverter(new javafx.util.StringConverter<LocalDate>() {
@@ -1091,7 +1131,6 @@ public class StaffController implements Initializable {
 
         Scene scene = new Scene(mainContainer);
 
-
         String scrollBarStyle =
                 ".scroll-pane {" +
                         "    -fx-background-color: transparent;" +
@@ -1104,7 +1143,7 @@ public class StaffController implements Initializable {
                         "    -fx-background-color: transparent;" +
                         "}" +
                         ".scroll-bar .thumb {" +
-                        "    -fx-background-color: #cbd5e0;" +
+                        "    -fx-background-color:  #cbd5e0;" +
                         "    -fx-background-radius: 4px;" +
                         "}" +
                         ".scroll-bar .thumb:hover {" +
@@ -1116,7 +1155,25 @@ public class StaffController implements Initializable {
                         "    -fx-padding: 0;" +
                         "}";
 
+        // Apply scrollbar style
         scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+
+        // DatePicker calendar popup CSS
+        String datePickerCalendarCSS =
+                ".date-picker-popup .month-year-pane .label {" +
+                        "    -fx-text-fill: black !important;" +
+                        "    -fx-font-weight: bold;" +
+                        "}" +
+                        ".date-picker-popup .calendar-grid {" +
+                        "    -fx-background-color: white;" +
+                        "}" +
+                        ".date-picker-popup .day-name-cell," +
+                        ".date-picker-popup .date-cell {" +
+                        "    -fx-text-fill: black;" +
+                        "}";
+
+        // Apply date picker calendar style
+        scene.getStylesheets().add("data:text/css," + datePickerCalendarCSS);
 
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
@@ -1278,6 +1335,28 @@ public class StaffController implements Initializable {
             boolean isMaximized = stage.isMaximized();
 
             Scene newScene = new Scene(root);
+
+            String scrollBarStyle =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color:  #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+
+            newScene.getStylesheets().add("data:text/css," + scrollBarStyle);
 
             try {
                 java.net.URL cssUrl = getClass().getResource(cssPath);

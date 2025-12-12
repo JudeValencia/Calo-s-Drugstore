@@ -27,6 +27,10 @@ public interface BatchRepository extends JpaRepository<Batch, Long> {
     @Query("SELECT b FROM Batch b WHERE b.product.id = :productId ORDER BY b.expirationDate ASC")
     List<Batch> findByProductOrderByExpirationDate(@Param("productId") Long productId);
 
+    // Find non-expired batches for a product, ordered by expiration date (FEFO)
+    @Query("SELECT b FROM Batch b WHERE b.product.id = :productId AND b.expirationDate > :today ORDER BY b.expirationDate ASC")
+    List<Batch> findNonExpiredBatchesByProductId(@Param("productId") Long productId, @Param("today") LocalDate today);
+
     // Find batch by batch number
     Optional<Batch> findByBatchNumber(String batchNumber);
 

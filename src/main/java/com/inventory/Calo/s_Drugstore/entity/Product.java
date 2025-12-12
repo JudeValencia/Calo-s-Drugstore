@@ -275,18 +275,18 @@ public class Product {
         return stock != null && stock <= minStockLevel;
     }
 
+    public boolean isExpired() {
+        if (expirationDate == null) return false;
+        // Check if expiration date is BEFORE today
+        return expirationDate.isBefore(LocalDate.now());
+    }
+
     public boolean isExpiringSoon() {
         if (expirationDate == null) return false;
         LocalDate today = LocalDate.now();
         LocalDate thirtyDaysFromNow = today.plusDays(30);
-        // Only include products expiring between today and 30 days from now (not already expired)
+        // Check if expiration date is between today and 30 days from now
         return !expirationDate.isBefore(today) && expirationDate.isBefore(thirtyDaysFromNow);
-    }
-
-    public boolean isExpired() {
-        if (expirationDate == null) return false;
-        LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-        return expirationDate.isAfter(thirtyDaysFromNow);
     }
 
     public String getStockStatus() {

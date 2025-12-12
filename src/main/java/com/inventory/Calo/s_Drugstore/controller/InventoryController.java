@@ -822,6 +822,7 @@ private BatchRepository batchRepository;
             mainContainer.getChildren().addAll(header, summaryLabel, previewTable, warningLabel, buttonContainer);
 
             Scene scene = new Scene(mainContainer);
+            addDatePickerCalendarCSS(scene);  // added
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
@@ -920,6 +921,7 @@ private BatchRepository batchRepository;
     
             // Create scene
             Scene scene = new Scene(mainContainer);
+            addDatePickerCalendarCSS(scene);  // added
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
@@ -1576,6 +1578,7 @@ private BatchRepository batchRepository;
             // Create scene
             Scene scene = new Scene(mainContainer);
             scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+            addDatePickerCalendarCSS(scene);  // added
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
@@ -1633,8 +1636,12 @@ private BatchRepository batchRepository;
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 8px; " +
                             "-fx-padding: 12px 15px; " +
-                            "-fx-font-size: 14px;"
+                            "-fx-font-size: 14px;" +
+                            "-fx-text-fill: black;" +  // added
+                            "-fx-prompt-text-fill: #7f8c8d;"  // added
             );
+            expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
+            expiryPicker.getStyleClass().add("custom-datepicker");
     
             TextField categoryField = new TextField();
             categoryField.setPromptText("Enter category");
@@ -1728,8 +1735,12 @@ private BatchRepository batchRepository;
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 8px; " +
                             "-fx-padding: 12px 15px; " +
-                            "-fx-font-size: 14px;"
+                            "-fx-font-size: 14px;" +
+                             "-fx-text-fill: black;" +  // added
+                            "-fx-prompt-text-fill: #7f8c8d;"  // added
             );
+            expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
+            expiryPicker.getStyleClass().add("custom-datepicker");
     
             TextField categoryField = new TextField();
             categoryField.setPromptText("Enter category");
@@ -1932,6 +1943,23 @@ private BatchRepository batchRepository;
                     .map(p -> p.getPrice().multiply(BigDecimal.valueOf(p.getStock())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             totalValueLabel.setText("₱" + String.format("%,.2f", totalValue));
+        }
+
+        private void addDatePickerCalendarCSS(Scene scene) {
+            String datePickerCalendarCSS =
+                    ".date-picker-popup .month-year-pane .label {" +
+                            "    -fx-text-fill: black !important;" +
+                            "    -fx-font-weight: bold;" +
+                            "}" +
+                            ".date-picker-popup .calendar-grid {" +
+                            "    -fx-background-color: white;" +
+                            "}" +
+                            ".date-picker-popup .day-name-cell," +
+                            ".date-picker-popup .date-cell {" +
+                            "    -fx-text-fill: black;" +
+                            "}";
+
+            scene.getStylesheets().add("data:text/css," + datePickerCalendarCSS);
         }
 
         private void showProductDetailsDialog(Product product) {
@@ -2522,11 +2550,41 @@ private BatchRepository batchRepository;
 
             VBox header = new VBox(8, titleLabel, subtitleLabel);
 
-            // ScrollPane for form fields
+            // fixed styling
             ScrollPane scrollPane = new ScrollPane();
             scrollPane.setFitToWidth(true);
             scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
             scrollPane.setPrefHeight(450);
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+            // fixed styling
+            String scrollBarStyle =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color: #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+
+            // scrollbar styling
+            scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.getStylesheets().add("data:text/css," + scrollBarStyle);
+                }
+            });
 
             // Form container
             VBox formContainer = new VBox(15);
@@ -2637,8 +2695,12 @@ private BatchRepository batchRepository;
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 8px; " +
                             "-fx-padding: 12px 15px; " +
-                            "-fx-font-size: 14px;"
+                            "-fx-font-size: 14px;" +
+                            "-fx-text-fill: black;" +  // added
+                            "-fx-prompt-text-fill: #7f8c8d;"  // added
             );
+            expirationPicker.getEditor().setStyle("-fx-text-fill: black;");
+            expirationPicker.getStyleClass().add("custom-datepicker");
 
             // Add all fields to form container
             formContainer.getChildren().addAll(
@@ -2725,6 +2787,14 @@ private BatchRepository batchRepository;
 
             saveButton.setOnAction(e -> {
                 try {
+                    // Prevent adding expired medicine
+                    if (expirationPicker.getValue() != null &&
+                            expirationPicker.getValue().isEqual(java.time.LocalDate.now())) {
+                        showStyledAlert(Alert.AlertType.ERROR, "Cannot Add Expired Medicine",
+                                "The expiration date " + expirationPicker.getValue() +
+                                        " has already passed. Please select a future date.");
+                        return; // Don't proceed
+                    }
                     // Validate all required fields
                     StringBuilder missingFields = new StringBuilder();
 
@@ -2850,6 +2920,8 @@ private BatchRepository batchRepository;
             VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
             Scene scene = new Scene(mainContainer);
+            scene.getStylesheets().add("data:text/css," + scrollBarStyle); // Added
+            addDatePickerCalendarCSS(scene); //added
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();

@@ -232,6 +232,12 @@ public class ProductService {
     public Product saveProductWithBatch(Product product, Integer batchStock,
                                         LocalDate batchExpiry, BigDecimal batchPrice,
                                         String batchSupplier) {
+        // Now will Prevent adding expired medicine
+        if (batchExpiry != null && batchExpiry.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Cannot add expired medicine. Expiration date: " +
+                    batchExpiry + " has already passed.");
+        }
+
         Product targetProduct;
 
         // Check if this is an existing product (has an ID) or new product
@@ -386,11 +392,12 @@ public class ProductService {
     // Returns a JSON string with batch deduction history for restoration
     @Transactional
     public String deductStockFromBatches(Long productId, int quantityToDeduct) {
-        // Get all batches for this product, ordered by expiration date (FEFO)
-        List<Batch> batches = batchRepository.findByProductOrderByExpirationDate(productId);
+        // ✅ FIX: Get only NON-EXPIRED batches using the new repository method
+        LocalDate today = LocalDate.now();
+        List<Batch> batches = batchRepository.findNonExpiredBatchesByProductId(productId, today);
 
         if (batches.isEmpty()) {
-            throw new RuntimeException("No batches available for product ID: " + productId);
+            throw new RuntimeException("No valid (non-expired) batches available for product ID: " + productId);
         }
 
         int remainingToDeduct = quantityToDeduct;
@@ -427,13 +434,14 @@ public class ProductService {
                 remainingToDeduct -= deductFromThisBatch;
 
                 System.out.println("✅ FEFO: Deducted " + deductFromThisBatch + " from batch " +
-                        batch.getBatchNumber() + " (Remaining in batch: " + batch.getStock() + ")");
+                        batch.getBatchNumber() + " (Expiry: " + batch.getExpirationDate() +
+                        ", Remaining in batch: " + batch.getStock() + ")");
             }
         }
 
         if (remainingToDeduct > 0) {
-            throw new RuntimeException("Insufficient batch stock. Could not fulfill " +
-                    remainingToDeduct + " units from batches.");
+            throw new RuntimeException("Insufficient non-expired batch stock. Could not fulfill " +
+                    remainingToDeduct + " units from available batches.");
         }
 
         batchInfoJson.append("]");

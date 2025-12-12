@@ -1,5 +1,6 @@
     package com.inventory.Calo.s_Drugstore.controller;
-    
+
+    import com.inventory.Calo.s_Drugstore.entity.Batch;
     import com.inventory.Calo.s_Drugstore.util.IconUtil;
     import com.inventory.Calo.s_Drugstore.entity.Product;
     import com.inventory.Calo.s_Drugstore.entity.Sale;
@@ -332,26 +333,34 @@
                 showStyledAlert(Alert.AlertType.WARNING, "Invalid Quantity", "Please enter a quantity.");
                 return;
             }
-    
+
             try {
                 int quantity = Integer.parseInt(qtyText);
                 if (quantity <= 0) {
                     showStyledAlert(Alert.AlertType.WARNING, "Invalid Quantity", "Quantity must be greater than 0.");
                     return;
                 }
-    
-                if (selectedProduct.getExpirationDate() != null &&
-                        selectedProduct.getExpirationDate().isBefore(java.time.LocalDate.now())) {
-                    showStyledAlert(Alert.AlertType.ERROR, "Expired Product",
-                            selectedProduct.getBrandName() + " has expired on " +
-                                    selectedProduct.getExpirationDate().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy")) +
-                                    " and cannot be sold.");
+
+                // ✅ IMPROVED: Check if product has ANY non-expired batches with stock
+                List<Batch> validBatches = productService.getBatchesForProduct(selectedProduct)
+                        .stream()
+                        .filter(batch -> batch.getExpirationDate() != null &&
+                                batch.getExpirationDate().isAfter(java.time.LocalDate.now()) &&
+                                batch.getStock() > 0)
+                        .toList();
+
+                if (validBatches.isEmpty()) {
+                    showStyledAlert(Alert.AlertType.ERROR, "No Valid Stock",
+                            selectedProduct.getBrandName() + " has no available non-expired batches and cannot be sold.");
                     return;
                 }
-    
-                if (quantity > selectedProduct.getStock()) {
+
+                // Calculate total available stock from non-expired batches only
+                int availableStock = validBatches.stream().mapToInt(Batch::getStock).sum();
+
+                if (quantity > availableStock) {
                     showStyledAlert(Alert.AlertType.WARNING, "Insufficient Stock",
-                            "Only " + selectedProduct.getStock() + " units available in stock.");
+                            "Only " + availableStock + " units available in non-expired batches.");
                     return;
                 }
     
