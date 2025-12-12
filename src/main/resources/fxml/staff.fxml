@@ -90,11 +90,14 @@
                 </padding>
 
                 <!-- Page Header -->
-                <HBox alignment="CENTER_LEFT">
+                <HBox alignment="CENTER_LEFT" spacing="15">
                     <VBox spacing="5" HBox.hgrow="ALWAYS">
                         <Label text="Staff Management" styleClass="page-header"/>
                         <Label text="Manage staff accounts and access control" styleClass="page-subheader"/>
                     </VBox>
+                    <Button text="📁+ Add Category" styleClass="add-staff-btn"
+                            onAction="#handleAddCategory"
+                            style="-fx-background-color: #FF9800;"/>
                     <Button text="👥+ Add Staff Account" styleClass="add-staff-btn"
                             onAction="#handleAddStaff"/>
                 </HBox>
