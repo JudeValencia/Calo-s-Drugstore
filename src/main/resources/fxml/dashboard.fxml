@@ -51,7 +51,7 @@
                 <Button fx:id="salesBtn" text="🛒  Sales" styleClass="menu-item"
                         onAction="#handleSales"/>
 
-                <Button fx:id="staffBtn" text="👥  Staff" styleClass="menu-item"
+                <Button fx:id="staffBtn" text="👥  Employee" styleClass="menu-item"
                         onAction="#handleStaff"/>
 
                 <Button fx:id="reportsBtn" text="📈  Reports" styleClass="menu-item"

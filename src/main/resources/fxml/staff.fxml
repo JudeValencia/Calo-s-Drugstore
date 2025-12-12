@@ -47,7 +47,7 @@
                 <Button fx:id="salesBtn" text="🛒  Sales" styleClass="menu-item"
                         onAction="#handleSales"/>
 
-                <Button fx:id="staffBtn" text="👥  Staff" styleClass="menu-item"
+                <Button fx:id="staffBtn" text="👥  Employee" styleClass="menu-item"
                         onAction="#handleStaff"/>
 
                 <Button fx:id="reportsBtn" text="📈  Reports" styleClass="menu-item"
@@ -95,13 +95,13 @@
                 <!-- Page Header -->
                 <HBox alignment="CENTER_LEFT" spacing="15">
                     <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Staff Management" styleClass="page-header"/>
-                        <Label text="Manage staff accounts and access control" styleClass="page-subheader"/>
+                        <Label text="Employee Management" styleClass="page-header"/>
+                        <Label text="Manage employee accounts and access control" styleClass="page-subheader"/>
                     </VBox>
                     <Button text="📁+ Add Category" styleClass="add-staff-btn"
                             onAction="#handleAddCategory"
                             style="-fx-background-color: #FF9800;"/>
-                    <Button text="👥+ Add Staff Account" styleClass="add-staff-btn"
+                    <Button text="👥+ Add Employee Account" styleClass="add-staff-btn"
                             onAction="#handleAddStaff"/>
                 </HBox>
 
@@ -119,7 +119,7 @@
                         <padding>
                             <Insets top="25" right="25" bottom="25" left="25"/>
                         </padding>
-                        <Label text="Total Staff" styleClass="card-label"/>
+                        <Label text="Total Employee" styleClass="card-label"/>
                         <Label fx:id="totalStaffLabel" text="0" styleClass="card-value"/>
                     </VBox>
 
@@ -146,7 +146,7 @@
                         <padding>
                             <Insets top="25" right="25" bottom="25" left="25"/>
                         </padding>
-                        <Label text="Staff Members" styleClass="card-label"/>
+                        <Label text="Employee Members" styleClass="card-label"/>
                         <Label fx:id="staffMembersLabel" text="0" styleClass="card-value"/>
                     </VBox>
                 </GridPane>
@@ -158,7 +158,7 @@
                     </padding>
 
                     <VBox spacing="5">
-                        <Label text="Staff Accounts" styleClass="card-title"/>
+                        <Label text="Employee Accounts" styleClass="card-title"/>
                         <Label text="Manage all staff accounts, roles, and permissions" styleClass="card-subtitle"/>
                     </VBox>
 
@@ -167,7 +167,7 @@
                                prefHeight="400"
                                minHeight="400">
                         <columns>
-                            <TableColumn fx:id="staffIdColumn" text="Staff ID" minWidth="100" prefWidth="120"/>
+                            <TableColumn fx:id="staffIdColumn" text="Employee ID" minWidth="100" prefWidth="120"/>
                             <TableColumn fx:id="nameColumn" text="Name" minWidth="150" prefWidth="200"/>
                             <TableColumn fx:id="contactColumn" text="Contact" minWidth="250" prefWidth="300"/>
                             <TableColumn fx:id="roleColumn" text="Role" minWidth="100" prefWidth="130"/>
