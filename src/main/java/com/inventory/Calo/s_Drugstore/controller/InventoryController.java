@@ -1335,35 +1335,34 @@ private BatchRepository batchRepository;
         }
     
         private void showBulkAddDialog() {
-            // Create custom dialog
             Stage dialogStage = new Stage();
             IconUtil.setApplicationIcon(dialogStage);
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.setTitle("Bulk Add Products");
+            dialogStage.setTitle("Bulk Add Inventory");
             dialogStage.setResizable(false);
-    
+
             // Main container
             VBox mainContainer = new VBox(15);
             mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
             mainContainer.setPrefWidth(900);
-            mainContainer.setMaxHeight(600);
-    
+            mainContainer.setMaxHeight(650);
+
             // Header
-            Label titleLabel = new Label("Bulk Add Products");
+            Label titleLabel = new Label("Bulk Add Inventory");
             titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-    
-            Label subtitleLabel = new Label("Add multiple products to inventory at once. Fill in the details for each medicine you want to add.");
+
+            Label subtitleLabel = new Label("Add multiple batches to inventory. Search products and enter batch details for each.");
             subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
             subtitleLabel.setWrapText(true);
-    
+
             VBox header = new VBox(5, titleLabel, subtitleLabel);
-    
-            // ScrollPane for medicine forms
+
+            // ScrollPane for batch forms
             ScrollPane scrollPane = new ScrollPane();
             scrollPane.setFitToWidth(true);
             scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-            scrollPane.setPrefHeight(350);
+            scrollPane.setPrefHeight(400);
 
             String scrollBarStyle =
                     ".scroll-bar {" +
@@ -1390,17 +1389,17 @@ private BatchRepository batchRepository;
                 }
             });
 
-            VBox medicineFormsContainer = new VBox(15);
-            scrollPane.setContent(medicineFormsContainer);
-    
-            // List to store medicine data
-            ObservableList<MedicineFormData> medicineDataList = FXCollections.observableArrayList();
-    
-            // Add first medicine form
-            addMedicineForm(medicineFormsContainer, medicineDataList, 1);
-    
-            // Add Another Medicine button
-            Button addAnotherButton = new Button("+ Add Another Medicine");
+            VBox batchFormsContainer = new VBox(15);
+            scrollPane.setContent(batchFormsContainer);
+
+            // List to store batch form data
+            ObservableList<BatchFormData> batchDataList = FXCollections.observableArrayList();
+
+            // Add first batch form
+            addBatchForm(batchFormsContainer, batchDataList, 1);
+
+            // Add Another Product button
+            Button addAnotherButton = new Button("+ Add Another Product");
             addAnotherButton.setStyle(
                     "-fx-background-color: #2196F3; " +
                             "-fx-text-fill: white; " +
@@ -1410,35 +1409,31 @@ private BatchRepository batchRepository;
                             "-fx-background-radius: 8px; " +
                             "-fx-cursor: hand;"
             );
-    
+
             addAnotherButton.setOnMouseEntered(e -> addAnotherButton.setStyle(
                     addAnotherButton.getStyle() + "-fx-background-color: #1976D2;"
             ));
             addAnotherButton.setOnMouseExited(e -> addAnotherButton.setStyle(
                     addAnotherButton.getStyle().replace("-fx-background-color: #1976D2;", "-fx-background-color: #2196F3;")
             ));
-    
-            // Counter label
-            Label counterLabel = new Label("0 of 1 medicines ready to add");
+
+            Label counterLabel = new Label("0 of 1 batches ready to add");
             counterLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
-    
+
             addAnotherButton.setOnAction(e -> {
-                int nextNumber = medicineFormsContainer.getChildren().size() + 1;
-                // Add new form at index 0 (top) instead of bottom
-                addMedicineFormAtTop(medicineFormsContainer, medicineDataList, nextNumber);
-                counterLabel.setText("0 of " + nextNumber + " medicines ready to add");
-    
-                // Scroll to top to show the new form
-                Platform.runLater(() -> scrollPane.setVvalue(0));
+                int nextNumber = batchFormsContainer.getChildren().size() + 1;
+                addBatchForm(batchFormsContainer, batchDataList, nextNumber);
+                counterLabel.setText("0 of " + nextNumber + " batches ready to add");
+                Platform.runLater(() -> scrollPane.setVvalue(0.0)); // Scroll to top
             });
-    
+
             HBox addButtonContainer = new HBox(15, addAnotherButton, counterLabel);
             addButtonContainer.setAlignment(Pos.CENTER_LEFT);
-    
+
             // Bottom buttons
             HBox buttonContainer = new HBox(15);
             buttonContainer.setAlignment(Pos.CENTER_RIGHT);
-    
+
             Button cancelButton = new Button("Cancel");
             cancelButton.setStyle(
                     "-fx-background-color: white; " +
@@ -1452,8 +1447,8 @@ private BatchRepository batchRepository;
                             "-fx-cursor: hand;"
             );
             cancelButton.setOnAction(e -> dialogStage.close());
-    
-            Button saveAllButton = new Button("Add All Medicines");
+
+            Button saveAllButton = new Button("Add All Inventory");
             saveAllButton.setStyle(
                     "-fx-background-color: #4CAF50; " +
                             "-fx-text-fill: white; " +
@@ -1463,244 +1458,137 @@ private BatchRepository batchRepository;
                             "-fx-background-radius: 8px; " +
                             "-fx-cursor: hand;"
             );
-    
+
             saveAllButton.setOnMouseEntered(e -> saveAllButton.setStyle(
                     saveAllButton.getStyle() + "-fx-background-color: #45a049;"
             ));
             saveAllButton.setOnMouseExited(e -> saveAllButton.setStyle(
                     saveAllButton.getStyle().replace("-fx-background-color: #45a049;", "-fx-background-color: #4CAF50;")
             ));
-    
+
             saveAllButton.setOnAction(e -> {
                 try {
                     int successCount = 0;
                     int failCount = 0;
                     int emptyCount = 0;
                     StringBuilder errorMessages = new StringBuilder();
-    
-                    for (int i = 0; i < medicineDataList.size(); i++) {
-                        MedicineFormData formData = medicineDataList.get(i);
-    
+
+                    for (int i = 0; i < batchDataList.size(); i++) {
+                        BatchFormData formData = batchDataList.get(i);
+
                         // Check if form is completely empty (skip it)
-                        if (formData.brandName.getText().trim().isEmpty() &&
-                                formData.genericName.getText().trim().isEmpty() &&
-                                formData.stock.getText().equals("0") &&
-                                formData.price.getText().equals("0.00")) {
+                        if (formData.selectedProduct == null &&
+                                formData.quantity.getText().trim().isEmpty() &&
+                                formData.expiryDate.getValue() == null) {
                             emptyCount++;
                             continue;
                         }
-    
+
                         // Validate required fields
                         StringBuilder missingFields = new StringBuilder();
-    
-                        if (formData.brandName.getText().trim().isEmpty()) {
-                            missingFields.append("Brand Name, ");
+
+                        if (formData.selectedProduct == null) {
+                            missingFields.append("Product Selection, ");
                         }
-                        if (formData.genericName.getText().trim().isEmpty()) {
-                            missingFields.append("Generic Name, ");
-                        }
-                        if (formData.stock.getText().trim().isEmpty() || formData.stock.getText().equals("0")) {
-                            missingFields.append("Stock, ");
-                        }
-                        if (formData.price.getText().trim().isEmpty() || formData.price.getText().equals("0.00")) {
-                            missingFields.append("Price, ");
+                        if (formData.quantity.getText().trim().isEmpty() || formData.quantity.getText().equals("0")) {
+                            missingFields.append("Quantity, ");
                         }
                         if (formData.expiryDate.getValue() == null) {
                             missingFields.append("Expiry Date, ");
                         }
-                        if (formData.supplier.getText().trim().isEmpty()) {
-                            missingFields.append("Supplier, ");
-                        }
-    
+
                         // If there are missing fields, add to error messages
                         if (missingFields.length() > 0) {
                             failCount++;
-                            // Remove last comma and space
                             String missing = missingFields.substring(0, missingFields.length() - 2);
-                            errorMessages.append("Medicine #").append(i + 1).append(": Missing ")
+                            errorMessages.append("Batch #").append(i + 1).append(": Missing ")
                                     .append(missing).append("\n");
                             continue;
                         }
-    
+
+                        // Validate expiry date
+                        if (formData.expiryDate.getValue().isBefore(LocalDate.now())) {
+                            failCount++;
+                            errorMessages.append("Batch #").append(i + 1)
+                                    .append(": Expiry date has already passed\n");
+                            continue;
+                        }
+
                         try {
-                            // All validations passed, create the product
-                            Product newProduct = new Product();
-                            newProduct.setMedicineId(productService.generateNextMedicineId());
-                            newProduct.setBrandName(formData.brandName.getText().trim());
-                            newProduct.setGenericName(formData.genericName.getText().trim());
-                            newProduct.setStock(Integer.parseInt(formData.stock.getText()));
-                            newProduct.setPrice(new BigDecimal(formData.price.getText()));
-                            newProduct.setExpirationDate(formData.expiryDate.getValue());
-                            newProduct.setSupplier(formData.supplier.getText().trim());
-                            newProduct.setCategory(formData.category.getText().trim());
-                            newProduct.setBatchNumber(formData.batchNumber.getText().trim());
-                            newProduct.setMinStockLevel(Integer.parseInt(formData.minStockLevel.getText()));
-                            newProduct.setPrescriptionRequired(formData.prescriptionRequired.isSelected());
-                            newProduct.setDosageForm(formData.dosageForm.getValue());
-                            newProduct.setDosageStrength(formData.dosageStrength.getText().trim());
-                            newProduct.setManufacturer(formData.manufacturer.getText().trim());
-                            newProduct.setUnitOfMeasure(formData.unitOfMeasure.getValue());
-    
-                            productService.saveProduct(newProduct);
+                            // Parse and validate quantity
+                            int quantity = Integer.parseInt(formData.quantity.getText().trim());
+                            if (quantity <= 0) {
+                                throw new NumberFormatException("Quantity must be greater than 0");
+                            }
+
+                            // Get price and supplier from product
+                            BigDecimal price = formData.selectedProduct.getPrice();
+                            String supplier = formData.selectedProduct.getSupplier() != null ?
+                                    formData.selectedProduct.getSupplier() : "Unknown";
+
+                            // Add batch
+                            productService.saveProductWithBatch(
+                                    formData.selectedProduct,
+                                    quantity,
+                                    formData.expiryDate.getValue(),
+                                    price,
+                                    supplier
+                            );
                             successCount++;
-    
+
                         } catch (NumberFormatException ex) {
                             failCount++;
-                            errorMessages.append("Medicine #").append(i + 1)
-                                    .append(": Invalid number format\n");
+                            errorMessages.append("Batch #").append(i + 1)
+                                    .append(": Invalid quantity format\n");
                         } catch (Exception ex) {
                             failCount++;
-                            errorMessages.append("Medicine #").append(i + 1)
+                            errorMessages.append("Batch #").append(i + 1)
                                     .append(": ").append(ex.getMessage()).append("\n");
                         }
                     }
-    
+
                     // Show appropriate message based on results
                     if (successCount == 0 && failCount > 0) {
-                        // No medicines added, show error
                         showStyledAlert(Alert.AlertType.ERROR, "Validation Failed",
-                                "No medicines were added. Please fix the following errors:\n\n" + errorMessages.toString());
+                                "No batches were added. Please fix the following errors:\n\n" + errorMessages.toString());
                     } else if (successCount > 0 && failCount > 0) {
-                        // Some succeeded, some failed
                         loadProducts();
                         dialogStage.close();
                         showStyledAlert(Alert.AlertType.WARNING, "Partial Success",
-                                successCount + " medicine(s) added successfully!\n" +
-                                        failCount + " medicine(s) failed validation:\n\n" + errorMessages.toString());
+                                successCount + " batch(es) added successfully!\n" +
+                                        failCount + " batch(es) failed validation:\n\n" + errorMessages.toString());
                     } else if (successCount > 0) {
-                        // All succeeded
                         loadProducts();
                         dialogStage.close();
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                                successCount + " medicine(s) added successfully!");
+                                successCount + " batch(es) added successfully!");
                     } else {
-                        // All forms were empty
                         showStyledAlert(Alert.AlertType.WARNING, "No Data",
-                                "Please fill in at least one medicine form before adding.");
+                                "Please fill in at least one batch form before adding.");
                     }
-    
+
                 } catch (Exception ex) {
-                    showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to add products: " + ex.getMessage());
+                    showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to add batches: " + ex.getMessage());
                 }
             });
-    
+
             buttonContainer.getChildren().addAll(cancelButton, saveAllButton);
-    
+
             // Add all sections to main container
             mainContainer.getChildren().addAll(header, scrollPane, addButtonContainer, buttonContainer);
-    
-            // Create scene
+
             Scene scene = new Scene(mainContainer);
             scene.getStylesheets().add("data:text/css," + scrollBarStyle);
-            addDatePickerCalendarCSS(scene);  // added
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
         }
-    
-        private void addMedicineFormAtTop(VBox container, ObservableList<MedicineFormData> dataList, int number) {
-            // Medicine card
-            VBox medicineCard = new VBox(15);
-            medicineCard.setStyle(
-                    "-fx-background-color: #F8F9FA; " +
-                            "-fx-background-radius: 10px; " +
-                            "-fx-padding: 25; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 10px;"
-            );
-    
-            // Header
-            Label headerLabel = new Label("Medicine #" + number);
-            headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-    
-            // Form fields - Two columns - FRESH FIELDS EACH TIME
-            GridPane grid = new GridPane();
-            grid.setHgap(15);
-            grid.setVgap(12);
-    
-            // Left column - NEW INSTANCES
-            TextField brandNameField = new TextField();
-            brandNameField.setPromptText("Enter brand name");
-            styleTextField(brandNameField);
-    
-            TextField genericNameField = new TextField();
-            genericNameField.setPromptText("Enter generic/active ingredient");
-            styleTextField(genericNameField);
-    
-            TextField priceField = new TextField("0.00");
-            priceField.setPromptText("0.00");
-            styleTextField(priceField);
-    
-            TextField supplierField = new TextField();
-            supplierField.setPromptText("Enter supplier name");
-            styleTextField(supplierField);
-    
-            // Right column - NEW INSTANCES
-            TextField stockField = new TextField("0");
-            stockField.setPromptText("0");
-            styleTextField(stockField);
-    
-            DatePicker expiryPicker = new DatePicker(LocalDate.now().plusYears(1));
-            expiryPicker.setPromptText("dd/mm/yyyy");
-            expiryPicker.setStyle(
-                    "-fx-background-color: #F8F9FA; " +
-                            "-fx-background-radius: 8px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 8px; " +
-                            "-fx-padding: 12px 15px; " +
-                            "-fx-font-size: 14px;" +
-                            "-fx-text-fill: black;" +  // added
-                            "-fx-prompt-text-fill: #7f8c8d;"  // added
-            );
-            expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
-            expiryPicker.getStyleClass().add("custom-datepicker");
-    
-            TextField categoryField = new TextField();
-            categoryField.setPromptText("Enter category");
-            styleTextField(categoryField);
-    
-            // Column 1
-            // Column 1
-            grid.add(createFieldLabel("Brand Name *"), 0, 0);
-            grid.add(brandNameField, 0, 1);
-            grid.add(createFieldLabel("Generic Name *"), 0, 2);
-            grid.add(genericNameField, 0, 3);
-            grid.add(createFieldLabel("Price (₱) *"), 0, 4);
-            grid.add(priceField, 0, 5);
-            grid.add(createFieldLabel("Supplier *"), 0, 6);
-            grid.add(supplierField, 0, 7);
-    
-            // Column 2
-            grid.add(createFieldLabel("Stock Quantity"), 1, 0);
-            grid.add(stockField, 1, 1);
-            grid.add(createFieldLabel("Expiration Date"), 1, 2);
-            grid.add(expiryPicker, 1, 3);
-            grid.add(createFieldLabel("Category"), 1, 4);
-            grid.add(categoryField, 1, 5);
-    
-            // Set column constraints
-            ColumnConstraints col1 = new ColumnConstraints();
-            col1.setPercentWidth(50);
-            ColumnConstraints col2 = new ColumnConstraints();
-            col2.setPercentWidth(50);
-            grid.getColumnConstraints().addAll(col1, col2);
-    
-            medicineCard.getChildren().addAll(headerLabel, grid);
-    
-            // ADD AT INDEX 0 (TOP) instead of bottom
-            container.getChildren().add(0, medicineCard);
-    
-            // Store form data
-            MedicineFormData formData = new MedicineFormData(brandNameField, genericNameField, stockField, priceField, expiryPicker, supplierField, categoryField);
-            dataList.add(0, formData); // Also add to list at top
-        }
-    
-        private void addMedicineForm(VBox container, ObservableList<MedicineFormData> dataList, int number) {
-            // Medicine card
-            VBox medicineCard = new VBox(15);
-            medicineCard.setStyle(
+
+        // Helper method to add a batch form
+        private void addBatchForm(VBox container, ObservableList<BatchFormData> dataList, int number) {
+            // Batch card
+            VBox batchCard = new VBox(15);
+            batchCard.setStyle(
                     "-fx-background-color: #F8F9FA; " +
                             "-fx-background-radius: 10px; " +
                             "-fx-padding: 20; " +
@@ -1708,40 +1596,91 @@ private BatchRepository batchRepository;
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 10px;"
             );
-    
-            // Header
-            Label headerLabel = new Label("Medicine #" + number);
+
+            // Header with remove button
+            HBox cardHeader = new HBox();
+            cardHeader.setAlignment(Pos.CENTER_LEFT);
+
+            Label headerLabel = new Label("Product #" + number);
             headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-    
-            // Form fields - Two columns - FRESH FIELDS EACH TIME
-            GridPane grid = new GridPane();
-            grid.setHgap(15);
-            grid.setVgap(12);
-    
-            // Left column - NEW INSTANCES
-            TextField brandNameField = new TextField();
-            brandNameField.setPromptText("Enter brand name");
-            styleTextField(brandNameField);
-    
-            TextField genericNameField = new TextField();
-            genericNameField.setPromptText("Enter generic/active ingredient");
-            styleTextField(genericNameField);
-    
-            TextField priceField = new TextField("0.00");
-            priceField.setPromptText("0.00");
-            styleTextField(priceField);
-    
-            TextField supplierField = new TextField();
-            supplierField.setPromptText("Enter supplier name");
-            styleTextField(supplierField);
-    
-            // Right column - NEW INSTANCES
-            TextField stockField = new TextField("0");
-            stockField.setPromptText("0");
-            styleTextField(stockField);
-    
-            DatePicker expiryPicker = new DatePicker(LocalDate.now().plusYears(1));
-            expiryPicker.setPromptText("dd/mm/yyyy");
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            Button removeBtn = new Button("Remove");
+            removeBtn.setStyle(
+                    "-fx-background-color: #dc3545; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 6px 15px; " +
+                            "-fx-background-radius: 6px; " +
+                            "-fx-cursor: hand;"
+            );
+            removeBtn.setVisible(number > 1); // Only show for forms after the first
+
+            removeBtn.setOnAction(e -> {
+                container.getChildren().remove(batchCard);
+                dataList.removeIf(data -> data.cardReference == batchCard);
+                // Renumber remaining cards
+                for (int i = 0; i < container.getChildren().size(); i++) {
+                    VBox card = (VBox) container.getChildren().get(i);
+                    HBox header = (HBox) card.getChildren().get(0);
+                    Label label = (Label) header.getChildren().get(0);
+                    label.setText("Product #" + (i + 1));
+                }
+            });
+
+            cardHeader.getChildren().addAll(headerLabel, spacer, removeBtn);
+
+            // Product search field
+            TextField searchField = createStyledTextField("", "Search by Product ID or Name...");
+
+            // Search results list
+            ListView<Product> searchResultsList = new ListView<>();
+            searchResultsList.setPrefHeight(80);
+            searchResultsList.setStyle(
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-background-radius: 8px;"
+            );
+            searchResultsList.setPlaceholder(new Label("Start typing to search..."));
+            searchResultsList.setVisible(false);
+            searchResultsList.setManaged(false);
+
+            searchResultsList.setCellFactory(lv -> new javafx.scene.control.ListCell<>() {
+                @Override
+                protected void updateItem(Product item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(String.format("[%s] %s - %s",
+                                item.getMedicineId(),
+                                item.getBrandName(),
+                                item.getGenericName() != null ? item.getGenericName() : "N/A"));
+                    }
+                }
+            });
+
+            // Selected product label
+            Label selectedProductLabel = new Label("No product selected");
+            selectedProductLabel.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-text-fill: #7f8c8d; " +
+                            "-fx-padding: 8; " +
+                            "-fx-background-color: white; " +
+                            "-fx-background-radius: 6px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 6px;"
+            );
+
+            // Batch fields
+            TextField quantityField = createStyledTextField("", "Enter quantity");
+            DatePicker expiryPicker = new DatePicker();
+            expiryPicker.setPromptText("Select expiration date");
             expiryPicker.setStyle(
                     "-fx-background-color: #F8F9FA; " +
                             "-fx-background-radius: 8px; " +
@@ -1750,194 +1689,89 @@ private BatchRepository batchRepository;
                             "-fx-border-radius: 8px; " +
                             "-fx-padding: 12px 15px; " +
                             "-fx-font-size: 14px;" +
-                             "-fx-text-fill: black;" +  // added
-                            "-fx-prompt-text-fill: #7f8c8d;"  // added
+                            "-fx-text-fill: black;" +
+                            "-fx-prompt-text-fill: #7f8c8d;"
             );
             expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
-            expiryPicker.getStyleClass().add("custom-datepicker");
-    
-            TextField categoryField = new TextField();
-            categoryField.setPromptText("Enter category");
-            styleTextField(categoryField);
-    
-            // New Priority Fields
-            TextField batchNumberField = new TextField();
-            batchNumberField.setPromptText("Batch/Lot number");
-            styleTextField(batchNumberField);
-    
-            TextField minStockField = new TextField("10");
-            minStockField.setPromptText("10");
-            styleTextField(minStockField);
-    
-            CheckBox prescriptionCheckBox = new CheckBox("Rx Required");
-            prescriptionCheckBox.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
-    
-            ComboBox<String> dosageFormCombo = new ComboBox<>();
-            dosageFormCombo.getItems().addAll("Tablet", "Capsule", "Syrup", "Injection", "Cream", "Ointment", "Drops", "Inhaler", "Other");
-            dosageFormCombo.setValue("Tablet");
-            dosageFormCombo.setPromptText("Select form");
-            styleComboBox(dosageFormCombo);
-    
-            TextField dosageStrengthField = new TextField();
-            dosageStrengthField.setPromptText("e.g., 500mg");
-            styleTextField(dosageStrengthField);
-    
-            TextField manufacturerField = new TextField();
-            manufacturerField.setPromptText("Manufacturer name");
-            styleTextField(manufacturerField);
-    
-            ComboBox<String> unitCombo = new ComboBox<>();
-            unitCombo.getItems().addAll("Box", "Strip", "Bottle", "Piece", "Vial", "Tube", "Pack");
-            unitCombo.setValue("Piece");
-            unitCombo.setPromptText("Select unit");
-            styleComboBox(unitCombo);
-    
-            // Column 1
-            // Column 1
-            grid.add(createFieldLabel("Brand Name *"), 0, 0);
-            grid.add(brandNameField, 0, 1);
-            grid.add(createFieldLabel("Generic Name *"), 0, 2);
-            grid.add(genericNameField, 0, 3);
-            grid.add(createFieldLabel("Dosage Form *"), 0, 4);
-            grid.add(dosageFormCombo, 0, 5);
-            grid.add(createFieldLabel("Dosage Strength"), 0, 6);
-            grid.add(dosageStrengthField, 0, 7);
-            grid.add(createFieldLabel("Manufacturer"), 0, 8);
-            grid.add(manufacturerField, 0, 9);
-            grid.add(createFieldLabel("Price (₱) *"), 0, 10);
-            grid.add(priceField, 0, 11);
-            grid.add(createFieldLabel("Supplier *"), 0, 12);
-            grid.add(supplierField, 0, 13);
-    
-            // Column 2
-            grid.add(createFieldLabel("Stock Quantity *"), 1, 0);
-            grid.add(stockField, 1, 1);
-            grid.add(createFieldLabel("Unit of Measure *"), 1, 2);
-            grid.add(unitCombo, 1, 3);
-            grid.add(createFieldLabel("Reorder Level *"), 1, 4);
-            grid.add(minStockField, 1, 5);
-            grid.add(createFieldLabel("Expiration Date *"), 1, 6);
-            grid.add(expiryPicker, 1, 7);
-            grid.add(createFieldLabel("Category"), 1, 8);
-            grid.add(categoryField, 1, 9);
-            grid.add(createFieldLabel("Batch Number"), 1, 10);
-            grid.add(batchNumberField, 1, 11);
-            grid.add(createFieldLabel(""), 1, 12);
-            grid.add(prescriptionCheckBox, 1, 13);
-    
-            // Set column constraints
-            ColumnConstraints col1 = new ColumnConstraints();
-            col1.setPercentWidth(50);
-            ColumnConstraints col2 = new ColumnConstraints();
-            col2.setPercentWidth(50);
-            grid.getColumnConstraints().addAll(col1, col2);
-    
-            medicineCard.getChildren().addAll(headerLabel, grid);
-            container.getChildren().add(medicineCard);
-    
+
+            GridPane fieldsGrid = new GridPane();
+            fieldsGrid.setHgap(15);
+            fieldsGrid.setVgap(12);
+            fieldsGrid.add(createFieldLabel("Quantity *"), 0, 0);
+            fieldsGrid.add(quantityField, 0, 1);
+            fieldsGrid.add(createFieldLabel("Expiry Date *"), 1, 0);
+            fieldsGrid.add(expiryPicker, 1, 1);
+
             // Store form data
-            MedicineFormData formData = new MedicineFormData(brandNameField, genericNameField, stockField, priceField, expiryPicker,
-                    supplierField, categoryField, batchNumberField, minStockField, prescriptionCheckBox,
-                    dosageFormCombo, dosageStrengthField, manufacturerField, unitCombo);
-            dataList.add(formData);
-        }
-    
-        // Helper method to style text fields
-        private void styleTextField(TextField field) {
-            field.setStyle(
-                    "-fx-background-color: #F8F9FA; " +
-                            "-fx-background-radius: 8px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 8px; " +
-                            "-fx-padding: 12px 15px; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-text-fill: #2c3e50;"
-            );
-    
-            // Focus effect
-            field.focusedProperty().addListener((obs, oldVal, newVal) -> {
-                if (newVal) {
-                    field.setStyle(field.getStyle() + "-fx-border-color: #4CAF50;");
-                } else {
-                    field.setStyle(field.getStyle().replace("-fx-border-color: #4CAF50;", "-fx-border-color: #E0E0E0;"));
+            BatchFormData formData = new BatchFormData(quantityField, expiryPicker);
+            formData.cardReference = batchCard;
+            dataList.add(0, formData); // Add at the beginning to match UI order
+
+            // Search functionality
+            searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal == null || newVal.trim().isEmpty()) {
+                    searchResultsList.setVisible(false);
+                    searchResultsList.setManaged(false);
+                    searchResultsList.getSelectionModel().clearSelection();
+                    searchResultsList.getItems().clear();
+                    return;
+                }
+                List<Product> results = productService.searchProducts(newVal.trim());
+                // Use Platform.runLater to avoid ListView internal state conflicts
+                Platform.runLater(() -> {
+                    searchResultsList.getSelectionModel().clearSelection();
+                    searchResultsList.getItems().setAll(results);
+                    searchResultsList.setVisible(!results.isEmpty());
+                    searchResultsList.setManaged(!results.isEmpty());
+                });
+            });
+
+            searchResultsList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    formData.selectedProduct = newVal;
+                    selectedProductLabel.setText(String.format("✅ [%s] %s",
+                            newVal.getMedicineId(), newVal.getBrandName()));
+                    selectedProductLabel.setStyle(
+                            "-fx-font-size: 13px; " +
+                                    "-fx-text-fill: #2c3e50; " +
+                                    "-fx-font-weight: bold; " +
+                                    "-fx-padding: 8; " +
+                                    "-fx-background-color: #e8f5e9; " +
+                                    "-fx-background-radius: 6px; " +
+                                    "-fx-border-color: #4CAF50; " +
+                                    "-fx-border-width: 1px; " +
+                                    "-fx-border-radius: 6px;"
+                    );
+                    searchField.clear();
+                    searchResultsList.setVisible(false);
+                    searchResultsList.setManaged(false);
                 }
             });
+
+            batchCard.getChildren().addAll(cardHeader, createFieldGroup("Search Product *", searchField),
+                    searchResultsList, selectedProductLabel, fieldsGrid);
+
+            // Add at the top (index 0) instead of bottom
+            container.getChildren().add(0, batchCard);
         }
-    
-        private void styleComboBox(ComboBox<?> comboBox) {
-            comboBox.setStyle(
-                    "-fx-background-color: #F8F9FA; " +
-                            "-fx-background-radius: 8px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 8px; " +
-                            "-fx-padding: 12px 15px; " +
-                            "-fx-font-size: 14px;"
-            );
-        }
-    
-        private Label createFieldLabel(String text) {
-            Label label = new Label(text);
-            label.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-            return label;
-        }
-    
-        // Inner class to store form field references
-        private static class MedicineFormData {
-            TextField brandName;
-            TextField genericName;
-            TextField stock;
-            TextField price;
+
+        // BatchFormData class
+        private static class BatchFormData {
+            Product selectedProduct;
+            TextField quantity;
             DatePicker expiryDate;
-            TextField supplier;
-            TextField category;
-            TextField batchNumber;
-            TextField minStockLevel;
-            CheckBox prescriptionRequired;
-            ComboBox<String> dosageForm;
-            TextField dosageStrength;
-            TextField manufacturer;
-            ComboBox<String> unitOfMeasure;
-    
-            public MedicineFormData(TextField brandName, TextField genericName, TextField stock, TextField price,
-                                    DatePicker expiryDate, TextField supplier, TextField category,
-                                    TextField batchNumber, TextField minStockLevel, CheckBox prescriptionRequired,
-                                    ComboBox<String> dosageForm, TextField dosageStrength,
-                                    TextField manufacturer, ComboBox<String> unitOfMeasure) {
-                this.brandName = brandName;
-                this.genericName = genericName;
-                this.stock = stock;
-                this.price = price;
+            VBox cardReference;
+
+            public BatchFormData(TextField quantity, DatePicker expiryDate) {
+                this.quantity = quantity;
                 this.expiryDate = expiryDate;
-                this.supplier = supplier;
-                this.category = category;
-                this.batchNumber = batchNumber;
-                this.minStockLevel = minStockLevel;
-                this.prescriptionRequired = prescriptionRequired;
-                this.dosageForm = dosageForm;
-                this.dosageStrength = dosageStrength;
-                this.manufacturer = manufacturer;
-                this.unitOfMeasure = unitOfMeasure;
             }
-    
-            public MedicineFormData(TextField brandName, TextField genericName, TextField stock, TextField price,
-                                    DatePicker expiryDate, TextField supplier, TextField category) {
-                this.brandName = brandName;
-                this.genericName = genericName;
-                this.stock = stock;
-                this.price = price;
-                this.expiryDate = expiryDate;
-                this.supplier = supplier;
-                this.category = category;
-            }
-    
         }
-    
+
         private void handleEditProduct(Product product) {
-            showProductDialog(product);
+            showBatchesDialog(product);
         }
-    
+
         private void handleViewProduct(Product product) {
             showProductDetailsDialog(product);
         }
@@ -2918,7 +2752,7 @@ private BatchRepository batchRepository;
             );
             cancelButton.setOnAction(e -> dialogStage.close());
 
-            Button saveButton = new Button(product == null ? "Add Product" : "Add New Batch");
+            Button saveButton = new Button(product == null ? "Add Inventory" : "Add New Batch");
             saveButton.setStyle(
                     "-fx-background-color: #4CAF50; " +
                             "-fx-text-fill: white; " +
@@ -3086,9 +2920,10 @@ private BatchRepository batchRepository;
             dialogStage.setTitle("Add New Batch");
             dialogStage.setResizable(false);
 
-            VBox mainContainer = new VBox(20);
-            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
-            mainContainer.setPrefWidth(650);
+            // Main container
+            VBox mainContainer = new VBox(10);
+            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 20;");
+            mainContainer.setPrefWidth(700);
 
             // Header
             Label titleLabel = new Label("Add New Batch to Inventory");
@@ -3096,33 +2931,63 @@ private BatchRepository batchRepository;
 
             Label subtitleLabel = new Label(
                     "Step 1: Search and select a product from Product Management.\n" +
-                            "Step 2: Enter batch details (quantity, expiry, price, supplier)."
+                            "Step 2: Enter batch details (quantity and expiry date)."
             );
-            subtitleLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+            subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
             subtitleLabel.setWrapText(true);
 
-            VBox header = new VBox(10, titleLabel, subtitleLabel);
+            VBox header = new VBox(8, titleLabel, subtitleLabel);
 
-            // Product Search Section
-            Label searchLabel = new Label("🔍 Step 1: Search Product");
-            searchLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+            // ScrollPane for form content
+            ScrollPane scrollPane = new ScrollPane();
+            scrollPane.setFitToWidth(true);
+            scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+            scrollPane.setPrefHeight(450);
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-            TextField searchField = new TextField();
-            searchField.setPromptText("Search by Product ID or Name...");
-            searchField.setStyle(
-                    "-fx-font-size: 14px; " +
-                            "-fx-padding: 12px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 2px; " +
-                            "-fx-border-radius: 8px; " +
-                            "-fx-background-radius: 8px;"
-            );
+            // Scrollbar styling
+            String scrollBarStyle =
+                    ".scroll-bar {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .thumb {" +
+                            "    -fx-background-color: #cbd5e0 !important;" +
+                            "    -fx-background-radius: 4px !important;" +
+                            "}" +
+                            ".scroll-bar .thumb:hover {" +
+                            "    -fx-background-color: #a0aec0 !important;" +
+                            "}" +
+                            ".scroll-bar .track {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "}" +
+                            ".scroll-bar .increment-button," +
+                            ".scroll-bar .decrement-button {" +
+                            "    -fx-background-color: transparent !important;" +
+                            "    -fx-padding: 0 !important;" +
+                            "}";
+
+            scrollPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.getStylesheets().add("data:text/css," + scrollBarStyle);
+                }
+            });
+
+            // Form container
+            VBox formContainer = new VBox(15);
+
+            // ===== PRODUCT SEARCH SECTION =====
+            Label searchSectionLabel = new Label("Search Product");
+            searchSectionLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            TextField searchField = createStyledTextField("", "Search by Product ID or Name...");
 
             // Search results list
             ListView<Product> searchResultsList = new ListView<>();
-            searchResultsList.setPrefHeight(150);
+            searchResultsList.setPrefHeight(120);
             searchResultsList.setStyle(
-                    "-fx-border-color: #E0E0E0; " +
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-border-color: #E0E0E0; " +
                             "-fx-border-width: 1px; " +
                             "-fx-border-radius: 8px; " +
                             "-fx-background-radius: 8px;"
@@ -3162,7 +3027,7 @@ private BatchRepository batchRepository;
             selectedProductLabel.setStyle(
                     "-fx-font-size: 13px; " +
                             "-fx-text-fill: #7f8c8d; " +
-                            "-fx-padding: 10;" +
+                            "-fx-padding: 10; " +
                             "-fx-background-color: #F8F9FA; " +
                             "-fx-background-radius: 6px;"
             );
@@ -3176,119 +3041,74 @@ private BatchRepository batchRepository;
                             newVal.getMedicineId(),
                             newVal.getBrandName()));
                     selectedProductLabel.setStyle(
-                            selectedProductLabel.getStyle() + "-fx-text-fill: #2c3e50; -fx-font-weight: bold;"
+                            "-fx-font-size: 13px; " +
+                                    "-fx-text-fill: #2c3e50; " +
+                                    "-fx-font-weight: bold; " +
+                                    "-fx-padding: 10; " +
+                                    "-fx-background-color: #e8f5e9; " +
+                                    "-fx-background-radius: 6px;"
                     );
                 }
             });
 
-            VBox searchSection = new VBox(10, searchLabel, searchField, searchResultsList, selectedProductLabel);
-
-            // Batch Details Section
-            Label batchLabel = new Label("📦 Step 2: Enter Batch Details");
-            batchLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 10 0 0 0;");
-
-            GridPane batchGrid = new GridPane();
-            batchGrid.setHgap(15);
-            batchGrid.setVgap(12);
+            // ===== BATCH INFORMATION SECTION =====
+            Label batchInfoLabel = new Label("Batch Information");
+            batchInfoLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 15 0 0 0;");
 
             // Batch Number (auto-generated, read-only)
-            Label batchNumLabel = new Label("Batch Number:");
-            batchNumLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
-            TextField batchNumField = new TextField();
-            batchNumField.setPromptText("Auto-generated");
+            TextField batchNumField = createStyledTextField("Auto-generated", "Batch number");
             batchNumField.setDisable(true);
-            batchNumField.setStyle(
-                    "-fx-font-size: 13px; " +
-                            "-fx-padding: 10px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 6px; " +
-                            "-fx-background-radius: 6px; " +
-                            "-fx-opacity: 1;"
-            );
+            batchNumField.setStyle(batchNumField.getStyle() + "-fx-opacity: 1;");
 
-            // Quantity
-            Label quantityLabel = new Label("Quantity:*");
-            quantityLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
-            TextField quantityField = new TextField();
-            quantityField.setPromptText("Enter quantity");
-            quantityField.setStyle(
-                    "-fx-font-size: 13px; " +
-                            "-fx-padding: 10px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 6px; " +
-                            "-fx-background-radius: 6px;"
-            );
+            // Stock Quantity
+            TextField quantityField = createStyledTextField("", "Quantity for this batch");
 
-            // Price
-            Label priceLabel = new Label("Price per Unit:*");
-            priceLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
-            TextField priceField = new TextField();
-            priceField.setPromptText("Enter price");
-            priceField.setStyle(
-                    "-fx-font-size: 13px; " +
-                            "-fx-padding: 10px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 6px; " +
-                            "-fx-background-radius: 6px;"
-            );
-
-            // Expiry Date
-            Label expiryLabel = new Label("Expiry Date:*");
-            expiryLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+            // Expiration Date
             DatePicker expiryPicker = new DatePicker();
-            expiryPicker.setPromptText("Select expiry date");
+            expiryPicker.setPromptText("Select expiration date");
             expiryPicker.setStyle(
-                    "-fx-font-size: 13px; " +
-                            "-fx-padding: 5px; " +
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 8px; " +
                             "-fx-border-color: #E0E0E0; " +
                             "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 6px; " +
-                            "-fx-background-radius: 6px;"
+                            "-fx-border-radius: 8px; " +
+                            "-fx-padding: 12px 15px; " +
+                            "-fx-font-size: 14px;" +
+                            "-fx-text-fill: black;" +
+                            "-fx-prompt-text-fill: #7f8c8d;"
+            );
+            expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
+
+            // Add all fields to form container
+            formContainer.getChildren().addAll(
+                    searchSectionLabel,
+                    createFieldGroup("Search Product *", searchField),
+                    searchResultsList,
+                    selectedProductLabel,
+
+                    batchInfoLabel,
+                    createFieldGroup("Batch Number", batchNumField),
+                    createFieldGroup("Stock Quantity *", quantityField),
+                    createFieldGroup("Expiration Date *", expiryPicker)
             );
 
-            // Supplier
-            Label supplierLabel = new Label("Supplier:*");
-            supplierLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50;");
-            TextField supplierField = new TextField();
-            supplierField.setPromptText("Enter supplier name");
-            supplierField.setStyle(
-                    "-fx-font-size: 13px; " +
-                            "-fx-padding: 10px; " +
-                            "-fx-border-color: #E0E0E0; " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 6px; " +
-                            "-fx-background-radius: 6px;"
-            );
-
-            // Add to grid
-            batchGrid.add(batchNumLabel, 0, 0);
-            batchGrid.add(batchNumField, 1, 0);
-            batchGrid.add(quantityLabel, 0, 1);
-            batchGrid.add(quantityField, 1, 1);
-            batchGrid.add(priceLabel, 0, 2);
-            batchGrid.add(priceField, 1, 2);
-            batchGrid.add(expiryLabel, 0, 3);
-            batchGrid.add(expiryPicker, 1, 3);
-            batchGrid.add(supplierLabel, 0, 4);
-            batchGrid.add(supplierField, 1, 4);
-
-            VBox batchSection = new VBox(10, batchLabel, batchGrid);
+            scrollPane.setContent(formContainer);
 
             // Buttons
-            HBox buttonBox = new HBox(15);
-            buttonBox.setAlignment(Pos.CENTER_RIGHT);
+            HBox buttonContainer = new HBox(15);
+            buttonContainer.setAlignment(Pos.CENTER_RIGHT);
+            buttonContainer.setStyle("-fx-padding: 10 0 0 0;");
 
             Button cancelButton = new Button("Cancel");
             cancelButton.setStyle(
-                    "-fx-background-color: #6c757d; " +
-                            "-fx-text-fill: white; " +
+                    "-fx-background-color: white; " +
+                            "-fx-text-fill: #2c3e50; " +
                             "-fx-font-size: 14px; " +
-                            "-fx-font-weight: bold; " +
                             "-fx-padding: 12px 30px; " +
                             "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
                             "-fx-cursor: hand;"
             );
             cancelButton.setOnAction(e -> dialogStage.close());
@@ -3304,6 +3124,13 @@ private BatchRepository batchRepository;
                             "-fx-cursor: hand;"
             );
 
+            addBatchButton.setOnMouseEntered(e -> addBatchButton.setStyle(
+                    addBatchButton.getStyle() + "-fx-background-color: #45a049;"
+            ));
+            addBatchButton.setOnMouseExited(e -> addBatchButton.setStyle(
+                    addBatchButton.getStyle().replace("-fx-background-color: #45a049;", "-fx-background-color: #4CAF50;")
+            ));
+
             addBatchButton.setOnAction(e -> {
                 try {
                     // Validate product selection
@@ -3315,22 +3142,16 @@ private BatchRepository batchRepository;
 
                     // Validate required fields
                     StringBuilder missingFields = new StringBuilder();
-                    if (quantityField.getText().trim().isEmpty()) {
-                        missingFields.append("• Quantity\n");
-                    }
-                    if (priceField.getText().trim().isEmpty()) {
-                        missingFields.append("• Price\n");
+                    if (quantityField.getText().trim().isEmpty() || quantityField.getText().equals("0")) {
+                        missingFields.append("• Stock Quantity (must be greater than 0)\n");
                     }
                     if (expiryPicker.getValue() == null) {
-                        missingFields.append("• Expiry Date\n");
-                    }
-                    if (supplierField.getText().trim().isEmpty()) {
-                        missingFields.append("• Supplier\n");
+                        missingFields.append("• Expiration Date\n");
                     }
 
                     if (missingFields.length() > 0) {
-                        showStyledAlert(Alert.AlertType.WARNING, "Missing Required Fields",
-                                "Please fill in the following fields:\n\n" + missingFields.toString());
+                        showStyledAlert(Alert.AlertType.ERROR, "Required Fields Missing",
+                                "Please fill in the following required fields:\n\n" + missingFields.toString());
                         return;
                     }
 
@@ -3342,11 +3163,25 @@ private BatchRepository batchRepository;
                         return;
                     }
 
-                    // Parse values
-                    int quantity = Integer.parseInt(quantityField.getText().trim());
-                    BigDecimal price = new BigDecimal(priceField.getText().trim());
+                    // Validate numeric fields
+                    int quantity;
+                    try {
+                        quantity = Integer.parseInt(quantityField.getText().trim());
+                        if (quantity <= 0) {
+                            throw new NumberFormatException("Quantity must be greater than 0");
+                        }
+                    } catch (NumberFormatException ex) {
+                        showStyledAlert(Alert.AlertType.ERROR, "Invalid Quantity",
+                                "Please enter a valid number for quantity (greater than 0).");
+                        return;
+                    }
+
                     LocalDate expiryDate = expiryPicker.getValue();
-                    String supplier = supplierField.getText().trim();
+
+                    // Get price and supplier from the selected product
+                    BigDecimal price = selectedProduct[0].getPrice();
+                    String supplier = selectedProduct[0].getSupplier() != null ?
+                            selectedProduct[0].getSupplier() : "Unknown";
 
                     // Add batch using productService
                     productService.saveProductWithBatch(
@@ -3362,18 +3197,15 @@ private BatchRepository batchRepository;
                     showStyledAlert(Alert.AlertType.INFORMATION, "Success",
                             "Batch added successfully to " + selectedProduct[0].getBrandName() + "!");
 
-                } catch (NumberFormatException ex) {
-                    showStyledAlert(Alert.AlertType.ERROR, "Invalid Input",
-                            "Please enter valid numbers for Quantity and Price.");
                 } catch (Exception ex) {
                     showStyledAlert(Alert.AlertType.ERROR, "Error",
                             "Failed to add batch: " + ex.getMessage());
                 }
             });
 
-            buttonBox.getChildren().addAll(cancelButton, addBatchButton);
+            buttonContainer.getChildren().addAll(cancelButton, addBatchButton);
 
-            mainContainer.getChildren().addAll(header, searchSection, batchSection, buttonBox);
+            mainContainer.getChildren().addAll(header, scrollPane, buttonContainer);
 
             Scene scene = new Scene(mainContainer);
             dialogStage.setScene(scene);
@@ -3534,12 +3366,42 @@ private BatchRepository batchRepository;
             });
             statusCol.setPrefWidth(110);
 
-            // Actions Column with Delete Button
+            // Actions Column with Edit and Delete Buttons
             TableColumn<Batch, Void> actionsCol = new TableColumn<>("Actions");
             actionsCol.setCellFactory(column -> new TableCell<>() {
+                private final Button editBtn = new Button("✏");
                 private final Button deleteBtn = new Button("🗑");
 
                 {
+                    // Edit button styling
+                    editBtn.setStyle(
+                            "-fx-background-color: white; " +
+                                    "-fx-text-fill: #2196F3; " +
+                                    "-fx-font-size: 16px; " +
+                                    "-fx-cursor: hand; " +
+                                    "-fx-padding: 8px 12px; " +
+                                    "-fx-border-color: #E0E0E0; " +
+                                    "-fx-border-width: 1px; " +
+                                    "-fx-border-radius: 6px; " +
+                                    "-fx-background-radius: 6px;"
+                    );
+
+                    editBtn.setOnMouseEntered(e -> editBtn.setStyle(
+                            editBtn.getStyle() + "-fx-background-color: #E3F2FD; -fx-border-color: #2196F3;"
+                    ));
+                    editBtn.setOnMouseExited(e -> editBtn.setStyle(
+                            editBtn.getStyle().replace("-fx-background-color: #E3F2FD; -fx-border-color: #2196F3;",
+                                    "-fx-background-color: white; -fx-border-color: #E0E0E0;")
+                    ));
+
+                    editBtn.setOnAction(event -> {
+                        Batch batch = getTableRow().getItem();
+                        if (batch != null) {
+                            showEditBatchDialog(batch, product, batchTable);
+                        }
+                    });
+
+                    // Delete button styling
                     deleteBtn.setStyle(
                             "-fx-background-color: white; " +
                                     "-fx-text-fill: #F44336; " +
@@ -3574,13 +3436,13 @@ private BatchRepository batchRepository;
                     if (empty) {
                         setGraphic(null);
                     } else {
-                        HBox container = new HBox(deleteBtn);
-                        container.setAlignment(Pos.CENTER);
+                        HBox container = new HBox(8, editBtn, deleteBtn);
+                        container.setAlignment(Pos.CENTER_LEFT);
                         setGraphic(container);
                     }
                 }
             });
-            actionsCol.setPrefWidth(100);
+            actionsCol.setPrefWidth(140);
 
             batchTable.getColumns().addAll(
                     batchNumCol, stockCol, priceCol, expiryCol,
@@ -3681,7 +3543,182 @@ private BatchRepository batchRepository;
             dialogStage.show();
         }
 
+        // Edit Batch Dialog - Only allows editing batch-related fields (quantity, expiry date)
+        private void showEditBatchDialog(Batch batch, Product product, TableView<Batch> batchTable) {
+            Stage dialogStage = new Stage();
+            IconUtil.setApplicationIcon(dialogStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setTitle("Edit Batch - " + product.getBrandName());
+            dialogStage.setResizable(false);
 
+            // Main container
+            VBox mainContainer = new VBox(15);
+            mainContainer.setStyle("-fx-background-color: white; -fx-padding: 25;");
+            mainContainer.setPrefWidth(500);
+
+            // Header
+            Label titleLabel = new Label("Edit Batch Details");
+            titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            Label subtitleLabel = new Label(
+                    "Update batch quantity and expiry date. Product profile details cannot be edited here."
+            );
+            subtitleLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #7f8c8d;");
+            subtitleLabel.setWrapText(true);
+
+            VBox header = new VBox(8, titleLabel, subtitleLabel);
+
+            // Product Info (read-only display)
+            Label productInfoLabel = new Label("Product: " + product.getBrandName() + " (" + product.getMedicineId() + ")");
+            productInfoLabel.setStyle(
+                    "-fx-font-size: 13px; " +
+                            "-fx-text-fill: #2c3e50; " +
+                            "-fx-padding: 10; " +
+                            "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 6px; " +
+                            "-fx-font-weight: bold;"
+            );
+
+            // Batch Number (read-only)
+            TextField batchNumField = createStyledTextField(batch.getBatchNumber(), "Batch number");
+            batchNumField.setDisable(true);
+            batchNumField.setStyle(batchNumField.getStyle() + "-fx-opacity: 1;");
+
+            // Stock Quantity (editable)
+            TextField quantityField = createStyledTextField(String.valueOf(batch.getStock()), "Quantity");
+
+            // Expiration Date (editable)
+            DatePicker expiryPicker = new DatePicker(batch.getExpirationDate());
+            expiryPicker.setPromptText("Select expiration date");
+            expiryPicker.setStyle(
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-padding: 12px 15px; " +
+                            "-fx-font-size: 14px;" +
+                            "-fx-text-fill: black;" +
+                            "-fx-prompt-text-fill: #7f8c8d;"
+            );
+            expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
+
+            // Form container
+            VBox formContainer = new VBox(15);
+            formContainer.getChildren().addAll(
+                    productInfoLabel,
+                    createFieldGroup("Batch Number", batchNumField),
+                    createFieldGroup("Stock Quantity *", quantityField),
+                    createFieldGroup("Expiration Date *", expiryPicker)
+            );
+
+            // Buttons
+            HBox buttonContainer = new HBox(15);
+            buttonContainer.setAlignment(Pos.CENTER_RIGHT);
+            buttonContainer.setStyle("-fx-padding: 15 0 0 0;");
+
+            Button cancelButton = new Button("Cancel");
+            cancelButton.setStyle(
+                    "-fx-background-color: white; " +
+                            "-fx-text-fill: #2c3e50; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+            cancelButton.setOnAction(e -> dialogStage.close());
+
+            Button saveButton = new Button("Save Changes");
+            saveButton.setStyle(
+                    "-fx-background-color: #4CAF50; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-padding: 12px 30px; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-cursor: hand;"
+            );
+
+            saveButton.setOnMouseEntered(e -> saveButton.setStyle(
+                    saveButton.getStyle() + "-fx-background-color: #45a049;"
+            ));
+            saveButton.setOnMouseExited(e -> saveButton.setStyle(
+                    saveButton.getStyle().replace("-fx-background-color: #45a049;", "-fx-background-color: #4CAF50;")
+            ));
+
+            saveButton.setOnAction(e -> {
+                try {
+                    // Validate required fields
+                    StringBuilder missingFields = new StringBuilder();
+                    if (quantityField.getText().trim().isEmpty()) {
+                        missingFields.append("• Stock Quantity\n");
+                    }
+                    if (expiryPicker.getValue() == null) {
+                        missingFields.append("• Expiration Date\n");
+                    }
+
+                    if (missingFields.length() > 0) {
+                        showStyledAlert(Alert.AlertType.ERROR, "Required Fields Missing",
+                                "Please fill in the following required fields:\n\n" + missingFields.toString());
+                        return;
+                    }
+
+                    // Validate quantity
+                    int quantity;
+                    try {
+                        quantity = Integer.parseInt(quantityField.getText().trim());
+                        if (quantity < 0) {
+                            throw new NumberFormatException("Quantity cannot be negative");
+                        }
+                    } catch (NumberFormatException ex) {
+                        showStyledAlert(Alert.AlertType.ERROR, "Invalid Quantity",
+                                "Please enter a valid number for quantity (0 or greater).");
+                        return;
+                    }
+
+                    // Validate expiry date is not in the past
+                    if (expiryPicker.getValue().isBefore(LocalDate.now())) {
+                        showStyledAlert(Alert.AlertType.ERROR, "Invalid Expiry Date",
+                                "Cannot set expiry date in the past. Expiration date: " +
+                                        expiryPicker.getValue() + " has already passed.");
+                        return;
+                    }
+
+                    LocalDate expiryDate = expiryPicker.getValue();
+
+                    // Update batch
+                    batch.setStock(quantity);
+                    batch.setExpirationDate(expiryDate);
+                    productService.updateBatch(batch);
+
+                    // Refresh the batch table
+                    List<Batch> batches = productService.getBatchesForProduct(product);
+                    batchTable.getItems().setAll(batches);
+
+                    // Refresh the main inventory table
+                    loadProducts();
+
+                    dialogStage.close();
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "Batch updated successfully!");
+
+                } catch (Exception ex) {
+                    showStyledAlert(Alert.AlertType.ERROR, "Error",
+                            "Failed to update batch: " + ex.getMessage());
+                }
+            });
+
+            buttonContainer.getChildren().addAll(cancelButton, saveButton);
+
+            mainContainer.getChildren().addAll(header, formContainer, buttonContainer);
+
+            Scene scene = new Scene(mainContainer);
+            dialogStage.setScene(scene);
+            dialogStage.show();
+        }
 
         // Helper method to create styled text fields
         private TextField createStyledTextField(String value, String prompt) {
@@ -3718,7 +3755,27 @@ private BatchRepository batchRepository;
             group.getChildren().addAll(label, field);
             return group;
         }
-    
+
+        // Helper method to create field labels
+        private Label createFieldLabel(String text) {
+            Label label = new Label(text);
+            label.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+            return label;
+        }
+
+        // Helper method to style ComboBox
+        private void styleComboBox(ComboBox<?> comboBox) {
+            comboBox.setStyle(
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-padding: 8px 15px; " +
+                            "-fx-font-size: 14px;"
+            );
+        }
+
         private void showStyledAlert(Alert.AlertType type, String title, String message) {
             // Create custom dialog
             Stage dialogStage = new Stage();

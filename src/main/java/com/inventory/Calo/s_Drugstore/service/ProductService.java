@@ -355,6 +355,20 @@ public class ProductService {
         }
     }
 
+    // Update batch details (stock and expiry date)
+    @Transactional
+    public void updateBatch(Batch batch) {
+        batchRepository.save(batch);
+
+        // Update product's total stock
+        Product product = batch.getProduct();
+        int totalStock = batchRepository.findByProductId(product.getId()).stream()
+                .mapToInt(Batch::getStock)
+                .sum();
+        product.setStock(totalStock);
+        productRepository.save(product);
+    }
+
     //Delete a batch
     @Transactional
     public void deleteBatch(Long batchId) {
