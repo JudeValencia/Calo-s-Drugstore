@@ -48,6 +48,9 @@
                 <Button fx:id="inventoryBtn" text="📦  Inventory" styleClass="menu-item"
                         onAction="#handleInventory"/>
 
+                <Button fx:id="supplierBtn" text="🏢  Suppliers" styleClass="menu-item"
+                        onAction="#handleSupplier"/>
+
                 <Button fx:id="salesBtn" text="🛒  Sales" styleClass="menu-item"
                         onAction="#handleSales"/>
 

@@ -6,8 +6,8 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.inventory.Calo.s_Drugstore.controller.ProductManagementController"
-            styleClass="inventory-root">
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.SupplierController"
+            styleClass="supplier-root">
 
     <left>
         <VBox fx:id="sidebar" styleClass="sidebar-overlay" prefWidth="250" minWidth="70">
@@ -95,48 +95,48 @@
                 <!-- Header -->
                 <HBox alignment="CENTER_LEFT" spacing="20">
                     <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Product Management" styleClass="page-header"/>
-                        <Label text="Manage product profiles and master data" styleClass="page-subheader"/>
+                        <Label text="Supplier Management" styleClass="page-header"/>
+                        <Label text="Manage supplier profiles and contact information" styleClass="page-subheader"/>
                     </VBox>
 
-                    <Button text="+ Add Product" styleClass="add-btn" onAction="#handleAddProduct"/>
+                    <Button text="+ Add Supplier" styleClass="add-btn" onAction="#handleAddSupplier"/>
                 </HBox>
 
                 <!-- KPI Cards Row -->
                 <HBox spacing="20" styleClass="kpi-row">
-                    <!-- Card 1: Total Products -->
+                    <!-- Card 1: Total Suppliers -->
                     <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <VBox HBox.hgrow="ALWAYS" spacing="8">
-                                <Label text="Total Products" styleClass="kpi-title"/>
-                                <Label fx:id="totalProductsLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="Product profiles" styleClass="kpi-subtitle"/>
-                            </VBox>
-                            <Label text="💊" style="-fx-font-size: 36px;"/>
-                        </HBox>
-                    </VBox>
-
-                    <!-- Card 2: Categories -->
-                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
-                        <HBox alignment="CENTER_LEFT" spacing="15">
-                            <VBox HBox.hgrow="ALWAYS" spacing="8">
-                                <Label text="Categories" styleClass="kpi-title"/>
-                                <Label fx:id="totalCategoriesLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="Product categories" styleClass="kpi-subtitle"/>
-                            </VBox>
-                            <Label text="📂" style="-fx-font-size: 36px;"/>
-                        </HBox>
-                    </VBox>
-
-                    <!-- Card 3: Suppliers -->
-                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
-                        <HBox alignment="CENTER_LEFT" spacing="15">
-                            <VBox HBox.hgrow="ALWAYS" spacing="8">
-                                <Label text="Suppliers" styleClass="kpi-title"/>
+                                <Label text="Total Suppliers" styleClass="kpi-title"/>
                                 <Label fx:id="totalSuppliersLabel" text="0" styleClass="kpi-value"/>
-                                <Label text="Active suppliers" styleClass="kpi-subtitle"/>
+                                <Label text="Registered suppliers" styleClass="kpi-subtitle"/>
                             </VBox>
                             <Label text="🏢" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 2: Active Suppliers -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="Active Suppliers" styleClass="kpi-title"/>
+                                <Label fx:id="activeSuppliersLabel" text="0" styleClass="kpi-value"/>
+                                <Label text="Currently active" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="✅" style="-fx-font-size: 36px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Card 3: New This Month -->
+                    <VBox styleClass="kpi-card" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS" spacing="8">
+                                <Label text="New This Month" styleClass="kpi-title"/>
+                                <Label fx:id="newSuppliersLabel" text="0" styleClass="kpi-value"/>
+                                <Label text="Added this month" styleClass="kpi-subtitle"/>
+                            </VBox>
+                            <Label text="📅" style="-fx-font-size: 36px;"/>
                         </HBox>
                     </VBox>
                 </HBox>
@@ -149,24 +149,21 @@
 
                     <VBox spacing="8">
                         <Label text="🔎 Search &amp; Filters" styleClass="filter-title"/>
-                        <Label text="Find products by name, ID, category, or supplier" styleClass="filter-subtitle"/>
+                        <Label text="Find suppliers by company name, ID, contact person, or email" styleClass="filter-subtitle"/>
                     </VBox>
 
                     <HBox spacing="15">
-                        <TextField fx:id="searchField" promptText="🔍 Search by Product ID, Brand Name, or Generic Name..."
+                        <TextField fx:id="searchField" promptText="🔍 Search by Supplier ID, Company Name, or Contact Person..."
                                    styleClass="search-field" HBox.hgrow="ALWAYS"/>
-
-                        <ComboBox fx:id="categoryFilter" promptText="All Categories" styleClass="filter-dropdown"
-                                  prefWidth="200"/>
 
                         <ComboBox fx:id="supplierFilter" promptText="All Suppliers" styleClass="filter-dropdown"
                                   prefWidth="200"/>
 
-                        <Button text="Clear" styleClass="bulk-btn" onAction="#handleClearFilters"/>
+                        <Button text="Clear" styleClass="clear-btn" onAction="#handleClearFilters"/>
                     </HBox>
                 </VBox>
 
-                <!-- Products Table Card -->
+                <!-- Suppliers Table Card -->
                 <VBox styleClass="table-card" spacing="15" VBox.vgrow="ALWAYS">
                     <padding>
                         <Insets top="25" right="25" bottom="25" left="25"/>
@@ -174,29 +171,26 @@
 
                     <HBox alignment="CENTER_LEFT" spacing="10">
                         <VBox HBox.hgrow="ALWAYS">
-                            <Label text="Product List" styleClass="table-title"/>
-                            <Label fx:id="totalCountLabel" text="Total: 0 products" styleClass="table-subtitle"/>
+                            <Label text="Supplier List" styleClass="table-title"/>
+                            <Label fx:id="totalCountLabel" text="Total: 0 suppliers" styleClass="table-subtitle"/>
                         </VBox>
                     </HBox>
 
-                    <TableView fx:id="productsTable" styleClass="inventory-table" VBox.vgrow="ALWAYS">
+                    <TableView fx:id="supplierTable" styleClass="supplier-table" VBox.vgrow="ALWAYS">
                         <columns>
-                            <TableColumn fx:id="productIdColumn" text="Product ID" prefWidth="100"/>
-                            <TableColumn fx:id="brandNameColumn" text="Brand Name" prefWidth="180"/>
-                            <TableColumn fx:id="genericNameColumn" text="Generic Name" prefWidth="160"/>
-                            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="120"/>
-                            <TableColumn fx:id="dosageFormColumn" text="Dosage Form" prefWidth="120"/>
-                            <TableColumn fx:id="dosageStrengthColumn" text="Strength" prefWidth="100"/>
-                            <TableColumn fx:id="manufacturerColumn" text="Manufacturer" prefWidth="150"/>
-                            <TableColumn fx:id="supplierColumn" text="Supplier" prefWidth="130"/>
-                            <TableColumn fx:id="priceColumn" text="Price" prefWidth="100"/>
-                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
+                            <TableColumn fx:id="supplierIdColumn" text="Supplier ID" prefWidth="120"/>
+                            <TableColumn fx:id="companyNameColumn" text="Company Name" prefWidth="200"/>
+                            <TableColumn fx:id="contactPersonColumn" text="Contact Person" prefWidth="150"/>
+                            <TableColumn fx:id="mobileNumberColumn" text="Mobile Number" prefWidth="130"/>
+                            <TableColumn fx:id="emailColumn" text="Email" prefWidth="180"/>
+                            <TableColumn fx:id="addressColumn" text="Physical Address" prefWidth="200"/>
+                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="220"/>
                         </columns>
                         <placeholder>
                             <VBox alignment="CENTER" spacing="10">
-                                <Label text="📦" style="-fx-font-size: 48px;"/>
-                                <Label text="No products found" style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d;"/>
-                                <Label text="Click 'Add Product' to create your first product"
+                                <Label text="🏢" style="-fx-font-size: 48px;"/>
+                                <Label text="No suppliers found" style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d;"/>
+                                <Label text="Click 'Add Supplier' to register your first supplier"
                                        style="-fx-font-size: 14px; -fx-text-fill: #95a5a6;"/>
                             </VBox>
                         </placeholder>

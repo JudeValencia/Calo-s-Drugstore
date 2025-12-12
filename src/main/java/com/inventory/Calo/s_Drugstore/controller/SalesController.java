@@ -76,6 +76,7 @@
         // Sidebar buttons
         @FXML private Button dashboardBtn;
         @FXML private Button inventoryBtn;
+        @FXML private Button supplierBtn;
         @FXML private Button salesBtn;
         @FXML private Button reportsBtn;
         @FXML private Button staffBtn;
@@ -1008,6 +1009,12 @@
                 System.out.println("Admin user detected - navigating to admin inventory");
                 navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
             }
+        }
+
+        @FXML
+        private void handleSupplier() {
+            setActiveButton(supplierBtn);
+            navigateToPage("/fxml/supplier.fxml", "/css/supplier.css");
         }
     
         @FXML
