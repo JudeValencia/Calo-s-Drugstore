@@ -79,6 +79,7 @@ public class Product {
         this.dosageForm = "Tablet";
         this.unitOfMeasure = "Piece";
         this.minStockLevel = 10;
+        this.stock = 0;
         this.genericName = "";
         this.brandName = "";
     }

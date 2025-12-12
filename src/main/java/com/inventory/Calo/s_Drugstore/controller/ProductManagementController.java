@@ -67,7 +67,6 @@ public class ProductManagementController implements Initializable {
     @FXML private Label totalProductsLabel;
     @FXML private Label totalCategoriesLabel;
     @FXML private Label totalSuppliersLabel;
-    @FXML private Label lowStockLabel;
     @FXML private Label totalCountLabel;
 
     // Table
@@ -80,7 +79,6 @@ public class ProductManagementController implements Initializable {
     @FXML private TableColumn<Product, String> dosageStrengthColumn;
     @FXML private TableColumn<Product, String> manufacturerColumn;
     @FXML private TableColumn<Product, String> supplierColumn;
-    @FXML private TableColumn<Product, String> stockColumn;
     @FXML private TableColumn<Product, String> priceColumn;
     @FXML private TableColumn<Product, Void> actionsColumn;
 
@@ -148,29 +146,6 @@ public class ProductManagementController implements Initializable {
             String supplier = data.getValue().getSupplier();
             return new SimpleStringProperty(supplier != null ? supplier : "N/A");
         });
-
-        // Stock Column with color coding
-        stockColumn.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    Product product = getTableRow().getItem();
-                    setText(String.valueOf(product.getStock()));
-
-                    if (product.isLowStock()) {
-                        setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-                    } else {
-                        setStyle("-fx-text-fill: #2c3e50;");
-                    }
-                }
-            }
-        });
-        stockColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(String.valueOf(data.getValue().getStock())));
 
         // Price Column
         priceColumn.setCellValueFactory(data ->
@@ -248,7 +223,7 @@ public class ProductManagementController implements Initializable {
                     setGraphic(null);
                 } else {
                     HBox actionBox = new HBox(8);
-                    actionBox.setAlignment(Pos.CENTER);
+                    actionBox.setAlignment(Pos.CENTER_LEFT);
                     actionBox.getChildren().addAll(editBtn, deleteBtn);
                     setGraphic(actionBox);
                 }
@@ -335,12 +310,6 @@ public class ProductManagementController implements Initializable {
                     .distinct()
                     .count();
             totalSuppliersLabel.setText(String.valueOf(supplierCount));
-
-            // Low stock count
-            long lowStockCount = allProducts.stream()
-                    .filter(Product::isLowStock)
-                    .count();
-            lowStockLabel.setText(String.valueOf(lowStockCount));
 
         } catch (Exception e) {
             e.printStackTrace();

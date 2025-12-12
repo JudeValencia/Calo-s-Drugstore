@@ -136,18 +136,6 @@
                             <Label text="🏢" style="-fx-font-size: 36px;"/>
                         </HBox>
                     </VBox>
-
-                    <!-- Card 4: Low Stock -->
-                    <VBox styleClass="kpi-card,kpi-card-alert" HBox.hgrow="ALWAYS">
-                        <HBox alignment="CENTER_LEFT" spacing="15">
-                            <VBox HBox.hgrow="ALWAYS" spacing="8">
-                                <Label text="Low Stock Products" styleClass="kpi-title"/>
-                                <Label fx:id="lowStockLabel" text="0" styleClass="kpi-value,kpi-value-alert"/>
-                                <Label text="Need restocking" styleClass="kpi-subtitle"/>
-                            </VBox>
-                            <Label text="⚠" style="-fx-font-size: 36px;"/>
-                        </HBox>
-                    </VBox>
                 </HBox>
 
                 <!-- Search & Filter Card -->
@@ -198,7 +186,6 @@
                             <TableColumn fx:id="dosageStrengthColumn" text="Strength" prefWidth="100"/>
                             <TableColumn fx:id="manufacturerColumn" text="Manufacturer" prefWidth="150"/>
                             <TableColumn fx:id="supplierColumn" text="Supplier" prefWidth="130"/>
-                            <TableColumn fx:id="stockColumn" text="Current Stock" prefWidth="100"/>
                             <TableColumn fx:id="priceColumn" text="Price" prefWidth="100"/>
                             <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
                         </columns>
