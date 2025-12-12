@@ -43,7 +43,7 @@ public class StaffController implements Initializable {
     @FXML private Label administratorsLabel;
     @FXML private Label staffMembersLabel;
 
-    // FXML Components - Staff Table
+    // FXML Components - Employee Table
     @FXML private TableView<User> staffTable;
     @FXML private TableColumn<User, String> staffIdColumn;
     @FXML private TableColumn<User, String> nameColumn;

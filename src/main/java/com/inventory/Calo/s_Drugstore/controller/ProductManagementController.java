@@ -678,6 +678,15 @@ public class ProductManagementController implements Initializable {
 
     private void navigateToPage(String fxmlPath, String cssPath) {
         try {
+            // Check if currentUser is null before navigating
+            if (currentUser == null) {
+                showStyledAlert(Alert.AlertType.ERROR, "Session Error",
+                    "User session is invalid. Please log in again.");
+                // Navigate to login page
+                performLogout();
+                return;
+            }
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             loader.setControllerFactory(springContext::getBean);
             Parent root = loader.load();
@@ -705,23 +714,131 @@ public class ProductManagementController implements Initializable {
             }
 
             Stage stage = (Stage) dashboardBtn.getScene().getWindow();
+            Scene currentScene = stage.getScene();
 
-            // Save current window size
+            // Save current window size and position
             double currentWidth = stage.getWidth();
             double currentHeight = stage.getHeight();
+            double currentX = stage.getX();
+            double currentY = stage.getY();
+            boolean isMaximized = stage.isMaximized();
 
             // Create new scene
             Scene newScene = new Scene(root);
             newScene.getStylesheets().add(getClass().getResource(cssPath).toExternalForm());
 
-            // Set scene and restore window size
-            stage.setScene(newScene);
-            stage.setWidth(currentWidth);
-            stage.setHeight(currentHeight);
+            // Set initial opacity to 0 for fade-in effect
+            root.setOpacity(0);
+
+            // Create fade-out animation for current scene
+            javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(30),
+                    currentScene.getRoot()
+            );
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+
+            fadeOut.setOnFinished(e -> {
+                // Switch to new scene
+                stage.setScene(newScene);
+
+                // Restore window size and position
+                if (isMaximized) {
+                    stage.setMaximized(true);
+                } else {
+                    stage.setWidth(currentWidth);
+                    stage.setHeight(currentHeight);
+                    stage.setX(currentX);
+                    stage.setY(currentY);
+                }
+
+                // Create fade-in animation for new scene
+                javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                        javafx.util.Duration.millis(30),
+                        root
+                );
+                fadeIn.setFromValue(0.0);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+            });
+
+            fadeOut.play();
 
         } catch (Exception e) {
             showStyledAlert(Alert.AlertType.ERROR, "Navigation Error", "Failed to navigate: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void performLogout() {
+        try {
+            // Load login page
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
+            loader.setControllerFactory(springContext::getBean);
+            Parent root = loader.load();
+
+            Stage stage = (Stage) dashboardBtn.getScene().getWindow();
+            Scene currentScene = stage.getScene();
+
+            // Create new scene
+            Scene newScene = new Scene(root);
+
+            // Try to load CSS if it exists (handle null gracefully)
+            try {
+                java.net.URL cssUrl = getClass().getResource("/css/styles.css");
+                if (cssUrl != null) {
+                    newScene.getStylesheets().add(cssUrl.toExternalForm());
+                } else {
+                    // Try alternative CSS paths
+                    cssUrl = getClass().getResource("/css/login.css");
+                    if (cssUrl != null) {
+                        newScene.getStylesheets().add(cssUrl.toExternalForm());
+                    }
+                }
+            } catch (Exception cssEx) {
+                // CSS loading failed, continue without it
+                System.err.println("Warning: Could not load CSS for login page: " + cssEx.getMessage());
+            }
+
+            // Set initial opacity to 0 for fade-in effect
+            root.setOpacity(0);
+
+            // Create fade-out animation for current scene
+            javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                    javafx.util.Duration.millis(30),
+                    currentScene.getRoot()
+            );
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+
+            fadeOut.setOnFinished(e -> {
+                // Clear current user
+                this.currentUser = null;
+
+                // Switch to login scene
+                stage.setScene(newScene);
+
+                // Reset window size to login page size
+                stage.setWidth(800);
+                stage.setHeight(600);
+                stage.centerOnScreen();
+                stage.setMaximized(false);
+
+                // Create fade-in animation for login scene
+                javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                        javafx.util.Duration.millis(30),
+                        root
+                );
+                fadeIn.setFromValue(0.0);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+            });
+
+            fadeOut.play();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error", "Failed to logout: " + e.getMessage());
         }
     }
 
