@@ -2,7 +2,9 @@ package com.inventory.Calo.s_Drugstore.controller;
 
 import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import com.inventory.Calo.s_Drugstore.entity.User;
+import com.inventory.Calo.s_Drugstore.entity.Category;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
+import com.inventory.Calo.s_Drugstore.service.CategoryService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -33,6 +35,9 @@ public class StaffController implements Initializable {
     private UserManagementService userManagementService;
 
     @Autowired
+    private CategoryService categoryService;
+
+    @Autowired
     private ConfigurableApplicationContext springContext;
 
     private User currentUser;
@@ -43,7 +48,7 @@ public class StaffController implements Initializable {
     @FXML private Label administratorsLabel;
     @FXML private Label staffMembersLabel;
 
-    // FXML Components - Staff Table
+    // FXML Components - Employee Table
     @FXML private TableView<User> staffTable;
     @FXML private TableColumn<User, String> staffIdColumn;
     @FXML private TableColumn<User, String> nameColumn;
@@ -498,6 +503,12 @@ public class StaffController implements Initializable {
             scene.getStylesheets().add("data:text/css," + scrollBarStyle);
         }
     }
+    
+    @FXML
+    private void handleAddCategory() {
+        showAddCategoryDialog();
+    }
+    
     @FXML
     private void handleAddStaff() {
         showAddEditStaffDialog(null);
@@ -516,7 +527,7 @@ public class StaffController implements Initializable {
         Stage dialogStage = new Stage();
         IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setTitle("Staff Details");
+        dialogStage.setTitle("Employee Details");
         dialogStage.setResizable(false);
 
         // Main container
@@ -551,11 +562,26 @@ public class StaffController implements Initializable {
         String addressStr = (user.getAddress() != null && !user.getAddress().isEmpty())
                 ? user.getAddress() : "Not provided";
         String dobStr;
+        String ageStr = "N/A";
+
         if (user.getDateOfBirth() != null && !user.getDateOfBirth().isEmpty()) {
             try {
                 LocalDate dob = LocalDate.parse(user.getDateOfBirth());
                 DateTimeFormatter dobFormatter = DateTimeFormatter.ofPattern("MMM. dd, yyyy");
                 dobStr = dob.format(dobFormatter);
+
+                // Calculate age
+                LocalDate currentDate = LocalDate.now();
+                int age = currentDate.getYear() - dob.getYear();
+
+                // Adjust age if birthday hasn't occurred yet this year
+                if (currentDate.getMonthValue() < dob.getMonthValue() ||
+                    (currentDate.getMonthValue() == dob.getMonthValue() &&
+                     currentDate.getDayOfMonth() < dob.getDayOfMonth())) {
+                    age--;
+                }
+
+                ageStr = age + " years old";
             } catch (Exception e) {
                 dobStr = user.getDateOfBirth(); // Fallback to raw value if parsing fails
             }
@@ -570,7 +596,8 @@ public class StaffController implements Initializable {
                 createDetailRow("Username:", user.getUsername()),
                 createDetailRow("Role:", user.getRole()),
                 createDetailRow("Address:", addressStr),
-                createDetailRow("Date of Birth:", dobStr)
+                createDetailRow("Date of Birth:", dobStr),
+                createDetailRow("Age:", ageStr)
         );
 
         // Section 2: Contact Information
@@ -701,13 +728,13 @@ public class StaffController implements Initializable {
             loadStaffData();
             updateSummaryCards();
             showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                    "Staff account " + (user.isActive() ? "activated" : "deactivated") + " successfully!");
+                    "Employee account " + (user.isActive() ? "activated" : "deactivated") + " successfully!");
         }
     }
 
     private void handleDeleteStaff(User user) {
         boolean confirmed = showStyledConfirmation(
-                "Delete Staff Account",
+                "Delete Employee Account",
                 "Are you sure you want to delete " + user.getFullName() + "? This action cannot be undone."
         );
 
@@ -715,7 +742,7 @@ public class StaffController implements Initializable {
             userManagementService.deleteUser(user.getId());
             loadStaffData();
             updateSummaryCards();
-            showStyledAlert(Alert.AlertType.INFORMATION, "Success", "Staff account deleted successfully!");
+            showStyledAlert(Alert.AlertType.INFORMATION, "Success", "Employee account deleted successfully!");
         }
     }
     private void showAddEditStaffDialog(User editUser) {
@@ -724,7 +751,7 @@ public class StaffController implements Initializable {
         Stage dialogStage = new Stage();
         IconUtil.setApplicationIcon(dialogStage);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
-        dialogStage.setTitle(isEdit ? "Edit Staff Account" : "Add New Staff Account");
+        dialogStage.setTitle(isEdit ? "Edit Employee Account" : "Add New Employee Account");
         dialogStage.setResizable(false);
 
         // ==================== MAIN CONTAINER  ====================//
@@ -736,7 +763,7 @@ public class StaffController implements Initializable {
         // ==================== FIXED HEADER ====================//
         VBox headerBox = new VBox();
         headerBox.setStyle("-fx-background-color: white; -fx-padding: 30 30 20 30;");
-        Label titleLabel = new Label(isEdit ? "Edit Staff Account" : "Add New Staff Account");
+        Label titleLabel = new Label(isEdit ? "Edit Employee Account" : "Add New Employee Account");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
         headerBox.getChildren().add(titleLabel);
 
@@ -761,23 +788,67 @@ public class StaffController implements Initializable {
 
         // ==================== FORM FIELDS ====================//
 
-        // Full Name
-        VBox nameBox = new VBox(8);
-        Label nameLabel = new Label("Full Name *");
-        nameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
-        TextField nameField = new TextField();
-        nameField.setPromptText("Enter full name");
-        nameField.setStyle(
-                "-fx-background-color: #F8F9FA; " +
-                        "-fx-background-radius: 8px; " +
-                        "-fx-border-color: #E0E0E0; " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-border-radius: 8px; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-padding: 12px 15px;"
-        );
-        if (isEdit) nameField.setText(editUser.getFullName());
-        nameBox.getChildren().addAll(nameLabel, nameField);
+        // Define common field style
+        String fieldStyle = "-fx-background-color: #F8F9FA; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 12px 15px;";
+
+        // First Name
+        VBox firstNameBox = new VBox(8);
+        Label firstNameLabel = new Label("First Name *");
+        firstNameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField firstNameField = new TextField();
+        firstNameField.setPromptText("Enter first name");
+        firstNameField.setStyle(fieldStyle);
+        firstNameBox.getChildren().addAll(firstNameLabel, firstNameField);
+
+        // Middle Name
+        VBox middleNameBox = new VBox(8);
+        Label middleNameLabel = new Label("Middle Name");
+        middleNameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField middleNameField = new TextField();
+        middleNameField.setPromptText("Enter middle name (optional)");
+        middleNameField.setStyle(fieldStyle);
+        middleNameBox.getChildren().addAll(middleNameLabel, middleNameField);
+
+        // Last Name
+        VBox lastNameBox = new VBox(8);
+        Label lastNameLabel = new Label("Last Name *");
+        lastNameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField lastNameField = new TextField();
+        lastNameField.setPromptText("Enter last name");
+        lastNameField.setStyle(fieldStyle);
+        lastNameBox.getChildren().addAll(lastNameLabel, lastNameField);
+
+        // Parse existing full name if editing
+        if (isEdit) {
+            String fullName = editUser.getFullName();
+            String[] nameParts = fullName.trim().split("\\s+");
+
+            if (nameParts.length == 1) {
+                // Only first name
+                firstNameField.setText(nameParts[0]);
+            } else if (nameParts.length == 2) {
+                // First and last name
+                firstNameField.setText(nameParts[0]);
+                lastNameField.setText(nameParts[1]);
+            } else if (nameParts.length >= 3) {
+                // First, middle, and last name
+                firstNameField.setText(nameParts[0]);
+                // Join all middle parts except the last one
+                StringBuilder middleName = new StringBuilder();
+                for (int i = 1; i < nameParts.length - 1; i++) {
+                    if (i > 1) middleName.append(" ");
+                    middleName.append(nameParts[i]);
+                }
+                middleNameField.setText(middleName.toString());
+                lastNameField.setText(nameParts[nameParts.length - 1]);
+            }
+        }
 
         // Username
         VBox usernameBox = new VBox(8);
@@ -785,7 +856,7 @@ public class StaffController implements Initializable {
         usernameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
         TextField usernameField = new TextField();
         usernameField.setPromptText("Enter username");
-        usernameField.setStyle(nameField.getStyle());
+        usernameField.setStyle(fieldStyle);
         if (isEdit) {
             usernameField.setText(editUser.getUsername());
         }
@@ -797,7 +868,7 @@ public class StaffController implements Initializable {
         emailLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
         TextField emailField = new TextField();
         emailField.setPromptText("Enter email address");
-        emailField.setStyle(nameField.getStyle());
+        emailField.setStyle(fieldStyle);
         if (isEdit) emailField.setText(editUser.getEmail());
         emailBox.getChildren().addAll(emailLabel, emailField);
 
@@ -807,7 +878,7 @@ public class StaffController implements Initializable {
         contactLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
         TextField contactField = new TextField();
         contactField.setPromptText("Enter contact number");
-        contactField.setStyle(nameField.getStyle());
+        contactField.setStyle(fieldStyle);
         if (isEdit && editUser.getContactNumber() != null) contactField.setText(editUser.getContactNumber());
         contactBox.getChildren().addAll(contactLabel, contactField);
 
@@ -817,7 +888,7 @@ public class StaffController implements Initializable {
         addressLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
         TextField addressField = new TextField();
         addressField.setPromptText("Enter address");
-        addressField.setStyle(nameField.getStyle());
+        addressField.setStyle(fieldStyle);
         if (isEdit && editUser.getAddress() != null) addressField.setText(editUser.getAddress());
         addressBox.getChildren().addAll(addressLabel, addressField);
 
@@ -879,15 +950,6 @@ public class StaffController implements Initializable {
 
         TextField passwordTextField = new TextField();
         PasswordField passwordField = new PasswordField();
-
-        String fieldStyle =
-                "-fx-background-color: #F8F9FA; " +
-                        "-fx-background-radius: 8px; " +
-                        "-fx-border-color: #E0E0E0; " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-border-radius: 8px; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-padding: 12px 15px;";
 
         passwordTextField.setStyle(fieldStyle);
         passwordField.setStyle(fieldStyle);
@@ -995,15 +1057,37 @@ public class StaffController implements Initializable {
         Label roleLabel = new Label("Role *");
         roleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
         ComboBox<String> roleCombo = new ComboBox<>();
-        roleCombo.getItems().addAll("STAFF", "ADMIN");
-        roleCombo.setValue(isEdit ? editUser.getRole() : "STAFF");
+        
+        // Load categories dynamically from database
+        List<String> categories = categoryService.getAllCategoryNames();
+        if (categories.isEmpty()) {
+            // Default categories if none exist
+            roleCombo.getItems().addAll("STAFF", "ADMIN");
+            roleCombo.setValue(isEdit ? editUser.getRole() : "STAFF");
+        } else {
+            roleCombo.getItems().addAll(categories);
+            // Set value to existing role if editing, otherwise first category in list
+            if (isEdit) {
+                roleCombo.setValue(editUser.getRole());
+            } else {
+                roleCombo.setValue(categories.isEmpty() ? null : categories.get(0));
+            }
+        }
+        
         roleCombo.setMaxWidth(Double.MAX_VALUE);
-        roleCombo.setStyle(nameField.getStyle());
+        roleCombo.setStyle(fieldStyle);
+
+        // Disable role combo if editing existing user
+        if (isEdit) {
+            roleCombo.setDisable(true);
+            roleCombo.setStyle(fieldStyle + "-fx-opacity: 0.6;");
+        }
+        
         roleBox.getChildren().addAll(roleLabel, roleCombo);
 
         // ==================== ALL FIELDS TO SCROLLABLE CONTENT ====================//
         contentBox.getChildren().addAll(
-                nameBox, usernameBox, emailBox, contactBox,
+                firstNameBox, middleNameBox, lastNameBox, usernameBox, emailBox, contactBox,
                 addressBox, dobBox, passwordBox, confirmPasswordBox, roleBox
         );
 
@@ -1036,7 +1120,7 @@ public class StaffController implements Initializable {
         );
         cancelButton.setOnAction(e -> dialogStage.close());
 
-        Button saveButton = new Button(isEdit ? "Update" : "Add Staff");
+        Button saveButton = new Button(isEdit ? "Update" : "Add Employee");
         saveButton.setStyle(
                 "-fx-background-color: #4CAF50; " +
                         "-fx-text-fill: white; " +
@@ -1048,7 +1132,20 @@ public class StaffController implements Initializable {
         );
 
         saveButton.setOnAction(e -> {
-            String name = nameField.getText().trim();
+            // Get name fields
+            String firstName = firstNameField.getText().trim();
+            String middleName = middleNameField.getText().trim();
+            String lastName = lastNameField.getText().trim();
+
+            // Concatenate name fields
+            String name;
+            if (middleName.isEmpty()) {
+                name = firstName + " " + lastName;
+            } else {
+                name = firstName + " " + middleName + " " + lastName;
+            }
+            name = name.trim();
+
             String username = usernameField.getText().trim();
             String email = emailField.getText().trim();
             String contactNumber = contactField.getText().trim();
@@ -1058,9 +1155,9 @@ public class StaffController implements Initializable {
             String confirmPassword = confirmPasswordField.getText().trim();
             String role = roleCombo.getValue();
 
-            if (name.isEmpty() || email.isEmpty() || username.isEmpty()) {
+            if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || username.isEmpty()) {
                 showStyledAlert(Alert.AlertType.WARNING, "Missing Information",
-                        "Please fill in all required fields.");
+                        "Please fill in all required fields (First Name, Last Name, Email, and Username).");
                 return;
             }
 
@@ -1080,7 +1177,7 @@ public class StaffController implements Initializable {
 
                     userManagementService.createStaffAccount(username, email, password, name, role, contactNumber, address, dateOfBirth);
                     showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                            "Staff account created successfully!");
+                            "Employee account created successfully!");
                 } else {
                     if (!username.equals(editUser.getUsername())) {
                         boolean usernameUpdated = userManagementService.updateUsername(
@@ -1107,7 +1204,7 @@ public class StaffController implements Initializable {
 
                     if (updatedUser != null) {
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
-                                "Staff account updated successfully!");
+                                "Employee account updated successfully!");
                     } else {
                         showStyledAlert(Alert.AlertType.ERROR, "Error",
                                 "Failed to update staff account.");
@@ -1580,5 +1677,266 @@ public class StaffController implements Initializable {
         dialogStage.showAndWait();
 
         return (Boolean) dialogStage.getUserData();
+    }
+    
+    private boolean showDeleteConfirmation(String title, String message) {
+        Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle(title);
+        dialogStage.setResizable(false);
+        dialogStage.setUserData(false);
+
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(500);
+
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        titleLabel.setWrapText(true);
+
+        Label messageLabel = new Label(message);
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d; -fx-line-spacing: 3px;");
+
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-text-fill: #2c3e50; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1.5px; " +
+                        "-fx-border-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+        cancelButton.setOnAction(e -> {
+            dialogStage.setUserData(false);
+            dialogStage.close();
+        });
+
+        Button confirmButton = new Button("Delete");
+        confirmButton.setStyle(
+                "-fx-background-color: #dc3545; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 12px 30px; " +
+                        "-fx-background-radius: 8px; " +
+                        "-fx-cursor: hand;"
+        );
+        confirmButton.setOnAction(e -> {
+            dialogStage.setUserData(true);
+            dialogStage.close();
+        });
+
+        buttonBox.getChildren().addAll(cancelButton, confirmButton);
+        mainContainer.getChildren().addAll(titleLabel, messageLabel, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+
+        return (Boolean) dialogStage.getUserData();
+    }
+    
+    private void showAddCategoryDialog() {
+        Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Manage Categories");
+        dialogStage.setResizable(false);
+
+        VBox mainContainer = new VBox(25);
+        mainContainer.setStyle("-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10px;");
+        mainContainer.setPrefWidth(500);
+
+        // Title
+        Label titleLabel = new Label("Manage Role Categories");
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        Label subtitleLabel = new Label("Add or remove role categories for staff accounts");
+        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+        subtitleLabel.setWrapText(true);
+
+        // Add Category Section
+        VBox addCategoryBox = new VBox(10);
+        addCategoryBox.setStyle(
+                "-fx-background-color: #F8F9FA; " +
+                "-fx-padding: 20; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1px; " +
+                "-fx-border-radius: 8px;"
+        );
+
+        Label addLabel = new Label("Add New Category:");
+        addLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        HBox inputBox = new HBox(10);
+        inputBox.setAlignment(Pos.CENTER_LEFT);
+
+        TextField categoryField = new TextField();
+        categoryField.setPromptText("Enter category name");
+        categoryField.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1.5px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-padding: 10px 15px; " +
+                "-fx-font-size: 14px;"
+        );
+        HBox.setHgrow(categoryField, Priority.ALWAYS);
+
+        Button addButton = new Button("Add");
+        addButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 10px 30px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+
+        inputBox.getChildren().addAll(categoryField, addButton);
+        addCategoryBox.getChildren().addAll(addLabel, inputBox);
+
+        // Existing Categories Section
+        VBox categoriesBox = new VBox(10);
+        Label existingLabel = new Label("Existing Categories:");
+        existingLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefHeight(200);
+        scrollPane.setStyle(
+                "-fx-background-color: transparent; " +
+                "-fx-background: transparent; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-background-radius: 8px;"
+        );
+
+        VBox categoryList = new VBox(5);
+        categoryList.setStyle("-fx-padding: 10; -fx-background-color: white;");
+
+        // Load existing categories
+        refreshCategoryList(categoryList);
+
+        scrollPane.setContent(categoryList);
+        categoriesBox.getChildren().addAll(existingLabel, scrollPane);
+
+        // Add button action
+        addButton.setOnAction(e -> {
+            String categoryName = categoryField.getText().trim();
+            if (categoryName.isEmpty()) {
+                showStyledAlert(Alert.AlertType.WARNING, "Empty Field",
+                        "Please enter a category name.");
+                return;
+            }
+
+            try {
+                categoryService.addCategory(categoryName);
+                showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                        "Category '" + categoryName + "' added successfully!");
+                categoryField.clear();
+                refreshCategoryList(categoryList);
+            } catch (IllegalArgumentException ex) {
+                showStyledAlert(Alert.AlertType.ERROR, "Error", ex.getMessage());
+            }
+        });
+
+        // Close button
+        HBox buttonBox = new HBox();
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button closeButton = new Button("Close");
+        closeButton.setStyle(
+                "-fx-background-color: #2196F3; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 12px 30px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+        closeButton.setOnAction(e -> dialogStage.close());
+        buttonBox.getChildren().add(closeButton);
+
+        mainContainer.getChildren().addAll(titleLabel, subtitleLabel, addCategoryBox, categoriesBox, buttonBox);
+
+        Scene scene = new Scene(mainContainer);
+        dialogStage.setScene(scene);
+        dialogStage.centerOnScreen();
+        dialogStage.showAndWait();
+    }
+
+    private void refreshCategoryList(VBox categoryList) {
+        categoryList.getChildren().clear();
+        List<Category> categories = categoryService.getAllCategories();
+
+        if (categories.isEmpty()) {
+            Label emptyLabel = new Label("No categories yet. Add your first category above.");
+            emptyLabel.setStyle("-fx-text-fill: #95a5a6; -fx-font-style: italic;");
+            categoryList.getChildren().add(emptyLabel);
+        } else {
+            for (Category category : categories) {
+                HBox categoryItem = new HBox(15);
+                categoryItem.setAlignment(Pos.CENTER_LEFT);
+                categoryItem.setStyle(
+                        "-fx-background-color: #F8F9FA; " +
+                        "-fx-padding: 10 15; " +
+                        "-fx-background-radius: 6px; " +
+                        "-fx-border-color: #E0E0E0; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-border-radius: 6px;"
+                );
+
+                Label nameLabel = new Label(category.getName());
+                nameLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50;");
+                HBox.setHgrow(nameLabel, Priority.ALWAYS);
+
+                Button deleteButton = new Button("Delete");
+                deleteButton.setStyle(
+                        "-fx-background-color: #dc3545; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 12px; " +
+                        "-fx-padding: 6px 15px; " +
+                        "-fx-background-radius: 6px; " +
+                        "-fx-cursor: hand;"
+                );
+
+                deleteButton.setOnAction(e -> {
+                    boolean confirmed = showDeleteConfirmation(
+                            "Delete Category",
+                            "Are you sure you want to delete the category '" + category.getName() + "'?\n\n" +
+                            "This will not affect existing staff accounts with this role."
+                    );
+
+                    if (confirmed) {
+                        try {
+                            categoryService.deleteCategory(category.getId());
+                            showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                                    "Category deleted successfully!");
+                            refreshCategoryList(categoryList);
+                        } catch (Exception ex) {
+                            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                                    "Failed to delete category: " + ex.getMessage());
+                        }
+                    }
+                });
+
+                categoryItem.getChildren().addAll(nameLabel, deleteButton);
+                categoryList.getChildren().add(categoryItem);
+            }
+        }
     }
 }

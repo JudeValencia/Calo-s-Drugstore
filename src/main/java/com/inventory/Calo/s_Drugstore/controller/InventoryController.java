@@ -797,7 +797,8 @@ private BatchRepository batchRepository;
                                     product.getStock(),
                                     product.getExpirationDate(),
                                     product.getPrice(),
-                                    product.getSupplier()
+                                    product.getSupplier(),
+                                    LocalDate.now() // CSV import defaults to today
                             );
                             successCount++;
                         } catch (Exception ex) {
@@ -1480,7 +1481,8 @@ private BatchRepository batchRepository;
                         // Check if form is completely empty (skip it)
                         if (formData.selectedProduct == null &&
                                 formData.quantity.getText().trim().isEmpty() &&
-                                formData.expiryDate.getValue() == null) {
+                                formData.expiryDate.getValue() == null &&
+                                formData.dateReceived.getValue() == null) {
                             emptyCount++;
                             continue;
                         }
@@ -1496,6 +1498,9 @@ private BatchRepository batchRepository;
                         }
                         if (formData.expiryDate.getValue() == null) {
                             missingFields.append("Expiry Date, ");
+                        }
+                        if (formData.dateReceived.getValue() == null) {
+                            missingFields.append("Date Received, ");
                         }
 
                         // If there are missing fields, add to error messages
@@ -1533,7 +1538,8 @@ private BatchRepository batchRepository;
                                     quantity,
                                     formData.expiryDate.getValue(),
                                     price,
-                                    supplier
+                                    supplier,
+                                    formData.dateReceived.getValue()
                             );
                             successCount++;
 
@@ -1695,6 +1701,22 @@ private BatchRepository batchRepository;
             );
             expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
 
+            // Date Received
+            DatePicker dateReceivedPicker = new DatePicker(LocalDate.now()); // Default to today
+            dateReceivedPicker.setPromptText("Select date received");
+            dateReceivedPicker.setStyle(
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-padding: 12px 15px; " +
+                            "-fx-font-size: 14px;" +
+                            "-fx-text-fill: black;" +
+                            "-fx-prompt-text-fill: #7f8c8d;"
+            );
+            dateReceivedPicker.getEditor().setStyle("-fx-text-fill: black;");
+
             GridPane fieldsGrid = new GridPane();
             fieldsGrid.setHgap(15);
             fieldsGrid.setVgap(12);
@@ -1702,9 +1724,11 @@ private BatchRepository batchRepository;
             fieldsGrid.add(quantityField, 0, 1);
             fieldsGrid.add(createFieldLabel("Expiry Date *"), 1, 0);
             fieldsGrid.add(expiryPicker, 1, 1);
+            fieldsGrid.add(createFieldLabel("Date Received *"), 0, 2);
+            fieldsGrid.add(dateReceivedPicker, 0, 3);
 
             // Store form data
-            BatchFormData formData = new BatchFormData(quantityField, expiryPicker);
+            BatchFormData formData = new BatchFormData(quantityField, expiryPicker, dateReceivedPicker);
             formData.cardReference = batchCard;
             dataList.add(0, formData); // Add at the beginning to match UI order
 
@@ -1761,11 +1785,13 @@ private BatchRepository batchRepository;
             Product selectedProduct;
             TextField quantity;
             DatePicker expiryDate;
+            DatePicker dateReceived;
             VBox cardReference;
 
-            public BatchFormData(TextField quantity, DatePicker expiryDate) {
+            public BatchFormData(TextField quantity, DatePicker expiryDate, DatePicker dateReceived) {
                 this.quantity = quantity;
                 this.expiryDate = expiryDate;
+                this.dateReceived = dateReceived;
             }
         }
 
@@ -2866,7 +2892,8 @@ private BatchRepository batchRepository;
                                 stock,
                                 expirationPicker.getValue(),
                                 price,
-                                supplierField.getText().trim()
+                                supplierField.getText().trim(),
+                                LocalDate.now() // Default to today
                         );
 
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
@@ -2878,7 +2905,8 @@ private BatchRepository batchRepository;
                                 stock,
                                 expirationPicker.getValue(),
                                 price,
-                                supplierField.getText().trim()
+                                supplierField.getText().trim(),
+                                LocalDate.now() // Default to today
                         );
 
                         showStyledAlert(Alert.AlertType.INFORMATION, "Success",
@@ -3080,6 +3108,22 @@ private BatchRepository batchRepository;
             );
             expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
 
+            // Date Received
+            DatePicker dateReceivedPicker = new DatePicker(LocalDate.now()); // Default to today
+            dateReceivedPicker.setPromptText("Select date received");
+            dateReceivedPicker.setStyle(
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-padding: 12px 15px; " +
+                            "-fx-font-size: 14px;" +
+                            "-fx-text-fill: black;" +
+                            "-fx-prompt-text-fill: #7f8c8d;"
+            );
+            dateReceivedPicker.getEditor().setStyle("-fx-text-fill: black;");
+
             // Add all fields to form container
             formContainer.getChildren().addAll(
                     searchSectionLabel,
@@ -3090,7 +3134,8 @@ private BatchRepository batchRepository;
                     batchInfoLabel,
                     createFieldGroup("Batch Number", batchNumField),
                     createFieldGroup("Stock Quantity *", quantityField),
-                    createFieldGroup("Expiration Date *", expiryPicker)
+                    createFieldGroup("Expiration Date *", expiryPicker),
+                    createFieldGroup("Date Received *", dateReceivedPicker)
             );
 
             scrollPane.setContent(formContainer);
@@ -3149,6 +3194,9 @@ private BatchRepository batchRepository;
                     if (expiryPicker.getValue() == null) {
                         missingFields.append("• Expiration Date\n");
                     }
+                    if (dateReceivedPicker.getValue() == null) {
+                        missingFields.append("• Date Received\n");
+                    }
 
                     if (missingFields.length() > 0) {
                         showStyledAlert(Alert.AlertType.ERROR, "Required Fields Missing",
@@ -3178,6 +3226,7 @@ private BatchRepository batchRepository;
                     }
 
                     LocalDate expiryDate = expiryPicker.getValue();
+                    LocalDate dateReceived = dateReceivedPicker.getValue();
 
                     // Get price and supplier from the selected product
                     BigDecimal price = selectedProduct[0].getPrice();
@@ -3190,7 +3239,8 @@ private BatchRepository batchRepository;
                             quantity,
                             expiryDate,
                             price,
-                            supplier
+                            supplier,
+                            dateReceived
                     );
 
                     dialogStage.close();
@@ -3604,13 +3654,30 @@ private BatchRepository batchRepository;
             );
             expiryPicker.getEditor().setStyle("-fx-text-fill: black;");
 
+            // Date Received (editable)
+            DatePicker dateReceivedPicker = new DatePicker(batch.getDateReceived());
+            dateReceivedPicker.setPromptText("Select date received");
+            dateReceivedPicker.setStyle(
+                    "-fx-background-color: #F8F9FA; " +
+                            "-fx-background-radius: 8px; " +
+                            "-fx-border-color: #E0E0E0; " +
+                            "-fx-border-width: 1px; " +
+                            "-fx-border-radius: 8px; " +
+                            "-fx-padding: 12px 15px; " +
+                            "-fx-font-size: 14px;" +
+                            "-fx-text-fill: black;" +
+                            "-fx-prompt-text-fill: #7f8c8d;"
+            );
+            dateReceivedPicker.getEditor().setStyle("-fx-text-fill: black;");
+
             // Form container
             VBox formContainer = new VBox(15);
             formContainer.getChildren().addAll(
                     productInfoLabel,
                     createFieldGroup("Batch Number", batchNumField),
                     createFieldGroup("Stock Quantity *", quantityField),
-                    createFieldGroup("Expiration Date *", expiryPicker)
+                    createFieldGroup("Expiration Date *", expiryPicker),
+                    createFieldGroup("Date Received *", dateReceivedPicker)
             );
 
             // Buttons
@@ -3660,6 +3727,9 @@ private BatchRepository batchRepository;
                     if (expiryPicker.getValue() == null) {
                         missingFields.append("• Expiration Date\n");
                     }
+                    if (dateReceivedPicker.getValue() == null) {
+                        missingFields.append("• Date Received\n");
+                    }
 
                     if (missingFields.length() > 0) {
                         showStyledAlert(Alert.AlertType.ERROR, "Required Fields Missing",
@@ -3689,10 +3759,12 @@ private BatchRepository batchRepository;
                     }
 
                     LocalDate expiryDate = expiryPicker.getValue();
+                    LocalDate dateReceived = dateReceivedPicker.getValue();
 
                     // Update batch
                     batch.setStock(quantity);
                     batch.setExpirationDate(expiryDate);
+                    batch.setDateReceived(dateReceived);
                     productService.updateBatch(batch);
 
                     // Refresh the batch table
