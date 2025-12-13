@@ -536,6 +536,10 @@ public class StaffController implements Initializable {
         mainContainer.setPrefWidth(600);
         mainContainer.setMaxHeight(650);
 
+        // Employee ID at the top (same style as subtitle)
+        Label employeeIdLabel = new Label("Employee ID: " + user.getUsername());
+        employeeIdLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
         // Header
         Label titleLabel = new Label(user.getFullName());
         titleLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
@@ -543,7 +547,7 @@ public class StaffController implements Initializable {
         Label subtitleLabel = new Label("@" + user.getUsername());
         subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
 
-        VBox header = new VBox(5, titleLabel, subtitleLabel);
+        VBox header = new VBox(5, employeeIdLabel, titleLabel, subtitleLabel);
 
         // ScrollPane for content
         ScrollPane scrollPane = new ScrollPane();
@@ -761,8 +765,16 @@ public class StaffController implements Initializable {
         mainContainer.setMaxHeight(650); //maximum height
 
         // ==================== FIXED HEADER ====================//
-        VBox headerBox = new VBox();
+        VBox headerBox = new VBox(8);
         headerBox.setStyle("-fx-background-color: white; -fx-padding: 30 30 20 30;");
+
+        // Add Employee ID at top if editing (same color as regular text)
+        if (isEdit) {
+            Label employeeIdLabel = new Label("Employee ID: " + editUser.getUsername());
+            employeeIdLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+            headerBox.getChildren().add(employeeIdLabel);
+        }
+
         Label titleLabel = new Label(isEdit ? "Edit Employee Account" : "Add New Employee Account");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
         headerBox.getChildren().add(titleLabel);
@@ -796,6 +808,22 @@ public class StaffController implements Initializable {
                 "-fx-border-radius: 8px; " +
                 "-fx-font-size: 14px; " +
                 "-fx-padding: 12px 15px;";
+
+        // Employee ID Field (non-editable, shows at top)
+        VBox employeeIdBox = new VBox(8);
+        Label employeeIdLabel = new Label("Employee ID");
+        employeeIdLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField employeeIdField = new TextField();
+        if (isEdit) {
+            employeeIdField.setText(editUser.getUsername());
+        } else {
+            employeeIdField.setText("Auto-generated after creation");
+        }
+        employeeIdField.setStyle(fieldStyle + "-fx-opacity: 0.6;");
+        employeeIdField.setEditable(false);
+        employeeIdField.setMouseTransparent(true);
+        employeeIdField.setFocusTraversable(false);
+        employeeIdBox.getChildren().addAll(employeeIdLabel, employeeIdField);
 
         // First Name
         VBox firstNameBox = new VBox(8);
@@ -1086,7 +1114,13 @@ public class StaffController implements Initializable {
         roleBox.getChildren().addAll(roleLabel, roleCombo);
 
         // ==================== ALL FIELDS TO SCROLLABLE CONTENT ====================//
+        // Add Employee ID field first if editing
+        if (isEdit && employeeIdBox != null) {
+            contentBox.getChildren().add(employeeIdBox);
+        }
+
         contentBox.getChildren().addAll(
+                employeeIdBox,  // Add Employee ID first
                 firstNameBox, middleNameBox, lastNameBox, usernameBox, emailBox, contactBox,
                 addressBox, dobBox, passwordBox, confirmPasswordBox, roleBox
         );

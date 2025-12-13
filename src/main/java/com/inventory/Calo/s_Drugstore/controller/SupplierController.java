@@ -481,6 +481,10 @@ public class SupplierController implements Initializable {
         mainContainer.setPrefWidth(600);
         mainContainer.setMaxHeight(650);
 
+        // Supplier ID at the top (same style as subtitle)
+        Label supplierIdLabel = new Label("Supplier ID: " + supplier.getSupplierId());
+        supplierIdLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
         Label titleLabel = new Label(supplier.getCompanyName());
         titleLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
@@ -577,6 +581,35 @@ public class SupplierController implements Initializable {
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
         Scene scene = new Scene(mainContainer);
+        // Apply custom scrollbar style
+        String scrollBarStyle =
+                ".scroll-pane {" +
+                        "    -fx-background-color: transparent;" +
+                        "    -fx-border-width: 0;" +
+                        "}" +
+                        ".scroll-pane .viewport {" +
+                        "    -fx-background-color: transparent;" +
+                        "}" +
+                        ".scroll-bar {" +
+                        "    -fx-background-color: transparent;" +
+                        "}" +
+                        ".scroll-bar .thumb {" +
+                        "    -fx-background-color: #cbd5e0;" +
+                        "    -fx-background-radius: 4px;" +
+                        "}" +
+                        ".scroll-bar .thumb:hover {" +
+                        "    -fx-background-color: #a0aec0;" +
+                        "}" +
+                        ".scroll-bar .track {" +
+                        "    -fx-background-color: transparent;" +
+                        "}" +
+                        ".scroll-bar .increment-button," +
+                        ".scroll-bar .decrement-button {" +
+                        "    -fx-background-color: transparent;" +
+                        "    -fx-padding: 0;" +
+                        "}";
+
+        scene.getStylesheets().add("data:text/css," + scrollBarStyle);
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
         dialogStage.showAndWait();
@@ -664,8 +697,16 @@ public class SupplierController implements Initializable {
         mainContainer.setPrefWidth(550);
         mainContainer.setMaxHeight(650);
 
-        VBox headerBox = new VBox();
+        VBox headerBox = new VBox(8);
         headerBox.setStyle("-fx-background-color: white; -fx-padding: 30 30 20 30;");
+
+        // Add Supplier ID at top if editing (same color as regular text)
+        if (isEdit) {
+            Label supplierIdLabel = new Label("Supplier ID: " + editSupplier.getSupplierId());
+            supplierIdLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+            headerBox.getChildren().add(supplierIdLabel);
+        }
+
         Label titleLabel = new Label(isEdit ? "Edit Supplier" : "Add New Supplier");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
         headerBox.getChildren().add(titleLabel);
@@ -692,6 +733,22 @@ public class SupplierController implements Initializable {
                 "-fx-border-radius: 8px; " +
                 "-fx-font-size: 14px; " +
                 "-fx-padding: 12px 15px;";
+
+        // Supplier ID Field (non-editable, shows at top)
+        VBox supplierIdBox = new VBox(8);
+        Label supplierIdLabel = new Label("Supplier ID");
+        supplierIdLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
+        TextField supplierIdField = new TextField();
+        if (isEdit) {
+            supplierIdField.setText(editSupplier.getSupplierId());
+        } else {
+            supplierIdField.setText("Auto-generated after creation");
+        }
+        supplierIdField.setStyle(fieldStyle + "-fx-opacity: 0.6;");
+        supplierIdField.setEditable(false);
+        supplierIdField.setMouseTransparent(true);
+        supplierIdField.setFocusTraversable(false);
+        supplierIdBox.getChildren().addAll(supplierIdLabel, supplierIdField);
 
         VBox companyNameBox = new VBox(8);
         Label companyNameLabel = new Label("Company Name *");
@@ -754,6 +811,7 @@ public class SupplierController implements Initializable {
         productsBox.getChildren().addAll(productsLabel, productsField);
 
         contentBox.getChildren().addAll(
+                supplierIdBox,  // This will be added first
                 companyNameBox, contactNumberBox, addressBox, contactPersonBox,
                 emailBox, productsBox
         );
