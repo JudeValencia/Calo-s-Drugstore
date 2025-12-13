@@ -1586,6 +1586,7 @@ private BatchRepository batchRepository;
 
             Scene scene = new Scene(mainContainer);
             scene.getStylesheets().add("data:text/css," + scrollBarStyle);
+            addDatePickerCalendarCSS(scene);
             dialogStage.setScene(scene);
             dialogStage.centerOnScreen();
             dialogStage.showAndWait();
@@ -3243,7 +3244,7 @@ private BatchRepository batchRepository;
                             dateReceived
                     );
 
-                    dialogStage.close();
+                    dialogStage.close();showAddBatchDialog();
                     loadProducts(); // Refresh inventory table
                     showStyledAlert(Alert.AlertType.INFORMATION, "Success",
                             "Batch added successfully to " + selectedProduct[0].getBrandName() + "!");
@@ -3260,6 +3261,7 @@ private BatchRepository batchRepository;
 
             Scene scene = new Scene(mainContainer);
             dialogStage.setScene(scene);
+            addDatePickerCalendarCSS(scene);
             dialogStage.show();
         }
 
@@ -3789,6 +3791,7 @@ private BatchRepository batchRepository;
             mainContainer.getChildren().addAll(header, formContainer, buttonContainer);
 
             Scene scene = new Scene(mainContainer);
+            addDatePickerCalendarCSS(scene);
             dialogStage.setScene(scene);
             dialogStage.show();
         }
