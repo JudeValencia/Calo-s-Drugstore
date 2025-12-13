@@ -97,10 +97,11 @@
                     </VBox>
 
                     <HBox spacing="15">
-                        <Button text="+ Add Inventory" styleClass="add-btn" onAction="#handleAddMedicine"/>
-                        <Button text="📦 Bulk Add" styleClass="bulk-btn" onAction="#handleBulkAdd"/>
+<!--                        <Button text="+ Add Inventory" styleClass="add-btn" onAction="#handleAddMedicine"/>-->
+                        <Button text="+ Add Inventory" styleClass="add-btn" onAction="#handleBulkAdd"/>
                         <Button text="📥 Import CSV" styleClass="bulk-btn" onAction="#handleImportCSV"/>
                         <Button text="📥 Export " styleClass="bulk-btn" onAction="#handleExportCSV"/>
+                        <Button text="🖨 Print" styleClass="bulk-btn" onAction="#handlePrintInventory"/>
                     </HBox>
                 </HBox>
 

@@ -96,7 +96,10 @@
                 <VBox VBox.vgrow="ALWAYS">
                     <Label text="Reports &amp; Analytics" styleClass="page-title"/>
                     <Label text="Comprehensive insights into your pharmacy operations" styleClass="page-subtitle"/>
-                    <Button text="📄 Export Report" onAction="#handleExportReport" styleClass="period-toggle"/>
+                    <HBox spacing="10">
+                        <Button text="📄 Export Report" onAction="#handleExportReport" styleClass="period-toggle"/>
+                        <Button text="🖨 Print Report" onAction="#handlePrintReport" styleClass="period-toggle"/>
+                    </HBox>
                 </VBox>
 <!--                <Button text="📥 Export Report" styleClass="export-button" onAction="#handleExportReport"/>-->
             </HBox>

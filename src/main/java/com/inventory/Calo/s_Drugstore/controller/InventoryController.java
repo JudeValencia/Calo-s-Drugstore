@@ -19,6 +19,7 @@
     import javafx.scene.Scene;
     import javafx.scene.control.*;
     import javafx.scene.layout.*;
+    import javafx.print.PrinterJob;
     import javafx.stage.Modality;
     import javafx.stage.Stage;
     import org.springframework.beans.factory.annotation.Autowired;
@@ -536,6 +537,18 @@ private BatchRepository batchRepository;
         }
 
         @FXML
+        private void handlePrintInventory() {
+            try {
+                // Show print preview dialog
+                showInventoryPrintPreviewDialog();
+            } catch (Exception e) {
+                e.printStackTrace();
+                showStyledAlert(Alert.AlertType.ERROR, "Error",
+                        "Failed to show print preview: " + e.getMessage());
+            }
+        }
+
+        @FXML
         private void handleImportCSV() {
             try {
                 // Create file chooser
@@ -908,7 +921,7 @@ private BatchRepository batchRepository;
             pdfCard.setOnMouseExited(e -> pdfCard.setStyle(
                     pdfCard.getStyle().replace("-fx-background-color: #E3F2FD;", "-fx-background-color: #F8F9FA;")
             ));
-    
+
             optionsContainer.getChildren().addAll(csvCard, pdfCard);
     
             // Cancel button
@@ -1326,13 +1339,307 @@ private BatchRepository batchRepository;
             if (value == null) {
                 return "";
             }
-    
+
             // If value contains comma, quote, or newline, wrap in quotes and escape internal quotes
             if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
                 return "\"" + value.replace("\"", "\"\"") + "\"";
             }
-    
+
             return value;
+        }
+
+        private void showInventoryPrintPreviewDialog() throws Exception {
+            // Get products from the inventory table
+            List<Product> products = new ArrayList<>(inventoryTable.getItems());
+
+            if (products.isEmpty()) {
+                showStyledAlert(Alert.AlertType.WARNING, "No Data",
+                        "There are no products in the inventory to print.");
+                return;
+            }
+
+            // Create print preview dialog
+            Stage dialogStage = new Stage();
+            IconUtil.setApplicationIcon(dialogStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setTitle("Print Preview - Inventory Report");
+            dialogStage.setResizable(true);
+
+            // Main container
+            VBox mainContainer = new VBox(20);
+            mainContainer.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 30;");
+
+            // Header
+            Label titleLabel = new Label("Print Preview");
+            titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            Label subtitleLabel = new Label("Inventory Report - " + products.size() + " products");
+            subtitleLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #7f8c8d;");
+
+            VBox header = new VBox(5, titleLabel, subtitleLabel);
+
+            // Print preview content
+            ScrollPane scrollPane = new ScrollPane();
+            scrollPane.setFitToWidth(true);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setStyle("-fx-background-color: transparent;");
+            scrollPane.setPrefViewportHeight(500);
+            VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+            VBox printContent = createInventoryPrintableContent(products);
+            printContent.setStyle(
+                    "-fx-background-color: white; " +
+                    "-fx-padding: 50; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"
+            );
+            printContent.setPrefWidth(800);
+            printContent.setMaxWidth(800);
+            printContent.setMinHeight(Region.USE_PREF_SIZE);
+
+            // Center the content
+            HBox contentWrapper = new HBox(printContent);
+            contentWrapper.setAlignment(Pos.TOP_CENTER);
+            contentWrapper.setStyle("-fx-padding: 20;");
+            contentWrapper.setMinHeight(Region.USE_PREF_SIZE);
+
+            scrollPane.setContent(contentWrapper);
+
+            // Button container
+            HBox buttonBox = new HBox(15);
+            buttonBox.setAlignment(Pos.CENTER_RIGHT);
+            buttonBox.setStyle("-fx-padding: 20 0 0 0;");
+
+            Button cancelButton = new Button("Cancel");
+            cancelButton.setStyle(
+                    "-fx-background-color: white; " +
+                    "-fx-text-fill: #2c3e50; " +
+                    "-fx-font-size: 14px; " +
+                    "-fx-padding: 12px 30px; " +
+                    "-fx-background-radius: 8px; " +
+                    "-fx-border-color: #E0E0E0; " +
+                    "-fx-border-width: 1.5px; " +
+                    "-fx-border-radius: 8px; " +
+                    "-fx-cursor: hand;"
+            );
+            cancelButton.setOnAction(e -> dialogStage.close());
+
+            Button printButton = new Button("🖨 Print");
+            printButton.setStyle(
+                    "-fx-background-color: #4CAF50; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-font-size: 14px; " +
+                    "-fx-font-weight: bold; " +
+                    "-fx-padding: 12px 30px; " +
+                    "-fx-background-radius: 8px; " +
+                    "-fx-cursor: hand;"
+            );
+            printButton.setOnAction(e -> {
+                performInventoryPrint(printContent);
+                dialogStage.close();
+            });
+
+            buttonBox.getChildren().addAll(cancelButton, printButton);
+
+            mainContainer.getChildren().addAll(header, scrollPane, buttonBox);
+
+            Scene scene = new Scene(mainContainer, 1000, 700);
+            dialogStage.setScene(scene);
+            dialogStage.showAndWait();
+        }
+
+        private VBox createInventoryPrintableContent(List<Product> products) {
+            VBox content = new VBox(20);
+
+            // Title
+            Label title = new Label("INVENTORY REPORT");
+            title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+            title.setAlignment(Pos.CENTER);
+            title.setMaxWidth(Double.MAX_VALUE);
+
+            Label subtitle = new Label("Calo's Drugstore - Generated on " +
+                    LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")));
+            subtitle.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d;");
+            subtitle.setAlignment(Pos.CENTER);
+            subtitle.setMaxWidth(Double.MAX_VALUE);
+
+            Separator separator1 = new Separator();
+            separator1.setStyle("-fx-padding: 10 0;");
+
+            // Summary Statistics Section
+            Label statsTitle = new Label("SUMMARY STATISTICS");
+            statsTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+            // Calculate statistics
+            int totalProducts = products.size();
+            int totalStock = products.stream().mapToInt(Product::getStock).sum();
+            BigDecimal totalValue = products.stream()
+                    .map(p -> p.getPrice().multiply(new BigDecimal(p.getStock())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            long lowStockCount = products.stream().filter(Product::isLowStock).count();
+
+            LocalDate today = LocalDate.now();
+            LocalDate thirtyDaysFromNow = today.plusDays(30);
+            long expiringCount = products.stream()
+                    .filter(product -> {
+                        List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+                        if (batches.isEmpty()) {
+                            return product.getExpirationDate() != null &&
+                                   !product.getExpirationDate().isBefore(today) &&
+                                   product.getExpirationDate().isBefore(thirtyDaysFromNow);
+                        }
+                        LocalDate earliestExpiry = batches.stream()
+                                .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                                .filter(date -> date != null)
+                                .min(LocalDate::compareTo)
+                                .orElse(null);
+                        return earliestExpiry != null &&
+                               !earliestExpiry.isBefore(today) &&
+                               earliestExpiry.isBefore(thirtyDaysFromNow);
+                    })
+                    .count();
+
+            // Stats Grid
+            GridPane statsGrid = new GridPane();
+            statsGrid.setHgap(20);
+            statsGrid.setVgap(10);
+            statsGrid.setStyle("-fx-padding: 15; -fx-background-color: #F8F9FA; -fx-background-radius: 8px;");
+
+            statsGrid.add(createInventoryKPILabel("Total Products:", true), 0, 0);
+            statsGrid.add(createInventoryKPILabel(String.valueOf(totalProducts), false), 1, 0);
+            statsGrid.add(createInventoryKPILabel("Total Stock Units:", true), 0, 1);
+            statsGrid.add(createInventoryKPILabel(String.valueOf(totalStock), false), 1, 1);
+            statsGrid.add(createInventoryKPILabel("Total Inventory Value:", true), 0, 2);
+            statsGrid.add(createInventoryKPILabel("₱" + String.format("%,.2f", totalValue), false), 1, 2);
+            statsGrid.add(createInventoryKPILabel("Low Stock Items:", true), 0, 3);
+            statsGrid.add(createInventoryKPILabel(String.valueOf(lowStockCount), false), 1, 3);
+            statsGrid.add(createInventoryKPILabel("Expiring Soon (30 days):", true), 0, 4);
+            statsGrid.add(createInventoryKPILabel(String.valueOf(expiringCount), false), 1, 4);
+
+            // Products List Section
+            Label productsTitle = new Label("COMPLETE INVENTORY LIST");
+            productsTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 20 0 10 0;");
+
+            GridPane productsGrid = createInventoryProductsGrid(products);
+
+            content.getChildren().addAll(
+                    title, subtitle, separator1,
+                    statsTitle, statsGrid,
+                    productsTitle, productsGrid
+            );
+
+            return content;
+        }
+
+        private Label createInventoryKPILabel(String text, boolean isBold) {
+            Label label = new Label(text);
+            if (isBold) {
+                label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+            } else {
+                label.setStyle("-fx-font-size: 12px; -fx-text-fill: #555555;");
+            }
+            return label;
+        }
+
+        private GridPane createInventoryProductsGrid(List<Product> products) {
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(6);
+            grid.setStyle("-fx-padding: 15; -fx-background-color: #F8F9FA; -fx-background-radius: 8px;");
+
+            // Headers
+            String[] headers = {"ID", "Brand", "Generic", "Stock", "Price", "Expiry", "Status", "Supplier"};
+            for (int i = 0; i < headers.length; i++) {
+                Label header = new Label(headers[i]);
+                header.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 4;");
+                grid.add(header, i, 0);
+            }
+
+            // Add product data (show all products for scrolling)
+            int maxRows = products.size();
+            for (int row = 0; row < maxRows; row++) {
+                Product product = products.get(row);
+
+                List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+                LocalDate expiryDate = null;
+                if (!batches.isEmpty()) {
+                    expiryDate = batches.stream()
+                            .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                            .filter(date -> date != null)
+                            .min(LocalDate::compareTo)
+                            .orElse(null);
+                }
+                if (expiryDate == null) {
+                    expiryDate = product.getExpirationDate();
+                }
+
+                String expiryStr = expiryDate != null ?
+                        expiryDate.format(DateTimeFormatter.ofPattern("MM/dd/yy")) : "N/A";
+                String supplier = product.getSupplier() != null ? product.getSupplier() : "N/A";
+
+                Label id = new Label(product.getMedicineId());
+                Label brand = new Label(product.getBrandName());
+                Label generic = new Label(product.getGenericName() != null ? product.getGenericName() : "N/A");
+                Label stock = new Label(String.valueOf(product.getStock()));
+                Label price = new Label("₱" + product.getPrice());
+                Label expiry = new Label(expiryStr);
+                Label status = new Label(product.getStockStatus() != null ? product.getStockStatus() : "N/A");
+                Label supplierLabel = new Label(supplier);
+
+                String cellStyle = "-fx-font-size: 9px; -fx-text-fill: #555555; -fx-padding: 4;";
+                id.setStyle(cellStyle);
+                brand.setStyle(cellStyle);
+                generic.setStyle(cellStyle);
+                stock.setStyle(cellStyle);
+                price.setStyle(cellStyle);
+                expiry.setStyle(cellStyle);
+                status.setStyle(cellStyle);
+                supplierLabel.setStyle(cellStyle);
+
+                grid.add(id, 0, row + 1);
+                grid.add(brand, 1, row + 1);
+                grid.add(generic, 2, row + 1);
+                grid.add(stock, 3, row + 1);
+                grid.add(price, 4, row + 1);
+                grid.add(expiry, 5, row + 1);
+                grid.add(status, 6, row + 1);
+                grid.add(supplierLabel, 7, row + 1);
+            }
+
+            return grid;
+        }
+
+        private void performInventoryPrint(VBox printContent) {
+            try {
+                // Remove drop shadow effect for printing (performance)
+                printContent.setEffect(null);
+
+                PrinterJob printerJob = PrinterJob.createPrinterJob();
+                if (printerJob != null && printerJob.showPrintDialog(inventoryTable.getScene().getWindow())) {
+
+                    // Create a simplified print node without effects
+                    VBox simplifiedContent = new VBox();
+                    simplifiedContent.getChildren().addAll(printContent.getChildren());
+                    simplifiedContent.setStyle("-fx-background-color: white; -fx-padding: 30;");
+
+                    boolean success = printerJob.printPage(simplifiedContent);
+                    if (success) {
+                        printerJob.endJob();
+                        showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                                "Inventory report sent to printer successfully!");
+                    } else {
+                        showStyledAlert(Alert.AlertType.ERROR, "Error",
+                                "Failed to print the inventory report.");
+                    }
+
+                    // Restore drop shadow for preview
+                    printContent.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.rgb(0, 0, 0, 0.2)));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                showStyledAlert(Alert.AlertType.ERROR, "Error",
+                        "Failed to print: " + e.getMessage());
+            }
         }
     
         private void showBulkAddDialog() {
