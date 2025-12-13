@@ -231,7 +231,7 @@ public class ProductService {
     @Transactional
     public Product saveProductWithBatch(Product product, Integer batchStock,
                                         LocalDate batchExpiry, BigDecimal batchPrice,
-                                        String batchSupplier) {
+                                        String batchSupplier, LocalDate batchDateReceived) {
         // Now will Prevent adding expired medicine
         if (batchExpiry != null && batchExpiry.isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Cannot add expired medicine. Expiration date: " +
@@ -297,7 +297,7 @@ public class ProductService {
         newBatch.setExpirationDate(batchExpiry);
         newBatch.setPrice(batchPrice);
         newBatch.setSupplier(batchSupplier);
-        newBatch.setDateReceived(LocalDate.now());
+        newBatch.setDateReceived(batchDateReceived != null ? batchDateReceived : LocalDate.now());
 
         batchRepository.save(newBatch);
         System.out.println("✅ Created batch: " + newBatch.getBatchNumber() + " with " + batchStock + " units, expiry: " + batchExpiry);
