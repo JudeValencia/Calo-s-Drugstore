@@ -191,58 +191,47 @@
 }
 
 /* ===================================
-   KPI CARDS
+   STAFF CARDS (Reused from staff.css)
    =================================== */
 
-.kpi-row {
-    -fx-alignment: CENTER_LEFT;
-}
-
-.kpi-card {
+.staff-card {
     -fx-background-color: white;
     -fx-background-radius: 12px;
-    -fx-padding: 20px;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
 }
 
-.kpi-title {
+.card-label {
     -fx-font-size: 14px;
     -fx-font-weight: 500;
     -fx-text-fill: #7f8c8d;
-    -fx-letter-spacing: 0.3px;
 }
 
-.kpi-value {
-    -fx-font-size: 32px;
+.card-value {
+    -fx-font-size: 36px;
     -fx-font-weight: bold;
     -fx-text-fill: #2c3e50;
 }
 
-.kpi-subtitle {
+.card-value-green {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4CAF50;
+}
+
+.card-subtitle {
     -fx-font-size: 13px;
     -fx-text-fill: #95a5a6;
 }
 
-/* ===================================
-   FILTER CARD
-   =================================== */
-
-.filter-card {
-    -fx-background-color: white;
-    -fx-background-radius: 12px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
-}
-
-.filter-title {
-    -fx-font-size: 18px;
+.card-title {
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-fill: #2c3e50;
 }
 
-.filter-subtitle {
-    -fx-font-size: 14px;
-    -fx-text-fill: #7f8c8d;
-}
+/* ===================================
+   SEARCH & FILTER
+   =================================== */
 
 .search-field {
     -fx-background-color: #F8F9FA;
@@ -287,88 +276,67 @@
 }
 
 /* ===================================
-   TABLE CARD
+   TABLE STYLES (staff-table reused)
    =================================== */
 
-.table-card {
-    -fx-background-color: white;
-    -fx-background-radius: 12px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
-}
-
-.table-title {
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #2c3e50;
-}
-
-.table-subtitle {
-    -fx-font-size: 14px;
-    -fx-text-fill: #7f8c8d;
-}
-
-/* ===================================
-   TABLE STYLES
-   =================================== */
-
-.supplier-table {
+.staff-table {
     -fx-background-color: white;
     -fx-border-color: transparent;
     -fx-table-cell-border-color: transparent;
 }
 
-.supplier-table .column-header-background {
+.staff-table .column-header-background {
     -fx-background-color: white;
 }
 
-.supplier-table .column-header {
+.staff-table .column-header {
     -fx-background-color: white;
     -fx-border-color: transparent transparent #E0E0E0 transparent;
     -fx-border-width: 0 0 2px 0;
     -fx-padding: 15px 10px;
 }
 
-.supplier-table .column-header .label {
+.staff-table .column-header .label {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-text-fill: #2c3e50;
     -fx-alignment: CENTER_LEFT;
 }
 
-.supplier-table .table-row-cell {
+.staff-table .table-row-cell {
     -fx-background-color: white;
     -fx-border-color: transparent transparent #F0F0F0 transparent;
     -fx-border-width: 0 0 1px 0;
     -fx-padding: 12px 0;
 }
 
-.supplier-table .table-row-cell:hover {
+.staff-table .table-row-cell:hover {
     -fx-background-color: #F8F9FA;
 }
 
-.supplier-table .table-row-cell:selected {
+.staff-table .table-row-cell:selected {
     -fx-background-color: rgba(76, 175, 80, 0.1);
 }
 
-.supplier-table .table-cell {
+.staff-table .table-cell {
     -fx-padding: 10px;
     -fx-alignment: CENTER_LEFT;
     -fx-text-fill: #2c3e50;
     -fx-font-size: 14px;
 }
 
-.supplier-table:focused {
+.staff-table:focused {
     -fx-background-color: white;
     -fx-background-insets: 0;
 }
 
-.supplier-table .table-row-cell:focused {
+.staff-table .table-row-cell:focused {
     -fx-background-color: rgba(76, 175, 80, 0.1);
     -fx-background-insets: 0;
 }
 
 /* Table placeholder */
-.supplier-table .placeholder .label {
+.staff-table .placeholder .label {
     -fx-text-fill: #7f8c8d;
 }
 

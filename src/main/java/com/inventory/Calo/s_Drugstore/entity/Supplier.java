@@ -17,17 +17,26 @@ public class Supplier {
     @Column(name = "company_name", nullable = false)
     private String companyName;
 
+    @Column(name = "contact_number")
+    private String contactNumber;
+
+    @Column(name = "address")
+    private String address;
+
     @Column(name = "contact_person")
     private String contactPerson;
-
-    @Column(name = "mobile_number")
-    private String mobileNumber;
 
     @Column(name = "email")
     private String email;
 
-    @Column(name = "physical_address")
-    private String physicalAddress;
+    @Column(name = "products_supplied")
+    private String productsSupplied;
+
+    @Column(name = "status", nullable = false)
+    private String status = "Active";
+
+    @Column(name = "date_added")
+    private LocalDate dateAdded;
 
     @Column(name = "created_at")
     private LocalDate createdAt;
@@ -35,24 +44,26 @@ public class Supplier {
     @Column(name = "updated_at")
     private LocalDate updatedAt;
 
-    // Constructors
     public Supplier() {
+        this.dateAdded = LocalDate.now();
         this.createdAt = LocalDate.now();
         this.updatedAt = LocalDate.now();
     }
 
-    public Supplier(String supplierId, String companyName, String contactPerson,
-                    String mobileNumber, String email, String physicalAddress) {
+    public Supplier(String supplierId, String companyName, String contactNumber,
+                    String address, String contactPerson, String email,
+                    String productsSupplied, String status) {
         this();
         this.supplierId = supplierId;
         this.companyName = companyName;
+        this.contactNumber = contactNumber;
+        this.address = address;
         this.contactPerson = contactPerson;
-        this.mobileNumber = mobileNumber;
         this.email = email;
-        this.physicalAddress = physicalAddress;
+        this.productsSupplied = productsSupplied;
+        this.status = status;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -77,20 +88,28 @@ public class Supplier {
         this.companyName = companyName;
     }
 
+    public String getContactNumber() {
+        return contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
     public String getContactPerson() {
         return contactPerson;
     }
 
     public void setContactPerson(String contactPerson) {
         this.contactPerson = contactPerson;
-    }
-
-    public String getMobileNumber() {
-        return mobileNumber;
-    }
-
-    public void setMobileNumber(String mobileNumber) {
-        this.mobileNumber = mobileNumber;
     }
 
     public String getEmail() {
@@ -101,12 +120,28 @@ public class Supplier {
         this.email = email;
     }
 
-    public String getPhysicalAddress() {
-        return physicalAddress;
+    public String getProductsSupplied() {
+        return productsSupplied;
     }
 
-    public void setPhysicalAddress(String physicalAddress) {
-        this.physicalAddress = physicalAddress;
+    public void setProductsSupplied(String productsSupplied) {
+        this.productsSupplied = productsSupplied;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDate getDateAdded() {
+        return dateAdded;
+    }
+
+    public void setDateAdded(LocalDate dateAdded) {
+        this.dateAdded = dateAdded;
     }
 
     public LocalDate getCreatedAt() {
@@ -125,6 +160,30 @@ public class Supplier {
         this.updatedAt = updatedAt;
     }
 
+    public String getSupplierName() {
+        return companyName;
+    }
+
+    public void setSupplierName(String supplierName) {
+        this.companyName = supplierName;
+    }
+
+    public String getMobileNumber() {
+        return contactNumber;
+    }
+
+    public void setMobileNumber(String mobileNumber) {
+        this.contactNumber = mobileNumber;
+    }
+
+    public String getPhysicalAddress() {
+        return address;
+    }
+
+    public void setPhysicalAddress(String physicalAddress) {
+        this.address = physicalAddress;
+    }
+
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDate.now();
@@ -137,7 +196,7 @@ public class Supplier {
                 ", supplierId='" + supplierId + '\'' +
                 ", companyName='" + companyName + '\'' +
                 ", contactPerson='" + contactPerson + '\'' +
-                ", mobileNumber='" + mobileNumber + '\'' +
+                ", contactNumber='" + contactNumber + '\'' +
                 ", email='" + email + '\'' +
                 '}';
     }
