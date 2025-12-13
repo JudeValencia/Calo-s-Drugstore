@@ -588,6 +588,27 @@ public class ProductManagementController implements Initializable {
         mainContainer.getChildren().addAll(header, scrollPane, buttonContainer);
 
         Scene scene = new Scene(mainContainer);
+        String dialogScrollBarStyle =
+                ".scroll-bar {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "}" +
+                        ".scroll-bar .thumb {" +
+                        "    -fx-background-color: #cbd5e0 !important;" +
+                        "    -fx-background-radius: 4px !important;" +
+                        "}" +
+                        ".scroll-bar .thumb:hover {" +
+                        "    -fx-background-color: #a0aec0 !important;" +
+                        "}" +
+                        ".scroll-bar .track {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "}" +
+                        ".scroll-bar .increment-button," +
+                        ".scroll-bar .decrement-button {" +
+                        "    -fx-background-color: transparent !important;" +
+                        "    -fx-padding: 0 !important;" +
+                        "}";
+
+        scene.getStylesheets().add("data:text/css," + dialogScrollBarStyle);
         dialogStage.setScene(scene);
         dialogStage.centerOnScreen();
         dialogStage.showAndWait();
