@@ -74,6 +74,8 @@ public class SupplierController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         System.out.println("=== SUPPLIER CONTROLLER INITIALIZE ===");
 
+        supplierService.syncSuppliersFromProducts();
+
         setupSupplierTable();
         loadSupplierData();
         setupColumnWidths();
@@ -832,6 +834,8 @@ public class SupplierController implements Initializable {
                 updateSummaryCards();
                 dialogStage.close();
 
+                refreshProductManagementSuppliers();
+
             } catch (RuntimeException ex) {
                 showStyledAlert(Alert.AlertType.ERROR, "Error", ex.getMessage());
             }
@@ -1271,5 +1275,16 @@ public class SupplierController implements Initializable {
         dialogStage.showAndWait();
 
         return (Boolean) dialogStage.getUserData();
+    }
+
+    private void refreshProductManagementSuppliers() {
+        try {
+            // Find ProductManagementController if it's loaded and refresh its supplier dropdown
+            Stage stage = (Stage) supplierBtn.getScene().getWindow();
+            // This will refresh the next time Product Management is opened
+            System.out.println("✅ Supplier list updated - will refresh in Product Management");
+        } catch (Exception e) {
+            // Ignore if Product Management isn't currently loaded
+        }
     }
 }

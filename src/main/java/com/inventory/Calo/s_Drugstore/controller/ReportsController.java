@@ -19,10 +19,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.print.PrinterJob;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -2084,6 +2087,388 @@ public class ReportsController implements Initializable {
             e.printStackTrace();
             showStyledAlert(Alert.AlertType.ERROR, "Error",
                     "Failed to export report: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handlePrintReport() {
+        // Show month selection dialog
+        LocalDate selectedPrintMonth = showMonthSelectionDialog();
+
+        if (selectedPrintMonth == null) {
+            return; // User cancelled
+        }
+
+        // Set the export month for printing
+        exportMonth = selectedPrintMonth;
+
+        try {
+            // Show print preview dialog
+            showPrintPreviewDialog();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                    "Failed to show print preview: " + e.getMessage());
+        }
+    }
+
+    private void showPrintPreviewDialog() throws Exception {
+        // Create print preview dialog
+        Stage dialogStage = new Stage();
+        IconUtil.setApplicationIcon(dialogStage);
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.setTitle("Print Preview - Sales Report");
+        dialogStage.setResizable(true);
+
+        // Main container
+        VBox mainContainer = new VBox(20);
+        mainContainer.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 30;");
+
+        // Header
+        Label titleLabel = new Label("Print Preview");
+        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        Label subtitleLabel = new Label("Sales Report for " + exportMonth.format(formatter));
+        subtitleLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #7f8c8d;");
+
+        VBox header = new VBox(5, titleLabel, subtitleLabel);
+
+        // Print preview content (same format as PDF)
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+        scrollPane.setPrefViewportHeight(500);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        VBox printContent = createPrintableContent();
+        printContent.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-padding: 50; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"
+        );
+        printContent.setPrefWidth(800);
+        printContent.setMaxWidth(800);
+        printContent.setMinHeight(Region.USE_PREF_SIZE);
+
+        // Center the content
+        HBox contentWrapper = new HBox(printContent);
+        contentWrapper.setAlignment(Pos.TOP_CENTER);
+        contentWrapper.setStyle("-fx-padding: 20;");
+        contentWrapper.setMinHeight(Region.USE_PREF_SIZE);
+
+        scrollPane.setContent(contentWrapper);
+
+        // Button container
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        buttonBox.setStyle("-fx-padding: 20 0 0 0;");
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-text-fill: #2c3e50; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 12px 30px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-border-color: #E0E0E0; " +
+                "-fx-border-width: 1.5px; " +
+                "-fx-border-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+        cancelButton.setOnAction(e -> dialogStage.close());
+
+        Button printButton = new Button("🖨 Print");
+        printButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 12px 30px; " +
+                "-fx-background-radius: 8px; " +
+                "-fx-cursor: hand;"
+        );
+        printButton.setOnAction(e -> {
+            performPrint(printContent);
+            dialogStage.close();
+        });
+
+        buttonBox.getChildren().addAll(cancelButton, printButton);
+
+        mainContainer.getChildren().addAll(header, scrollPane, buttonBox);
+
+        Scene scene = new Scene(mainContainer, 1000, 700);
+        dialogStage.setScene(scene);
+        dialogStage.showAndWait();
+    }
+
+    private VBox createPrintableContent() {
+        VBox content = new VBox(20);
+
+        // Title
+        Label title = new Label("Calo's Drugstore");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #4CAF50;");
+        title.setAlignment(Pos.CENTER);
+        title.setMaxWidth(Double.MAX_VALUE);
+
+        Label subtitle = new Label("Sales & Inventory Report");
+        subtitle.setStyle("-fx-font-size: 16px; -fx-text-fill: #2c3e50;");
+        subtitle.setAlignment(Pos.CENTER);
+        subtitle.setMaxWidth(Double.MAX_VALUE);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        Label dateRange = new Label(exportMonth.format(formatter));
+        dateRange.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d;");
+        dateRange.setAlignment(Pos.CENTER);
+        dateRange.setMaxWidth(Double.MAX_VALUE);
+
+        Label generatedDate = new Label("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a")));
+        generatedDate.setStyle("-fx-font-size: 10px; -fx-text-fill: #7f8c8d;");
+        generatedDate.setAlignment(Pos.CENTER);
+        generatedDate.setMaxWidth(Double.MAX_VALUE);
+
+        Separator separator1 = new Separator();
+        separator1.setStyle("-fx-padding: 10 0;");
+
+        // KPI Section
+        Label kpiTitle = new Label("Key Performance Indicators");
+        kpiTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        // Calculate KPIs
+        LocalDate exportMonthStart = exportMonth.with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate exportMonthEnd = exportMonth.with(TemporalAdjusters.lastDayOfMonth());
+        LocalDateTime startOfExportMonth = exportMonthStart.atStartOfDay();
+        LocalDateTime endOfExportMonth = exportMonthEnd.atTime(23, 59, 59);
+
+        List<Sale> exportMonthSales = salesService.getSalesBetweenDates(startOfExportMonth, endOfExportMonth);
+
+        BigDecimal exportRevenue = exportMonthSales.stream()
+                .map(Sale::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int exportTransactions = exportMonthSales.size();
+
+        BigDecimal exportAvgOrder = exportTransactions > 0
+                ? exportRevenue.divide(BigDecimal.valueOf(exportTransactions), 2, BigDecimal.ROUND_HALF_UP)
+                : BigDecimal.ZERO;
+
+        long exportLowStock = productService.getLowStockCount();
+
+        // KPI Grid
+        GridPane kpiGrid = new GridPane();
+        kpiGrid.setHgap(20);
+        kpiGrid.setVgap(10);
+        kpiGrid.setStyle("-fx-padding: 15; -fx-background-color: #F8F9FA; -fx-background-radius: 8px;");
+
+        kpiGrid.add(createKPILabel("Total Revenue:", true), 0, 0);
+        kpiGrid.add(createKPILabel("₱" + String.format("%,.2f", exportRevenue), false), 1, 0);
+        kpiGrid.add(createKPILabel("Transactions:", true), 2, 0);
+        kpiGrid.add(createKPILabel(String.format("%,d", exportTransactions), false), 3, 0);
+        kpiGrid.add(createKPILabel("Avg. Order Value:", true), 0, 1);
+        kpiGrid.add(createKPILabel("₱" + String.format("%,.2f", exportAvgOrder), false), 1, 1);
+        kpiGrid.add(createKPILabel("Low Stock Items:", true), 2, 1);
+        kpiGrid.add(createKPILabel(String.valueOf(exportLowStock), false), 3, 1);
+
+        // Top Selling Products Section
+        Label topSellingTitle = new Label("Top Selling Products");
+        topSellingTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 20 0 10 0;");
+
+        // Calculate top selling products
+        Map<String, Map<String, Object>> medicineStats = new HashMap<>();
+        for (Sale sale : exportMonthSales) {
+            for (SaleItem item : sale.getItems()) {
+                String medicineName = item.getMedicineName();
+                if (!medicineStats.containsKey(medicineName)) {
+                    Optional<Product> productOpt = productService.getProductByMedicineId(item.getMedicineId());
+                    String category = productOpt.map(Product::getCategory).orElse("Unknown");
+                    Map<String, Object> stats = new HashMap<>();
+                    stats.put("medicineName", medicineName);
+                    stats.put("category", category);
+                    stats.put("quantitySold", 0);
+                    medicineStats.put(medicineName, stats);
+                }
+                Map<String, Object> stats = medicineStats.get(medicineName);
+                stats.put("quantitySold", (Integer) stats.get("quantitySold") + item.getQuantity());
+            }
+        }
+
+        List<Map<String, Object>> topMedicines = medicineStats.values().stream()
+                .sorted((a, b) -> Integer.compare((Integer) b.get("quantitySold"), (Integer) a.get("quantitySold")))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        GridPane topSellingGrid = createTableGrid(
+                new String[]{"Rank", "Product", "Category", "Quantity Sold"},
+                topMedicines.isEmpty() ? null : topMedicines
+        );
+
+        // Expiring Products Section
+        Label expiringTitle = new Label("Expired & Expiring Products");
+        expiringTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 20 0 10 0;");
+
+        GridPane expiringGrid = createExpiringProductsGrid();
+
+        content.getChildren().addAll(
+                title, subtitle, dateRange, generatedDate, separator1,
+                kpiTitle, kpiGrid,
+                topSellingTitle, topSellingGrid,
+                expiringTitle, expiringGrid
+        );
+
+        return content;
+    }
+
+    private Label createKPILabel(String text, boolean isBold) {
+        Label label = new Label(text);
+        if (isBold) {
+            label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        } else {
+            label.setStyle("-fx-font-size: 12px; -fx-text-fill: #555555;");
+        }
+        return label;
+    }
+
+    private GridPane createTableGrid(String[] headers, List<Map<String, Object>> data) {
+        GridPane grid = new GridPane();
+        grid.setHgap(15);
+        grid.setVgap(8);
+        grid.setStyle("-fx-padding: 15; -fx-background-color: #F8F9FA; -fx-background-radius: 8px;");
+
+        // Add headers
+        for (int i = 0; i < headers.length; i++) {
+            Label header = new Label(headers[i]);
+            header.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 5;");
+            grid.add(header, i, 0);
+        }
+
+        // Add data
+        if (data == null || data.isEmpty()) {
+            Label noData = new Label("No data available");
+            noData.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d; -fx-padding: 5;");
+            grid.add(noData, 0, 1, headers.length, 1);
+        } else {
+            for (int row = 0; row < data.size(); row++) {
+                Map<String, Object> item = data.get(row);
+                Label rank = new Label("#" + (row + 1));
+                Label product = new Label(item.get("medicineName").toString());
+                Label category = new Label(item.get("category").toString());
+                Label quantity = new Label(item.get("quantitySold").toString());
+
+                rank.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                product.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                category.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                quantity.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+
+                grid.add(rank, 0, row + 1);
+                grid.add(product, 1, row + 1);
+                grid.add(category, 2, row + 1);
+                grid.add(quantity, 3, row + 1);
+            }
+        }
+
+        return grid;
+    }
+
+    private GridPane createExpiringProductsGrid() {
+        GridPane grid = new GridPane();
+        grid.setHgap(15);
+        grid.setVgap(8);
+        grid.setStyle("-fx-padding: 15; -fx-background-color: #F8F9FA; -fx-background-radius: 8px;");
+
+        // Headers
+        String[] headers = {"ID", "Product", "Expiration", "Days", "Stock", "Status"};
+        for (int i = 0; i < headers.length; i++) {
+            Label header = new Label(headers[i]);
+            header.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 5;");
+            grid.add(header, i, 0);
+        }
+
+        // Add expiring products data
+        List<Product> expiringProducts = new ArrayList<>(expiringMedicinesTable.getItems());
+        if (expiringProducts.isEmpty()) {
+            Label noData = new Label("No expiring products");
+            noData.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d; -fx-padding: 5;");
+            grid.add(noData, 0, 1, headers.length, 1);
+        } else {
+            int maxRows = Math.min(10, expiringProducts.size()); // Limit to 10 rows for print
+            for (int row = 0; row < maxRows; row++) {
+                Product product = expiringProducts.get(row);
+
+                List<com.inventory.Calo.s_Drugstore.entity.Batch> batches = productService.getBatchesForProduct(product);
+                LocalDate expiryDate = null;
+                if (!batches.isEmpty()) {
+                    expiryDate = batches.stream()
+                            .map(com.inventory.Calo.s_Drugstore.entity.Batch::getExpirationDate)
+                            .filter(date -> date != null)
+                            .min(LocalDate::compareTo)
+                            .orElse(null);
+                }
+                if (expiryDate == null) {
+                    expiryDate = product.getExpirationDate();
+                }
+
+                String expiryStr = expiryDate != null ? expiryDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) : "N/A";
+                long daysLeft = expiryDate != null ? java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), expiryDate) : 0;
+                String status = daysLeft < 0 ? "Expired" : "Expiring Soon";
+
+                Label id = new Label(product.getMedicineId());
+                Label name = new Label(product.getBrandName());
+                Label expiry = new Label(expiryStr);
+                Label days = new Label(String.valueOf(daysLeft));
+                Label stock = new Label(String.valueOf(product.getStock()));
+                Label statusLabel = new Label(status);
+
+                id.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                name.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                expiry.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                days.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                stock.setStyle("-fx-font-size: 11px; -fx-text-fill: #555555; -fx-padding: 5;");
+                statusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: " + (daysLeft < 0 ? "#F44336" : "#FF9800") + "; -fx-padding: 5; -fx-font-weight: bold;");
+
+                grid.add(id, 0, row + 1);
+                grid.add(name, 1, row + 1);
+                grid.add(expiry, 2, row + 1);
+                grid.add(days, 3, row + 1);
+                grid.add(stock, 4, row + 1);
+                grid.add(statusLabel, 5, row + 1);
+            }
+        }
+
+        return grid;
+    }
+
+    private void performPrint(VBox printContent) {
+        try {
+            // Remove drop shadow effect for printing (performance)
+            printContent.setEffect(null);
+
+            PrinterJob printerJob = PrinterJob.createPrinterJob();
+            if (printerJob != null && printerJob.showPrintDialog(dashboardBtn.getScene().getWindow())) {
+
+                // Create a simplified print node without effects
+                VBox simplifiedContent = new VBox();
+                simplifiedContent.getChildren().addAll(printContent.getChildren());
+                simplifiedContent.setStyle("-fx-background-color: white; -fx-padding: 30;");
+
+                boolean success = printerJob.printPage(simplifiedContent);
+                if (success) {
+                    printerJob.endJob();
+                    showStyledAlert(Alert.AlertType.INFORMATION, "Success",
+                            "Report sent to printer successfully!");
+                } else {
+                    showStyledAlert(Alert.AlertType.ERROR, "Error",
+                            "Failed to print the report.");
+                }
+
+                // Restore drop shadow for preview
+                printContent.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.rgb(0, 0, 0, 0.2)));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Error",
+                    "Failed to print: " + e.getMessage());
         }
     }
 

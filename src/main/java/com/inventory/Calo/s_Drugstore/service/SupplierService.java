@@ -1,6 +1,8 @@
 package com.inventory.Calo.s_Drugstore.service;
 
+import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.Supplier;
+import com.inventory.Calo.s_Drugstore.repository.ProductRepository;
 import com.inventory.Calo.s_Drugstore.repository.SupplierRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,9 @@ public class SupplierService {
 
     @Autowired
     private SupplierRepository supplierRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     public List<Supplier> getAllSuppliers() {
         return supplierRepository.findAllByOrderByCompanyNameAsc();
@@ -33,6 +38,45 @@ public class SupplierService {
             return getAllSuppliers();
         }
         return supplierRepository.searchSuppliers(searchTerm.trim());
+    }
+
+    @Transactional
+    public void syncSuppliersFromProducts() {
+        try {
+            // Get all unique supplier names from products table
+            List<String> productSuppliers = productRepository.findAll().stream()
+                    .map(Product::getSupplier)
+                    .filter(supplier -> supplier != null && !supplier.trim().isEmpty())
+                    .distinct()
+                    .toList();
+
+            System.out.println("Found " + productSuppliers.size() + " unique suppliers in products table");
+
+            int added = 0;
+            for (String supplierName : productSuppliers) {
+                // Check if supplier already exists in suppliers table
+                Optional<Supplier> existing = supplierRepository.findByCompanyName(supplierName);
+
+                if (existing.isEmpty()) {
+                    // Create new supplier record
+                    Supplier newSupplier = new Supplier();
+                    newSupplier.setSupplierId(generateNextSupplierId());
+                    newSupplier.setCompanyName(supplierName);
+                    newSupplier.setStatus("Active");
+                    newSupplier.setDateAdded(LocalDate.now());
+
+                    supplierRepository.save(newSupplier);
+                    added++;
+                    System.out.println("✅ Added supplier: " + supplierName);
+                }
+            }
+
+            System.out.println("Supplier sync complete. Added " + added + " new suppliers.");
+
+        } catch (Exception e) {
+            System.err.println("Error syncing suppliers: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Transactional

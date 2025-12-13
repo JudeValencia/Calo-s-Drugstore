@@ -36,4 +36,6 @@ public interface SupplierRepository extends JpaRepository<Supplier, Long> {
 
     // Count suppliers added after specific date
     long countByDateAddedAfter(LocalDate date);
+
+    Optional<Supplier> findByCompanyName(String supplierName);
 }

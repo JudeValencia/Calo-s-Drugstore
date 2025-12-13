@@ -4,6 +4,7 @@ import com.inventory.Calo.s_Drugstore.entity.Product;
 import com.inventory.Calo.s_Drugstore.entity.User;
 import com.inventory.Calo.s_Drugstore.repository.BatchRepository;
 import com.inventory.Calo.s_Drugstore.service.ProductService;
+import com.inventory.Calo.s_Drugstore.service.SupplierService;
 import com.inventory.Calo.s_Drugstore.service.UserManagementService;
 import com.inventory.Calo.s_Drugstore.util.IconUtil;
 import javafx.beans.property.SimpleStringProperty;
@@ -42,6 +43,9 @@ public class ProductManagementController implements Initializable {
 
     @Autowired
     private BatchRepository batchRepository;
+
+    @Autowired
+    private SupplierService supplierService;
 
     private User currentUser;
 
@@ -241,7 +245,10 @@ public class ProductManagementController implements Initializable {
         categoryFilter.setValue("All Categories");
 
         // Populate supplier filter
-        List<String> suppliers = productService.getAllSuppliers();
+        List<String> suppliers = supplierService.getAllSuppliers()
+                .stream()
+                .map(com.inventory.Calo.s_Drugstore.entity.Supplier::getCompanyName)
+                .toList();
         supplierFilter.getItems().clear();
         supplierFilter.getItems().add("All Suppliers");
         supplierFilter.getItems().addAll(suppliers);
@@ -250,12 +257,37 @@ public class ProductManagementController implements Initializable {
         // Add listeners
         categoryFilter.setOnAction(e -> applyFilters());
         supplierFilter.setOnAction(e -> applyFilters());
+
+        // Refresh supplier list when dropdown opens
+        supplierFilter.setOnShowing(e -> refreshSupplierDropdown());
     }
 
     private void setupSearchListener() {
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             applyFilters();
         });
+    }
+
+    public void refreshSupplierDropdown() {
+        if (supplierFilter != null) {
+            String currentValue = supplierFilter.getValue();
+
+            List<String> suppliers = supplierService.getAllSuppliers()
+                    .stream()
+                    .map(com.inventory.Calo.s_Drugstore.entity.Supplier::getCompanyName)
+                    .toList();
+
+            supplierFilter.getItems().clear();
+            supplierFilter.getItems().add("All Suppliers");
+            supplierFilter.getItems().addAll(suppliers);
+
+            // Restore previous selection if it still exists
+            if (currentValue != null && supplierFilter.getItems().contains(currentValue)) {
+                supplierFilter.setValue(currentValue);
+            } else {
+                supplierFilter.setValue("All Suppliers");
+            }
+        }
     }
 
     private void loadProducts() {
@@ -442,7 +474,10 @@ public class ProductManagementController implements Initializable {
 
         // Supplier
         ComboBox<String> supplierCombo = new ComboBox<>();
-        List<String> suppliers = productService.getAllSuppliers();
+        List<String> suppliers = supplierService.getAllSuppliers()  // ✅ CORRECT - reads from Supplier table
+                .stream()
+                .map(com.inventory.Calo.s_Drugstore.entity.Supplier::getCompanyName)
+                .toList();
         supplierCombo.getItems().addAll(suppliers);
         supplierCombo.setEditable(true);
         supplierCombo.setValue(product == null ? null : product.getSupplier());
