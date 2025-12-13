@@ -2542,7 +2542,7 @@ public class ReportsController implements Initializable {
             dialogStage.close();
         });
 
-        Button exportButton = new Button("Export Report");
+        Button exportButton = new Button("Export/Print Report");
         exportButton.setStyle(
                 "-fx-background-color: #4CAF50; " +
                         "-fx-text-fill: white; " +

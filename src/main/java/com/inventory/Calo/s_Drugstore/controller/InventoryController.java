@@ -503,7 +503,7 @@ private BatchRepository batchRepository;
         private void applyFilters() {
             String searchTerm = searchField.getText();
             String supplier = supplierFilter.getValue();
-    
+
             List<Product> filtered = productService.filterProducts(searchTerm, supplier, null);
             productList.setAll(filtered);
             updateTotalCount();
