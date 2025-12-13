@@ -6,8 +6,8 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.inventory.Calo.s_Drugstore.controller.StaffController"
-            styleClass="staff-root">
+            fx:controller="com.inventory.Calo.s_Drugstore.controller.SupplierController"
+            styleClass="supplier-root">
 
     <!-- LEFT SIDEBAR -->
     <left>
@@ -40,7 +40,6 @@
                 <Button fx:id="productsBtn" text="💊  Products" styleClass="menu-item"
                         onAction="#handleProducts"/>
 
-                <!-- Do the same for all buttons: -->
                 <Button fx:id="inventoryBtn" text="📦  Inventory" styleClass="menu-item"
                         onAction="#handleInventory"/>
 
@@ -98,86 +97,107 @@
                 <!-- Page Header -->
                 <HBox alignment="CENTER_LEFT" spacing="15">
                     <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Employee Management" styleClass="page-header"/>
-                        <Label text="Manage employee accounts and access control" styleClass="page-subheader"/>
+                        <Label text="Supplier Management" styleClass="page-header"/>
+                        <Label text="Manage supplier profiles and contact information" styleClass="page-subheader"/>
                     </VBox>
-                    <Button text="📁+ Add Category" styleClass="add-staff-btn"
-                            onAction="#handleAddCategory"
-                            style="-fx-background-color: #FF9800;"/>
-                    <Button text="👥+ Add Employee Account" styleClass="add-staff-btn"
-                            onAction="#handleAddStaff"/>
+                    <Button text="+ Add Supplier" styleClass="add-btn" onAction="#handleAddSupplier"/>
                 </HBox>
 
                 <!-- SUMMARY CARDS -->
                 <GridPane hgap="20" vgap="20">
                     <columnConstraints>
-                        <ColumnConstraints percentWidth="25" minWidth="200"/>
-                        <ColumnConstraints percentWidth="25" minWidth="200"/>
-                        <ColumnConstraints percentWidth="25" minWidth="200"/>
-                        <ColumnConstraints percentWidth="25" minWidth="200"/>
+                        <ColumnConstraints percentWidth="33" minWidth="200"/>
+                        <ColumnConstraints percentWidth="33" minWidth="200"/>
+                        <ColumnConstraints percentWidth="33" minWidth="200"/>
                     </columnConstraints>
 
-                    <!-- Total Staff -->
+                    <!-- Total Suppliers -->
                     <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="0">
                         <padding>
                             <Insets top="25" right="25" bottom="25" left="25"/>
                         </padding>
-                        <Label text="Total Employee" styleClass="card-label"/>
-                        <Label fx:id="totalStaffLabel" text="0" styleClass="card-value"/>
+                        <Label text="Total Suppliers" styleClass="card-label"/>
+                        <Label fx:id="totalSuppliersLabel" text="0" styleClass="card-value"/>
+                        <Label text="Registered suppliers" styleClass="card-subtitle"/>
                     </VBox>
 
-                    <!-- Active Accounts -->
+                    <!-- Active Suppliers -->
                     <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="1">
                         <padding>
                             <Insets top="25" right="25" bottom="25" left="25"/>
                         </padding>
-                        <Label text="Active Accounts" styleClass="card-label"/>
-                        <Label fx:id="activeAccountsLabel" text="0" styleClass="card-value-green"/>
+                        <Label text="Active Suppliers" styleClass="card-label"/>
+                        <Label fx:id="activeSuppliersLabel" text="0" styleClass="card-value-green"/>
+                        <Label text="Currently active" styleClass="card-subtitle"/>
                     </VBox>
 
-                    <!-- Administrators -->
+                    <!-- New This Month -->
                     <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="2">
                         <padding>
                             <Insets top="25" right="25" bottom="25" left="25"/>
                         </padding>
-                        <Label text="Administrators" styleClass="card-label"/>
-                        <Label fx:id="administratorsLabel" text="0" styleClass="card-value"/>
-                    </VBox>
-
-                    <!-- Staff Members -->
-                    <VBox styleClass="staff-card" spacing="15" GridPane.columnIndex="3">
-                        <padding>
-                            <Insets top="25" right="25" bottom="25" left="25"/>
-                        </padding>
-                        <Label text="Employee Members" styleClass="card-label"/>
-                        <Label fx:id="staffMembersLabel" text="0" styleClass="card-value"/>
+                        <Label text="New This Month" styleClass="card-label"/>
+                        <Label fx:id="newSuppliersLabel" text="0" styleClass="card-value"/>
+                        <Label text="Added this month" styleClass="card-subtitle"/>
                     </VBox>
                 </GridPane>
 
-                <!-- STAFF ACCOUNTS TABLE -->
+                <!-- Search and Filter -->
+                <VBox styleClass="staff-card" spacing="15">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <TextField fx:id="searchField" promptText="Search by Supplier ID, Name, Contact Person..."
+                                   styleClass="search-field" HBox.hgrow="ALWAYS"/>
+                        <ComboBox fx:id="supplierFilter" styleClass="filter-dropdown" prefWidth="180"/>
+                        <Button text="Clear" styleClass="clear-btn" onAction="#handleClearFilters"/>
+                    </HBox>
+                </VBox>
+
+                <!-- SUPPLIERS TABLE -->
                 <VBox styleClass="staff-card" spacing="20">
                     <padding>
                         <Insets top="25" right="25" bottom="25" left="25"/>
                     </padding>
 
                     <VBox spacing="5">
-                        <Label text="Employee Accounts" styleClass="card-title"/>
-                        <Label text="Manage all staff accounts, roles, and permissions" styleClass="card-subtitle"/>
+                        <Label text="Supplier List" styleClass="card-title"/>
+                        <Label text="Manage all supplier profiles, contacts, and products supplied" styleClass="card-subtitle"/>
                     </VBox>
 
-                    <TableView fx:id="staffTable" styleClass="staff-table"
+                    <TableView fx:id="supplierTable" styleClass="staff-table"
                                VBox.vgrow="ALWAYS"
                                prefHeight="400"
                                minHeight="400">
                         <columns>
-                            <TableColumn fx:id="staffIdColumn" text="Employee ID" minWidth="100" prefWidth="120"/>
-                            <TableColumn fx:id="nameColumn" text="Name" minWidth="150" prefWidth="200"/>
-                            <TableColumn fx:id="contactColumn" text="Contact" minWidth="250" prefWidth="300"/>
-                            <TableColumn fx:id="roleColumn" text="Role" minWidth="100" prefWidth="130"/>
+                            <!-- Supplier ID -->
+                            <TableColumn fx:id="supplierIdColumn" text="Supplier ID" minWidth="100" prefWidth="120"/>
+
+                            <!-- Supplier Name -->
+                            <TableColumn fx:id="supplierNameColumn" text="Supplier Name" minWidth="150" prefWidth="220"/>
+
+                            <!-- Contact Person -->
+                            <TableColumn fx:id="contactPersonColumn" text="Contact Person" minWidth="150" prefWidth="250"/>
+
+                            <!-- Email -->
+                            <TableColumn fx:id="emailColumn" text="Email" minWidth="150" prefWidth="200"/>
+
+                            <!-- Status -->
                             <TableColumn fx:id="statusColumn" text="Status" minWidth="100" prefWidth="120"/>
-                            <TableColumn fx:id="createdDateColumn" text="Created Date" minWidth="120" prefWidth="140"/>
-                            <TableColumn fx:id="actionsColumn" text="Actions" minWidth="200" prefWidth="250"/>
+
+                            <!-- Actions -->
+                            <TableColumn fx:id="actionsColumn" text="Actions" minWidth="250" prefWidth="350"/>
                         </columns>
+
+                        <placeholder>
+                            <VBox alignment="CENTER" spacing="10">
+                                <Label text="🏢" style="-fx-font-size: 48px;"/>
+                                <Label text="No suppliers found" style="-fx-font-size: 16px; -fx-text-fill: #7f8c8d;"/>
+                                <Label text="Click 'Add Supplier' to register your first supplier"
+                                       style="-fx-font-size: 14px; -fx-text-fill: #95a5a6;"/>
+                            </VBox>
+                        </placeholder>
                     </TableView>
                 </VBox>
 

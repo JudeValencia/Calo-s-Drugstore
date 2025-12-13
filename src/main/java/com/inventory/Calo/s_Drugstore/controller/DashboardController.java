@@ -80,6 +80,9 @@ public class DashboardController {
     private Button inventoryBtn;
 
     @FXML
+    private Button supplierBtn;
+
+    @FXML
     private Button salesBtn;
 
     @FXML
@@ -279,6 +282,11 @@ public class DashboardController {
         navigateToPage("/fxml/inventory.fxml", "/css/inventory.css");
     }
 
+    @FXML
+    private void handleSupplier() {
+        setActiveButton(supplierBtn);
+        navigateToPage("/fxml/supplier.fxml", "/css/supplier.css");
+    }
 
     @FXML
     private void handleSales() {
@@ -416,6 +424,9 @@ public class DashboardController {
                 controller.setCurrentUser(currentUser);
             } else if (fxmlPath.contains("product-management")) {
                 ProductManagementController controller = loader.getController();
+                controller.setCurrentUser(currentUser);
+            } else if (fxmlPath.contains("supplier")) {
+                SupplierController controller = loader.getController();
                 controller.setCurrentUser(currentUser);
             }
 
