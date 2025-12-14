@@ -1120,7 +1120,6 @@ public class StaffController implements Initializable {
         }
 
         contentBox.getChildren().addAll(
-                employeeIdBox,  // Add Employee ID first
                 firstNameBox, middleNameBox, lastNameBox, usernameBox, emailBox, contactBox,
                 addressBox, dobBox, passwordBox, confirmPasswordBox, roleBox
         );
